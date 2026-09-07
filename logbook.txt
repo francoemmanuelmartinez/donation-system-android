@@ -31,7 +31,11 @@
 - Developed `register.php` with unique username validation and BCRYPT encryption.
 - Added navigation links between Login and Register screens.
 
-## [2026-09-07] Monorepo & Sync Strategy
-- Created `backend/` and `sql/` folders in the project root to sync API code and database dumps via GitHub.
-- Established a "Monorepo" workflow to allow seamless synchronization between multiple development machines (PC and Notebook).
-- Planned the use of Symbolic Links (`mklink`) to connect the project's backend folder with the XAMPP `htdocs` directory.
+## [2026-09-07] Documentation & Export
+- Created `README.md` for project overview and setup.
+- Created `technical_summary.artifact.md` for deep technical documentation.
+- Established a "technical export" strategy to ensure project decisions are preserved and sharable.
+
+## [2026-09-07] Plasma Bank Planning
+- Re-oriented project toward medical domain (Plasma and Platelet Bank).
+- Designed updated `donations` table with medical-specific fields (Volume, Blood Pressure, Donation Type).
