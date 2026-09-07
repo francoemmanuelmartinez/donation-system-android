@@ -1,0 +1,37 @@
+# DonationSystem Project Logbook
+
+## [2026-09-04] Architecture & Structure
+- Created MVC package structure: `models`, `views`, `controllers`.
+- Moved `MainActivity.java` to `views/` package to align with MVC.
+- Updated `AndroidManifest.xml` and `activity_main.xml` to reflect the move.
+- Created `database/dao/` package for future persistence layers.
+- Added `PlaceholderDao.java` to keep empty packages visible in Android Studio.
+
+## [2026-09-06] UI & Local Logic
+- Implemented basic `User` model with username/password fields.
+- Created `LoginController` for handling business logic.
+- Built `LoginActivity` and `activity_login.xml` for the user interface.
+
+## [2026-09-06] Networking & API Setup
+- Integrated **Retrofit**, **Gson**, and **OkHttp** logging interceptor.
+- Configured `AndroidManifest.xml` with `INTERNET` permissions.
+- Created `network_security_config.xml` to allow cleartext traffic for local PHP development (`10.0.2.2`).
+- Implemented **Repository Pattern** with `UserRepository`.
+- Created `RetrofitClient` and `ApiService` for standardized network calls.
+
+## [2026-09-06] Backend & Database Integration
+- Set up **XAMPP** environment (Apache & MySQL).
+- Created `donation_system` database and `users` table in phpMyAdmin.
+- Developed `db_config.php` for PDO database connections.
+- Implemented `login.php` with secure **BCRYPT password hashing** and verification.
+
+## [2026-09-06] User Management
+- Implemented **User Registration** flow.
+- Created `RegisterActivity`, `activity_register.xml`, and `RegisterController`.
+- Developed `register.php` with unique username validation and BCRYPT encryption.
+- Added navigation links between Login and Register screens.
+
+## [2026-09-07] Monorepo & Sync Strategy
+- Created `backend/` and `sql/` folders in the project root to sync API code and database dumps via GitHub.
+- Established a "Monorepo" workflow to allow seamless synchronization between multiple development machines (PC and Notebook).
+- Planned the use of Symbolic Links (`mklink`) to connect the project's backend folder with the XAMPP `htdocs` directory.
