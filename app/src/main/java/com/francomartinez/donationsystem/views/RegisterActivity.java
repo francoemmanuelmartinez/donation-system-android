@@ -1,6 +1,5 @@
 package com.francomartinez.donationsystem.views;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
@@ -12,14 +11,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.francomartinez.donationsystem.R;
-import com.francomartinez.donationsystem.controllers.RegisterController;
 import com.francomartinez.donationsystem.models.LoginResponse;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import com.francomartinez.donationsystem.viewmodels.RegisterViewModel;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -27,7 +23,7 @@ public class RegisterActivity extends AppCompatActivity {
     private EditText etPassword;
     private Button btnRegister;
     private TextView tvGoToLogin;
-    private RegisterController controller;
+    private RegisterViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +31,7 @@ public class RegisterActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_register);
 
-        controller = new RegisterController();
+        viewModel = new ViewModelProvider(this).get(RegisterViewModel.class);
 
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
@@ -48,38 +44,42 @@ public class RegisterActivity extends AppCompatActivity {
             return insets;
         });
 
+        observeViewModel();
+
         btnRegister.setOnClickListener(v -> handleRegister());
         tvGoToLogin.setOnClickListener(v -> finish());
+    }
+
+    private void observeViewModel() {
+        viewModel.getRegisterResult().observe(this, resource -> {
+            if (resource == null) return;
+
+            switch (resource.status) {
+                case LOADING:
+                    btnRegister.setEnabled(false);
+                    break;
+                case SUCCESS:
+                    btnRegister.setEnabled(true);
+                    LoginResponse response = resource.data;
+                    if (response != null && response.getMessage() != null) {
+                        Toast.makeText(RegisterActivity.this, response.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                    finish(); // Go back to LoginActivity
+                    break;
+                case ERROR:
+                    btnRegister.setEnabled(true);
+                    if (resource.message != null) {
+                        Toast.makeText(RegisterActivity.this, resource.message, Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+            }
+        });
     }
 
     private void handleRegister() {
         String username = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
-        if (username.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        btnRegister.setEnabled(false);
-
-        controller.register(username, password, new Callback<LoginResponse>() {
-            @Override
-            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
-                btnRegister.setEnabled(true);
-                if (response.isSuccessful() && response.body() != null) {
-                    Toast.makeText(RegisterActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                    finish(); // Go back to LoginActivity
-                } else {
-                    Toast.makeText(RegisterActivity.this, "Registration failed", Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<LoginResponse> call, Throwable t) {
-                btnRegister.setEnabled(true);
-                Toast.makeText(RegisterActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+        viewModel.register(username, password);
     }
 }

@@ -10,7 +10,7 @@ This system is designed to streamline the donation process for medical facilitie
 - **Backend:** PHP 8.x (Hosted via XAMPP for local development)
 - **Database:** MySQL
 - **Networking:** Retrofit 2 + Gson
-- **Architecture:** MVC (Model-View-Controller) + Repository Pattern
+- **Architecture:** MVVM (Model-View-ViewModel) + Repository Pattern
 
 ## 🛠️ Setup Instructions
 

@@ -12,14 +12,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.francomartinez.donationsystem.R;
-import com.francomartinez.donationsystem.controllers.LoginController;
 import com.francomartinez.donationsystem.models.LoginResponse;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import com.francomartinez.donationsystem.viewmodels.LoginViewModel;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -27,7 +24,7 @@ public class LoginActivity extends AppCompatActivity {
     private EditText etPassword;
     private Button btnLogin;
     private TextView tvGoToRegister;
-    private LoginController controller;
+    private LoginViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,8 +32,8 @@ public class LoginActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_login);
 
-        // Initialize Controller
-        controller = new LoginController();
+        // Initialize ViewModel
+        viewModel = new ViewModelProvider(this).get(LoginViewModel.class);
 
         // Bind Views
         etUsername = findViewById(R.id.etUsername);
@@ -51,6 +48,9 @@ public class LoginActivity extends AppCompatActivity {
             return insets;
         });
 
+        // Observe ViewModel State
+        observeViewModel();
+
         // Set Click Listeners
         btnLogin.setOnClickListener(v -> handleLogin());
         tvGoToRegister.setOnClickListener(v -> {
@@ -59,42 +59,38 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    private void observeViewModel() {
+        viewModel.getLoginResult().observe(this, resource -> {
+            if (resource == null) return;
+
+            switch (resource.status) {
+                case LOADING:
+                    btnLogin.setEnabled(false);
+                    break;
+                case SUCCESS:
+                    btnLogin.setEnabled(true);
+                    LoginResponse loginResponse = resource.data;
+                    if (loginResponse != null && loginResponse.getMessage() != null) {
+                        Toast.makeText(LoginActivity.this, loginResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                    startActivity(intent);
+                    finish();
+                    break;
+                case ERROR:
+                    btnLogin.setEnabled(true);
+                    if (resource.message != null) {
+                        Toast.makeText(LoginActivity.this, resource.message, Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+            }
+        });
+    }
+
     private void handleLogin() {
         String username = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
-        if (username.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Disable button to prevent multiple clicks
-        btnLogin.setEnabled(false);
-
-        controller.login(username, password, new Callback<LoginResponse>() {
-            @Override
-            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
-                btnLogin.setEnabled(true);
-                if (response.isSuccessful() && response.body() != null) {
-                    LoginResponse loginResponse = response.body();
-                    if ("success".equals(loginResponse.getStatus())) {
-                        Toast.makeText(LoginActivity.this, loginResponse.getMessage(), Toast.LENGTH_SHORT).show();
-                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                        startActivity(intent);
-                        finish();
-                    } else {
-                        Toast.makeText(LoginActivity.this, loginResponse.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                } else {
-                    Toast.makeText(LoginActivity.this, "Login failed: " + response.code(), Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<LoginResponse> call, Throwable t) {
-                btnLogin.setEnabled(true);
-                Toast.makeText(LoginActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+        viewModel.login(username, password);
     }
 }
