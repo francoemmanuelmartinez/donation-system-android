@@ -15,7 +15,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.francomartinez.donationsystem.R;
-import com.francomartinez.donationsystem.models.LoginResponse;
+import com.francomartinez.donationsystem.models.User;
 import com.francomartinez.donationsystem.viewmodels.LoginViewModel;
 
 public class LoginActivity extends AppCompatActivity {
@@ -69,9 +69,9 @@ public class LoginActivity extends AppCompatActivity {
                     break;
                 case SUCCESS:
                     btnLogin.setEnabled(true);
-                    LoginResponse loginResponse = resource.data;
-                    if (loginResponse != null && loginResponse.getMessage() != null) {
-                        Toast.makeText(LoginActivity.this, loginResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                    User user = resource.data;
+                    if (user != null) {
+                        Toast.makeText(LoginActivity.this, "¡Bienvenido/a " + user.getFirstName() + "!", Toast.LENGTH_SHORT).show();
                     }
                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                     startActivity(intent);

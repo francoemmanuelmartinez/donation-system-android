@@ -1,4 +1,197 @@
 package com.francomartinez.donationsystem.models;
 
+import com.google.gson.annotations.SerializedName;
+import java.util.List;
+
 public class Donor {
+
+    @SerializedName("id")
+    private int id;
+
+    @SerializedName("dni")
+    private String dni;
+
+    @SerializedName("firstName")
+    private String firstName;
+
+    @SerializedName("lastName")
+    private String lastName;
+
+    @SerializedName("gender")
+    private String gender;
+
+    @SerializedName("birthDate")
+    private String birthDate;
+
+    @SerializedName("city")
+    private String city;
+
+    @SerializedName("zipCode")
+    private String zipCode;
+
+    @SerializedName("address")
+    private String address;
+
+    @SerializedName("neighborhood")
+    private String neighborhood;
+
+    @SerializedName("bloodType")
+    private String bloodType;
+
+    @SerializedName("phenotype")
+    private String phenotype;
+
+    @SerializedName("status")
+    private String status; // "APTO", "EN_VEDA"
+
+    @SerializedName("lastDonationDate")
+    private String lastDonationDate;
+
+    @SerializedName("phones")
+    private List<ContactPhone> phones;
+
+    @SerializedName("emails")
+    private List<ContactEmail> emails;
+
+    @SerializedName("activeRestrictions")
+    private List<MedicalRestriction> activeRestrictions;
+
+    public Donor() {
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getDni() {
+        return dni;
+    }
+
+    public void setDni(String dni) {
+        this.dni = dni;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public String getBirthDate() {
+        return birthDate;
+    }
+
+    public void setBirthDate(String birthDate) {
+        this.birthDate = birthDate;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getZipCode() {
+        return zipCode;
+    }
+
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getNeighborhood() {
+        return neighborhood;
+    }
+
+    public void setNeighborhood(String neighborhood) {
+        this.neighborhood = neighborhood;
+    }
+
+    public String getBloodType() {
+        return bloodType;
+    }
+
+    public void setBloodType(String bloodType) {
+        this.bloodType = bloodType;
+    }
+
+    public String getPhenotype() {
+        return phenotype;
+    }
+
+    public void setPhenotype(String phenotype) {
+        this.phenotype = phenotype;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getLastDonationDate() {
+        return lastDonationDate;
+    }
+
+    public void setLastDonationDate(String lastDonationDate) {
+        this.lastDonationDate = lastDonationDate;
+    }
+
+    public List<ContactPhone> getPhones() {
+        return phones;
+    }
+
+    public void setPhones(List<ContactPhone> phones) {
+        this.phones = phones;
+    }
+
+    public List<ContactEmail> getEmails() {
+        return emails;
+    }
+
+    public void setEmails(List<ContactEmail> emails) {
+        this.emails = emails;
+    }
+
+    public List<MedicalRestriction> getActiveRestrictions() {
+        return activeRestrictions;
+    }
+
+    public void setActiveRestrictions(List<MedicalRestriction> activeRestrictions) {
+        this.activeRestrictions = activeRestrictions;
+    }
 }

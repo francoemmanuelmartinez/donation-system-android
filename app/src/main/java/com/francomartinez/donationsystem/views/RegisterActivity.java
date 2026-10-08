@@ -14,7 +14,6 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.francomartinez.donationsystem.R;
-import com.francomartinez.donationsystem.models.LoginResponse;
 import com.francomartinez.donationsystem.viewmodels.RegisterViewModel;
 
 public class RegisterActivity extends AppCompatActivity {
@@ -60,9 +59,9 @@ public class RegisterActivity extends AppCompatActivity {
                     break;
                 case SUCCESS:
                     btnRegister.setEnabled(true);
-                    LoginResponse response = resource.data;
-                    if (response != null && response.getMessage() != null) {
-                        Toast.makeText(RegisterActivity.this, response.getMessage(), Toast.LENGTH_SHORT).show();
+                    String message = resource.data;
+                    if (message != null) {
+                        Toast.makeText(RegisterActivity.this, message, Toast.LENGTH_SHORT).show();
                     }
                     finish(); // Go back to LoginActivity
                     break;
@@ -77,9 +76,9 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void handleRegister() {
-        String username = etUsername.getText().toString().trim();
+        String input = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
-        viewModel.register(username, password);
+        viewModel.register("Usuario", "Staff", input, input, "", password);
     }
 }
