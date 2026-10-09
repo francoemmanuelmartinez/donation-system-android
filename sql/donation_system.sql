@@ -4,6 +4,7 @@
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `donation_procedures`;
 DROP TABLE IF EXISTS `donations`;
+DROP TABLE IF EXISTS `donation_recovery_policies`;
 DROP TABLE IF EXISTS `appointments`;
 DROP TABLE IF EXISTS `donor_restrictions`;
 DROP TABLE IF EXISTS `restrictions`;
@@ -74,8 +75,11 @@ CREATE TABLE `donors` (
   `neighborhood` VARCHAR(100) NOT NULL,
   `blood_type` VARCHAR(10) NOT NULL,
   `phenotype` VARCHAR(100) NULL,
+  `weight` DECIMAL(5,2) NULL,
+  `height` DECIMAL(5,2) NULL,
   `status` ENUM('APTO', 'EN_VEDA') NOT NULL DEFAULT 'APTO',
   `last_donation_date` DATE NULL,
+  `next_eligible_date` DATE NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -142,15 +146,39 @@ CREATE TABLE `donor_restrictions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
+-- Table: donation_recovery_policies (Recovery from donation)
+-- Configurable by the Director. INCUCAI/SAS baseline values:
+--   PLASMA:   2 days  / 25 per year
+--   PLATELETS: 7 days / 12 per year
+--   BLOOD:    60 days (male) / 90 (female) / 4 (male) / 3 (female) per year
+-- --------------------------------------------------------
+CREATE TABLE `donation_recovery_policies` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `procedure_type` ENUM('PLASMA', 'PLATELETS', 'BLOOD') NOT NULL UNIQUE,
+  `recovery_days` INT NOT NULL,
+  `recovery_days_female` INT NOT NULL,
+  `max_per_year` INT NOT NULL,
+  `max_per_year_female` INT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `donation_recovery_policies` (`procedure_type`, `recovery_days`, `recovery_days_female`, `max_per_year`, `max_per_year_female`) VALUES
+('PLASMA', 2, 2, 25, 25),
+('PLATELETS', 7, 7, 12, 12),
+('BLOOD', 60, 90, 4, 3);
+
+-- --------------------------------------------------------
 -- Table: donations
 -- --------------------------------------------------------
 CREATE TABLE `donations` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `donor_id` INT NOT NULL,
-  `weight` DECIMAL(5,2) NOT NULL,
-  `height` DECIMAL(5,2) NOT NULL,
+  `weight` DECIMAL(5,2) NOT NULL DEFAULT 0,
+  `height` DECIMAL(5,2) NOT NULL DEFAULT 0,
   `hto` DECIMAL(4,1) NOT NULL,
   `platelets_count` INT NOT NULL,
+  `annual_limit_override` TINYINT(1) NOT NULL DEFAULT 0,
   `staff_user_id` INT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`donor_id`) REFERENCES `donors`(`id`) ON DELETE CASCADE,
@@ -178,6 +206,7 @@ CREATE TABLE `appointments` (
   `target_procedure` VARCHAR(50) NOT NULL,
   `status` ENUM('SCHEDULED', 'ATTENDED', 'CANCELLED') NOT NULL DEFAULT 'SCHEDULED',
   `is_reminder_sent` TINYINT(1) NOT NULL DEFAULT 0,
+  `is_email_reminder_sent` TINYINT(1) NOT NULL DEFAULT 0,
   `reminder_sent_at` DATETIME NULL,
   `reminder_sent_by_user_id` INT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

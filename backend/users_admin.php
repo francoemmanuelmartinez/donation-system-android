@@ -7,7 +7,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     if ($action === 'pending') {
         try {
             $stmt = $conn->query("SELECT id, first_name AS firstName, last_name AS lastName, dni, email, role, is_approved AS isApproved, created_at AS createdAt FROM users WHERE is_approved = 0 ORDER BY created_at DESC");
-            $users = $stmt->fetchAll();
+            $users = array_map(function ($u) {
+                $u['isApproved'] = (bool)$u['isApproved'];
+                return $u;
+            }, $stmt->fetchAll());
             sendJsonResponse("success", "Pending staff retrieved", $users);
         } catch(PDOException $e) {
             sendJsonResponse("error", "Database error: " . $e->getMessage(), null, 500);
@@ -15,7 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     } else if ($action === 'active') {
         try {
             $stmt = $conn->query("SELECT id, first_name AS firstName, last_name AS lastName, dni, email, role, is_approved AS isApproved, created_at AS createdAt FROM users WHERE is_approved = 1 ORDER BY last_name ASC, first_name ASC");
-            $users = $stmt->fetchAll();
+            $users = array_map(function ($u) {
+                $u['isApproved'] = (bool)$u['isApproved'];
+                return $u;
+            }, $stmt->fetchAll());
             sendJsonResponse("success", "Active staff retrieved", $users);
         } catch(PDOException $e) {
             sendJsonResponse("error", "Database error: " . $e->getMessage(), null, 500);
@@ -53,6 +59,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             ]);
 
             sendJsonResponse("success", "Usuario aprobado exitosamente", ["userId" => $userId, "role" => $role]);
+        } catch(PDOException $e) {
+            sendJsonResponse("error", "Database error: " . $e->getMessage(), null, 500);
+        }
+    } else if ($action === 'update_role') {
+        $userId = (int)($data->userId ?? $data->user_id ?? 0);
+        $role = trim($data->role ?? '');
+
+        if ($userId <= 0) {
+            sendJsonResponse("error", "Invalid user ID", null, 400);
+        }
+
+        if (!in_array($role, ['ADMINISTRATIVA', 'DIRECTORA'])) {
+            sendJsonResponse("error", "Rol no válido", null, 400);
+        }
+
+        try {
+            $checkStmt = $conn->prepare("SELECT role, is_approved FROM users WHERE id = :id");
+            $checkStmt->execute(['id' => $userId]);
+            $targetUser = $checkStmt->fetch();
+
+            if (!$targetUser) {
+                sendJsonResponse("error", "Usuario no encontrado", null, 404);
+            }
+
+            // CRITICAL SECURITY MUTEX ENFORCEMENT
+            if ($targetUser['role'] === 'DIRECTORA' && (int)$targetUser['is_approved'] === 1 && $role !== 'DIRECTORA') {
+                $countStmt = $conn->query("SELECT COUNT(*) AS director_count FROM users WHERE role = 'DIRECTORA' AND is_approved = 1");
+                $result = $countStmt->fetch();
+                $directorCount = (int)($result['director_count'] ?? 0);
+
+                if ($directorCount <= 1) {
+                    sendJsonResponse("error", "Operación denegada. No se puede degradar al único usuario con rol de Directora en el sistema.", null, 403);
+                }
+            }
+
+            $updateStmt = $conn->prepare("UPDATE users SET role = :role WHERE id = :id");
+            $updateStmt->execute(['role' => $role, 'id' => $userId]);
+
+            sendJsonResponse("success", "Rol actualizado exitosamente", ["userId" => $userId, "role" => $role]);
         } catch(PDOException $e) {
             sendJsonResponse("error", "Database error: " . $e->getMessage(), null, 500);
         }

@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel;
 import com.francomartinez.donationsystem.models.ApiResponse;
 import com.francomartinez.donationsystem.models.User;
 import com.francomartinez.donationsystem.repositories.UserRepository;
+import com.francomartinez.donationsystem.utils.ApiErrorHandler;
 import com.francomartinez.donationsystem.utils.Resource;
 
 import retrofit2.Call;
@@ -32,11 +33,11 @@ public class LoginViewModel extends ViewModel {
 
     public void login(String email, String password) {
         if (email == null || email.trim().isEmpty() || password == null || password.trim().isEmpty()) {
-            loginResult.setValue(Resource.error("Please fill in all fields"));
+            loginResult.postValue(Resource.error("Por favor completá todos los campos"));
             return;
         }
 
-        loginResult.setValue(Resource.loading());
+        loginResult.postValue(Resource.loading());
 
         userRepository.login(email, password, new Callback<ApiResponse<User>>() {
             @Override
@@ -44,18 +45,19 @@ public class LoginViewModel extends ViewModel {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<User> body = response.body();
                     if (body.isSuccess()) {
-                        loginResult.setValue(Resource.success(body.getData()));
+                        loginResult.postValue(Resource.success(body.getData()));
                     } else {
-                        loginResult.setValue(Resource.error(body.getMessage() != null ? body.getMessage() : "Login failed"));
+                        loginResult.postValue(Resource.error(body.getMessage() != null ? body.getMessage() : "No se pudo iniciar sesión"));
                     }
                 } else {
-                    loginResult.setValue(Resource.error("Login failed: " + response.code()));
+                    String message = ApiErrorHandler.messageFrom(response);
+                    loginResult.postValue(Resource.error(message != null ? message : "No se pudo iniciar sesión: " + response.code()));
                 }
             }
 
             @Override
             public void onFailure(Call<ApiResponse<User>> call, Throwable t) {
-                loginResult.setValue(Resource.error("Network error: " + t.getMessage()));
+                loginResult.postValue(Resource.error("Error de red: " + t.getMessage()));
             }
         });
     }

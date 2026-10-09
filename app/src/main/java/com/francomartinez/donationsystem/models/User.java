@@ -26,6 +26,9 @@ public class User {
     @SerializedName("isApproved")
     private boolean isApproved;
 
+    @SerializedName("createdAt")
+    private String createdAt;
+
     @SerializedName("phones")
     private List<ContactPhone> phones;
 
@@ -99,6 +102,14 @@ public class User {
 
     public void setApproved(boolean approved) {
         isApproved = approved;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
     }
 
     public List<ContactPhone> getPhones() {

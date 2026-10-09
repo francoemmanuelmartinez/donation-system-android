@@ -16,6 +16,9 @@ public class Appointment {
     @SerializedName("donorPhone")
     private String donorPhone;
 
+    @SerializedName("donorEmail")
+    private String donorEmail;
+
     @SerializedName("appointmentDate")
     private String appointmentDate;
 
@@ -30,6 +33,9 @@ public class Appointment {
 
     @SerializedName("isReminderSent")
     private boolean isReminderSent;
+
+    @SerializedName("isEmailReminderSent")
+    private boolean isEmailReminderSent;
 
     @SerializedName("reminderSentAt")
     private String reminderSentAt;
@@ -67,6 +73,14 @@ public class Appointment {
 
     public void setDonorPhone(String donorPhone) {
         this.donorPhone = donorPhone;
+    }
+
+    public String getDonorEmail() {
+        return donorEmail;
+    }
+
+    public void setDonorEmail(String donorEmail) {
+        this.donorEmail = donorEmail;
     }
 
     public String getAppointmentDate() {
@@ -107,6 +121,14 @@ public class Appointment {
 
     public void setReminderSent(boolean reminderSent) {
         isReminderSent = reminderSent;
+    }
+
+    public boolean isEmailReminderSent() {
+        return isEmailReminderSent;
+    }
+
+    public void setEmailReminderSent(boolean emailReminderSent) {
+        isEmailReminderSent = emailReminderSent;
     }
 
     public String getReminderSentAt() {

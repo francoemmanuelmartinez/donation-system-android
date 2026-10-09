@@ -41,11 +41,23 @@ public class Donor {
     @SerializedName("phenotype")
     private String phenotype;
 
+    @SerializedName("weight")
+    private Double weight;
+
+    @SerializedName("height")
+    private Double height;
+
     @SerializedName("status")
     private String status; // "APTO", "EN_VEDA"
 
     @SerializedName("lastDonationDate")
     private String lastDonationDate;
+
+    @SerializedName("nextEligibleDate")
+    private String nextEligibleDate;
+
+    @SerializedName("annualCounts")
+    private java.util.Map<String, AnnualCount> annualCounts;
 
     @SerializedName("phones")
     private List<ContactPhone> phones;
@@ -155,6 +167,22 @@ public class Donor {
         this.phenotype = phenotype;
     }
 
+    public Double getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Double weight) {
+        this.weight = weight;
+    }
+
+    public Double getHeight() {
+        return height;
+    }
+
+    public void setHeight(Double height) {
+        this.height = height;
+    }
+
     public String getStatus() {
         return status;
     }
@@ -169,6 +197,22 @@ public class Donor {
 
     public void setLastDonationDate(String lastDonationDate) {
         this.lastDonationDate = lastDonationDate;
+    }
+
+    public String getNextEligibleDate() {
+        return nextEligibleDate;
+    }
+
+    public void setNextEligibleDate(String nextEligibleDate) {
+        this.nextEligibleDate = nextEligibleDate;
+    }
+
+    public java.util.Map<String, AnnualCount> getAnnualCounts() {
+        return annualCounts;
+    }
+
+    public void setAnnualCounts(java.util.Map<String, AnnualCount> annualCounts) {
+        this.annualCounts = annualCounts;
     }
 
     public List<ContactPhone> getPhones() {

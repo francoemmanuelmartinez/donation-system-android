@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="12dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipAppointmentTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/loading"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/textViewAppointmentDonor"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textColor="@color/on_surface"
+            app:layout_constraintEnd_toStartOf="@+id/chipAppointmentTime"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/textViewAppointmentProcedure"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/loading"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="@color/medical_blue"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textViewAppointmentDonor" />
+
+        <LinearLayout
+            android:id="@+id/layoutReminderActions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textViewAppointmentProcedure">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonSendWhatsApp"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/cd_send_whatsapp"
+                app:icon="@drawable/ic_whatsapp"
+                app:iconSize="24dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonSendEmail"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/cd_send_email"
+                app:icon="@drawable/ic_mail"
+                app:iconSize="24dp" />
+
+            <ImageView
+                android:id="@+id/imageViewReminderWhatsAppChecked"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:contentDescription="@string/msg_reminder_sent"
+                android:src="@drawable/ic_check"
+                android:tint="@color/aptitude_green"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/imageViewReminderEmailChecked"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:contentDescription="@string/msg_reminder_sent"
+                android:src="@drawable/ic_check"
+                android:tint="@color/aptitude_green"
+                android:visibility="gone" />
+        </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

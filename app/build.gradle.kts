@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.francomartinez.donationsystem"
-        minSdk = 30
+        minSdk = 29
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
@@ -36,6 +36,8 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.constraintlayout)
     implementation(libs.material)
+    implementation(libs.androidx.viewpager2)
+    implementation(libs.mpandroidchart)
 
     // Networking
     implementation(libs.retrofit)
@@ -43,6 +45,8 @@ dependencies {
     implementation(libs.okhttp.logging)
 
     testImplementation(libs.junit)
+    testImplementation(libs.androidx.core.testing)
+    testImplementation(libs.mysql.connector)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.ext.junit)
 }

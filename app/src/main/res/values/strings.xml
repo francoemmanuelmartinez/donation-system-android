@@ -1,3 +1,243 @@
 <resources>
     <string name="app_name">DonationSystem</string>
+
+    <!-- Shared / Generic -->
+    <string name="btn_accept">ACEPTAR</string>
+    <string name="btn_cancel">CANCELAR</string>
+    <string name="loading">Cargando...</string>
+
+    <!-- Authentication -->
+    <string name="login_title">¡Bienvenido de nuevo!</string>
+    <string name="login_subtitle">Iniciá sesión para continuar</string>
+    <string name="hint_email">Correo Electrónico:</string>
+    <string name="hint_password">Contraseña:</string>
+    <string name="btn_login">INICIAR SESIÓN</string>
+    <string name="btn_navigate_to_sign_up">¿No tenés cuenta? Registrate acá</string>
+
+    <string name="sign_up_title">Crear Cuenta</string>
+    <string name="sign_up_subtitle">Registrá tus datos de personal operativo</string>
+    <string name="hint_first_name">Nombre/s:</string>
+    <string name="hint_last_name">Apellido/s:</string>
+    <string name="hint_dni">DNI:</string>
+    <string name="hint_phone">Teléfono:</string>
+    <string name="btn_sign_up">REGISTRARSE</string>
+    <string name="btn_navigate_to_login">¿Ya tenés cuenta? Iniciar Sesión</string>
+
+    <string name="msg_fill_all_fields">Por favor completá todos los campos obligatorios</string>
+    <string name="msg_registration_success">Cuenta registrada. Esperando aprobación de Dirección</string>
+    <string name="msg_pending_approval">Cuenta pendiente de aprobación por la Dirección</string>
+    <string name="msg_welcome">¡Bienvenido/a %1$s!</string>
+    <string name="msg_login_error">No se pudo iniciar sesión</string>
+
+    <!-- Bottom Navigation -->
+    <string name="navigation_donations">Donaciones</string>
+    <string name="navigation_appointments">Agenda</string>
+    <string name="navigation_search">Búsqueda Avanzada</string>
+
+    <!-- Donors -->
+    <string name="donors_title">Donantes</string>
+    <string name="donors_placeholder">Módulo de Donantes</string>
+    <string name="hint_search_dni">Buscar por DNI:</string>
+    <string name="btn_search">BUSCAR</string>
+    <string name="card_personal_data">Datos Personales</string>
+    <string name="hint_gender">Género:</string>
+    <string name="hint_birth_date">Fecha de Nacimiento:</string>
+    <string name="hint_age">Edad:</string>
+    <string name="card_contact_data">Contacto y Ubicación</string>
+    <string name="hint_city">Ciudad:</string>
+    <string name="hint_zip_code">Código Postal:</string>
+    <string name="hint_address">Dirección:</string>
+    <string name="hint_neighborhood">Barrio:</string>
+    <string name="btn_add_phone">Agregar otro teléfono</string>
+    <string name="btn_add_email">Agregar otro email</string>
+    <string name="hint_aptitude">Aptitud:</string>
+    <string name="aptitude_apto">Apto</string>
+    <string name="aptitude_no_apto">No apto</string>
+    <string name="hint_veda_return_date">Fecha de Retorno:</string>
+    <string name="card_critical_data">Datos Críticos</string>
+    <string name="hint_blood_type">Grupo y Factor:</string>
+    <string name="hint_phenotype">Fenotipo (ej: Kell-):</string>
+    <string name="hint_last_donation_date">Última Donación:</string>
+    <string name="label_medical_restrictions">Restricciones Médicas:</string>
+    <string name="hint_add_restriction">Seleccionar restricción...</string>
+    <string name="hint_restriction_notes">Observaciones de la exclusión:</string>
+    <string name="btn_save_donor">CARGAR DONANTE</string>
+    <string name="btn_modify_donor">MODIFICAR</string>
+    <string name="badge_apto">APTO PARA DONAR</string>
+    <string name="badge_veda">EN VEDA</string>
+    <string name="msg_donor_saved">Datos del donante guardados correctamente</string>
+    <string name="msg_donor_loaded">Donante cargado correctamente</string>
+    <string name="msg_donor_not_found">Donante no encontrado</string>
+    <string name="msg_restrictions_updated">Exclusiones médicas actualizadas</string>
+    <string name="contact_primary">Principal</string>
+
+    <!-- Donation Flow (Hub & Donor Registration) -->
+    <string name="donations_flow_subtitle">Completá el registro de un donante nuevo o buscá uno existente para registrar su donación</string>
+    <string name="btn_register_new_donor">REGISTRAR NUEVO DONANTE</string>
+    <string name="btn_search_registered_donor">BUSCAR DONANTE REGISTRADO</string>
+    <string name="msg_donor_search_empty">No hay donantes con ese DNI</string>
+    <string name="btn_see_data">VER DATOS</string>
+    <string name="btn_save_changes">GUARDAR CAMBIOS</string>
+
+    <!-- Donations -->
+    <string name="donations_title">Donaciones</string>
+    <string name="donations_placeholder">Módulo de Donaciones</string>
+    <string name="card_donor_context">Donante Seleccionado</string>
+    <string name="hint_select_donor">Seleccioná un donante desde Buscar Donante Registrado</string>
+    <string name="hint_weight">Peso (kg):</string>
+    <string name="hint_height">Altura (cm):</string>
+    <string name="card_hemogram">Hemograma Breve</string>
+    <string name="hint_hto">HTO (%):</string>
+    <string name="hint_platelets">Recuento de Plaquetas (u/µL):</string>
+    <string name="label_procedure_type">Procedimiento(s):</string>
+    <string name="btn_type_plasma">Plasma</string>
+    <string name="btn_type_platelets">Plaquetas</string>
+    <string name="btn_type_blood">Sangre</string>
+    <string name="btn_save_donation">GUARDAR DONACIÓN</string>
+    <string name="msg_save_donation">Donación registrada correctamente</string>
+    <string name="msg_select_donor_first">Seleccioná un donante primero</string>
+    <string name="msg_select_procedure">Seleccioná al menos un tipo de extracción</string>
+    <string name="msg_validation_donation">Por favor completá todos los parámetros clínicos</string>
+
+    <!-- Appointments -->
+    <string name="appointments_title">Agenda</string>
+    <string name="appointments_placeholder">Módulo de Agenda</string>
+    <string name="week_header_format">Citados para la semana del %1$s al %2$s</string>
+    <string name="btn_send_reminder">Enviar Recordatorio</string>
+    <string name="msg_reminder_sent">Recordatorio enviado</string>
+    <string name="msg_reminder_error">No se pudo actualizar el recordatorio</string>
+    <string name="msg_whatsapp_not_installed">WhatsApp no está instalado</string>
+    <string name="empty_day_appointments">No hay citas para este día</string>
+    <string name="whatsapp_reminder_format">Hola *%1$s*, te recordamos tu turno para donación de *%2$s* el día %3$s a las *%4$s* hs.</string>
+    <string name="email_reminder_subject">Recordatorio de turno de donación</string>
+    <string name="email_reminder_format">Hola %1$s, te recordamos tu turno para donación de %2$s el día %3$s a las %4$s hs.</string>
+    <string name="msg_no_donor_email">El donante no tiene email registrado</string>
+    <string name="msg_email_not_available">No hay ninguna app de correo instalada</string>
+    <string name="cd_open_calendar">Abrir calendario</string>
+    <string name="cd_prev_month">Mes anterior</string>
+    <string name="cd_next_month">Mes siguiente</string>
+    <string name="cd_send_whatsapp">Enviar recordatorio por WhatsApp</string>
+    <string name="cd_send_email">Enviar recordatorio por email</string>
+    <string name="date_label_format">Turnos del %1$s</string>
+    <string name="cd_remove_contact">Quitar campo</string>
+    <string name="msg_donor_missing_weight_height">Cargá el peso y la altura en los datos del donante</string>
+    <string name="procedure_plasma">Plasma</string>
+    <string name="procedure_platelets">Plaquetas</string>
+    <string name="procedure_blood">Sangre</string>
+    <string name="btn_schedule_donor">AGENDAR UN DONANTE</string>
+    <string name="schedule_date_picker_title">Elegí la fecha del turno</string>
+    <string name="schedule_time_picker_title">Elegí la hora del turno</string>
+    <string name="msg_schedule_confirmation">Agendar a %1$s para el día %2$s a las %3$s</string>
+    <string name="btn_confirm_appointment">CONFIRMAR TURNO</string>
+    <string name="msg_appointment_saved">Turno agendado correctamente</string>
+    <string name="msg_appointment_save_error">No se pudo agendar el turno</string>
+    <string name="msg_schedule_duplicate">El donante ya tiene un turno agendado para ese día</string>
+
+    <!-- Search -->
+    <string name="search_title">Búsqueda Avanzada</string>
+    <string name="search_placeholder">Módulo de Búsqueda Avanzada</string>
+    <string name="btn_search_donors">BUSCAR DONANTES</string>
+    <string name="label_last_donation">Última Donación</string>
+    <string name="label_no_donation">Sin donaciones</string>
+    <string name="msg_search_no_results">No hay donantes aptos con ese grupo</string>
+    <string name="label_search_stock">Stock Crítico de Sangre</string>
+
+    <!-- Director -->
+    <string name="director_dashboard_title">Panel de Dirección</string>
+    <string name="director_dashboard_placeholder">Módulo de Dirección</string>
+    <string name="dashboard_subtitle">Control y gestión del banco de plasma y plaquetas</string>
+    <string name="dashboard_menu_donations">Flujo de Donación</string>
+    <string name="dashboard_menu_statistics">Estadísticas</string>
+    <string name="dashboard_menu_restrictions">Restricciones Médicas</string>
+    <string name="dashboard_menu_users">Gestión de Personal</string>
+    <string name="role_directora">Directora</string>
+
+    <!-- Admin activities -->
+    <string name="activity_statistics_title">Estadísticas</string>
+    <string name="activity_restrictions_title">Restricciones Médicas</string>
+    <string name="activity_users_title">Gestión de Personal</string>
+
+    <!-- Statistics -->
+    <string name="tab_statistics_day">Día</string>
+    <string name="tab_statistics_week">Semana</string>
+    <string name="tab_statistics_month">Mes</string>
+    <string name="tab_statistics_year">Año</string>
+    <string name="label_scoreboard_title">Resumen del Período</string>
+    <string name="label_total_donations">Donaciones Registradas</string>
+    <string name="label_donors_registered">Donantes Registrados</string>
+    <string name="label_donors_in_veda">Donantes en Veda</string>
+    <string name="label_trend">Tendencia de Donaciones</string>
+    <string name="chart_no_data">Sin datos para el período</string>
+
+    <!-- Users Management -->
+    <string name="tab_pending_users">Pendientes</string>
+    <string name="tab_active_users">Activos</string>
+    <string name="btn_approve_user">APROBAR</string>
+    <string name="label_role">Rol:</string>
+    <string name="label_created_at">Registrado:</string>
+    <string name="hint_select_role">Seleccionar rol...</string>
+    <string name="role_administrativa">Administrativa</string>
+    <string name="msg_user_approved">Usuario aprobado correctamente</string>
+    <string name="msg_user_approved_error">No se pudo aprobar al usuario</string>
+    <string name="msg_role_updated">Rol actualizado correctamente</string>
+    <string name="msg_user_deleted">Usuario eliminado correctamente</string>
+    <string name="msg_user_update_error">No se pudo actualizar al usuario</string>
+    <string name="dialog_confirm_delete_user">¿Eliminar a este usuario del sistema?</string>
+    <string name="dialog_confirm_demote_director">Es una Directora del sistema. Si es la única, la operación será bloqueada. ¿Continuar?</string>
+    <string name="msg_security_mutex">Operación denegada: debe existir al menos una Directora en el sistema</string>
+
+    <!-- Restrictions Management -->
+    <string name="label_new_restriction">Nueva Exclusión Médica</string>
+    <string name="hint_restriction_name">Nombre de la exclusión:</string>
+    <string name="hint_veda_days">Días de veda:</string>
+    <string name="btn_save_restriction">GUARDAR EXCLUSIÓN</string>
+    <string name="label_veda_days_count">Veda: %1$d días</string>
+    <string name="msg_restriction_created">Exclusión creada correctamente</string>
+    <string name="msg_restriction_deleted">Exclusión eliminada correctamente</string>
+    <string name="msg_restriction_error">No se pudo completar la operación</string>
+    <string name="dialog_confirm_delete_restriction">¿Eliminar esta exclusión del diccionario? Se quitará de todos los donantes asociados.</string>
+    <string name="list_restrictions_title">Diccionario de Exclusiones</string>
+    <string name="msg_validation_restriction">Por favor completá el nombre y los días de veda</string>
+
+    <!-- Recovery Policies Management -->
+    <string name="dashboard_menu_recovery_policies">Políticas de Recuperación</string>
+    <string name="activity_recovery_policies_title">Políticas de Recuperación</string>
+    <string name="label_new_recovery_policy">Nueva Política de Recuperación</string>
+    <string name="label_edit_recovery_policy">Editar Política de Recuperación</string>
+    <string name="hint_procedure_type">Procedimiento:</string>
+    <string name="hint_recovery_days">Días de recuperación (hombres):</string>
+    <string name="hint_recovery_days_female">Días de recuperación (mujeres):</string>
+    <string name="hint_max_per_year">Máx. donaciones por año (hombres):</string>
+    <string name="hint_max_per_year_female">Máx. donaciones por año (mujeres):</string>
+    <string name="btn_save_policy">GUARDAR POLÍTICA</string>
+    <string name="btn_cancel_edit">CANCELAR EDICIÓN</string>
+    <string name="list_recovery_policies_title">Políticas Configuradas</string>
+    <string name="dialog_confirm_delete_recovery_policy">¿Eliminar esta política de recuperación? Se perderán los días y límites anuales configurados.</string>
+    <string name="policy_summary_format">Días: %1$d (M) / %2$d (F) · Límite anual: %3$d (M) / %4$d (F)</string>
+
+    <!-- Next eligible date / annual counts -->
+    <string name="hint_next_eligible_date">Próxima Donación Apta:</string>
+    <string name="label_annual_counts">Donaciones este año:</string>
+
+    <!-- Recovery warnings (non-blocking) -->
+    <string name="dialog_warning_title">Advertencia</string>
+    <string name="warning_recovery_not_elapsed">El donante aún no completó la recuperación. Próxima fecha apta: %1$s. ¿Registrar la donación igualmente?</string>
+    <string name="warning_annual_limit">El donante supera el límite anual de %1$s (%2$s de %3$s). ¿Continuar?</string>
+    <string name="btn_register_anyway">REGISTRAR</string>
+    <string name="warning_schedule_not_elapsed">En la fecha elegida el donante aún está en recuperación (próxima fecha apta: %1$s). ¿Agendar igualmente?</string>
+    <string name="btn_schedule_anyway">AGENDAR</string>
+
+    <!-- Search states & WhatsApp contact -->
+    <string name="search_filter_all">Todos</string>
+    <string name="cd_contact_whatsapp">Contactar por WhatsApp</string>
+    <string name="chip_label_recovery">En recuperación hasta %1$s</string>
+    <string name="chip_label_restriction">En veda hasta %1$s</string>
+    <string name="chip_label_secondary">%1$s</string>
+    <string name="veda_reason_single">Motivo de veda: %1$s</string>
+    <string name="veda_reason_combined">Veda por restricción: %1$s</string>
+    <string name="veda_generic_reason">en veda</string>
+    <string name="dialog_whatsapp_veda_title">Donante en veda</string>
+    <string name="dialog_whatsapp_veda_message">El donante está en veda (%1$s, hasta %2$s). ¿Enviar el mensaje de todos modos?</string>
+    <string name="btn_send_whatsapp">ENVIAR</string>
+    <string name="whatsapp_contact_format">Hola %1$s, nos comunicamos del banco de sangre.</string>
 </resources>

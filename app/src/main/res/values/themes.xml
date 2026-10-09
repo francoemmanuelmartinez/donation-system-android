@@ -1,9 +1,33 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.DonationSystem" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/medical_blue</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+        <item name="colorPrimaryContainer">@color/medical_blue_light</item>
+        <item name="colorOnPrimaryContainer">@color/clinical_dark_blue</item>
+
+        <item name="colorSecondary">@color/clinical_dark_blue</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+
+        <item name="colorSurface">@color/surface_light</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="colorSurfaceVariant">@color/surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/on_surface_variant</item>
+
+        <item name="android:colorBackground">@color/surface_light</item>
+        <item name="colorOutline">@color/outline</item>
     </style>
 
     <style name="Theme.DonationSystem" parent="Base.Theme.DonationSystem" />
+
+    <style name="Widget.App.TextInputLayout.NavyField" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundColor">@color/navy_field</item>
+        <item name="boxStrokeColor">@color/navy_field_stroke</item>
+        <item name="hintTextColor">@color/white</item>
+        <item name="android:textColorHint">@color/clinical_dark_blue_light</item>
+    </style>
+
+    <style name="Widget.App.TextInputEditText.NavyField" parent="Widget.Material3.TextInputEditText.OutlinedBox">
+        <item name="android:textColor">@color/white</item>
+    </style>
 </resources>

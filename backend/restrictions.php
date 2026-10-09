@@ -1,20 +1,6 @@
 <?php
 require_once 'db_config.php';
 
-function calculateEligibleWorkdayReturnDate($startDateStr, $vedaDays) {
-    $date = new DateTime($startDateStr);
-    $date->modify("+$vedaDays days");
-
-    // N: 1 (Mon) through 7 (Sun)
-    $dayOfWeek = (int)$date->format('N');
-    if ($dayOfWeek === 6) { // Saturday -> advance 2 days to Monday
-        $date->modify("+2 days");
-    } else if ($dayOfWeek === 7) { // Sunday -> advance 1 day to Monday
-        $date->modify("+1 day");
-    }
-    return $date->format('Y-m-d');
-}
-
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -88,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
             $conn->commit();
 
-            sendJsonResponse("success", "Exclusión médica asignada al paciente", [
+            sendJsonResponse("success", "Exclusión médica asignada al donante", [
                 "donorId" => $donorId,
                 "startDate" => $startDateStr,
                 "vedaDays" => $vedaDays,
@@ -98,6 +84,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             if ($conn->inTransaction()) {
                 $conn->rollBack();
             }
+            sendJsonResponse("error", "Database error: " . $e->getMessage(), null, 500);
+        }
+    } else if ($action === 'delete') {
+        $restrictionId = (int)($data->restrictionId ?? $data->restriction_id ?? 0);
+
+        if ($restrictionId <= 0) {
+            sendJsonResponse("error", "ID de exclusión inválido", null, 400);
+        }
+
+        try {
+            $checkStmt = $conn->prepare("SELECT id FROM restrictions WHERE id = :id");
+            $checkStmt->execute(['id' => $restrictionId]);
+            if (!$checkStmt->fetch()) {
+                sendJsonResponse("error", "Tipo de exclusión no encontrado", null, 404);
+            }
+
+            $deleteStmt = $conn->prepare("DELETE FROM restrictions WHERE id = :id");
+            $deleteStmt->execute(['id' => $restrictionId]);
+
+            sendJsonResponse("success", "Tipo de exclusión eliminado correctamente", ["restrictionId" => $restrictionId]);
+        } catch(PDOException $e) {
             sendJsonResponse("error", "Database error: " . $e->getMessage(), null, 500);
         }
     } else {

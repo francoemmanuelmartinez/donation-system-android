@@ -2,4 +2,41 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Material 3 Clinical Palette -->
+    <color name="medical_blue">#FF00639A</color>
+    <color name="medical_blue_dark">#FF004A75</color>
+    <color name="medical_blue_light">#FFD1E4FF</color>
+    <color name="clinical_dark_blue">#FF001D33</color>
+    <color name="clinical_dark_blue_light">#FFC9E6FF</color>
+    <color name="surface_light">#FFF8FDFF</color>
+    <color name="surface_variant">#FFDEE3EB</color>
+    <color name="on_surface">#FF191C20</color>
+    <color name="on_surface_variant">#FF42474E</color>
+
+    <!-- Professional / Clinical Forces -->
+    <color name="on_primary">#FFFFFFFF</color>
+    <color name="on_secondary">#FFFFFFFF</color>
+    <color name="secondary">#FF51606F</color>
+    <color name="outline">#FF72777F</color>
+
+    <!-- Aptitude Badges -->
+    <color name="aptitude_green">#FF2E7D32</color>
+    <color name="veda_red">#FFC62828</color>
+    <color name="state_recovery">#FFEF6C00</color>
+    <color name="badge_grey">#FF9E9E9E</color>
+
+    <color name="design_default_color_primary">#FF00639A</color>
+
+    <!-- Section Tints -->
+    <color name="soft_blue">#FFE8F3FA</color>
+    <color name="soft_green">#FFEAF6EF</color>
+    <color name="soft_red">#FFFDECEB</color>
+    <color name="aptitude_green_light">#FFE6F4EA</color>
+    <color name="aptitude_red_light">#FFFBE9E9</color>
+
+    <!-- Navy Fields (modo oscuro en Datos Críticos) -->
+    <color name="navy_field">#FF0A5E8F</color>
+    <color name="aptitude_green_soft">#FF7EC98A</color>
+    <color name="aptitude_red_soft">#FFFF8A80</color>
 </resources>

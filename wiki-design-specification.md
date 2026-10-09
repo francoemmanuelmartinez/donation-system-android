@@ -11,6 +11,7 @@ This document serves as the official technical specification and design guide fo
 - **Navigation:** Root layout structured around a `CoordinatorLayout` or `ConstraintLayout` hosting a fixed **`BottomNavigationView`** at the bottom of the screen.
 - **Data Input:** Use `TextInputLayout` with `style="@style/Widget.Material3.TextInputLayout.OutlinedBox"` to implement space-saving floating labels.
 - **Keyboard Optimization:** Always specify `android:inputType="number"` or `"numberDecimal"` on numerical input fields (ID, Phone, Weight, Height, HTO, Platelets) to trigger the correct software keyboard.
+- **Dropdown Selection Rule:** Pure selector dropdowns (`AutoCompleteTextView` inside a `TextInputLayout` with `app:endIconMode="dropdown_menu"`) must set `android:inputType="none"` on the `AutoCompleteTextView` so tapping the field opens the list **without** invoking the soft keyboard. Applies to `spinnerGender`, `spinnerBloodType`, `spinnerAptitude` and `spinnerSearchBloodType`. Dropdowns that require type-to-filter (e.g., the restrictions dictionary `spinnerAddRestriction`) keep the keyboard visible and **must hide it after an item is selected** by calling `KeyboardUtils.hide(...)` inside the `OnItemClickListener`. `KeyboardUtils` (`utils/KeyboardUtils.java`) is the single helper centralizing `InputMethodManager.hideSoftInputFromWindow`.
 - **List Rendering:** Mandatory usage of `RecyclerView` paired with a `ListAdapter` or `RecyclerView.Adapter` for memory-efficient scrollable lists.
 
 ---
@@ -55,27 +56,39 @@ Navigation between these views must be handled in Java by swapping **`Fragment`s
 
 ## 📱 Detailed Screen Specifications
 
-### 1. Screen: Donor Registration & File (`DonorsFragment`)
-Handles two logical UI states controlled via Java visibility flags: **Empty Form (Registration Mode)** and **Populated Form (Edit/Consultation Mode)**.
+### 1. Screen: Donor Registration & File (`DonorFormFragment` / `fragment_donor_form.xml`)
+Handles three logical UI states driven by Java (`setMode`): **Registration (`MODE_REGISTER`)**, **Consultation (`MODE_VIEW`)** and **Modification (`MODE_MODIFY`)**. The form is a `ScrollView` hosting three tinted `MaterialCardView` sections with colored header pills, stacked inside a vertical `LinearLayout`.
 
-#### XML Layout Structure (`fragment_donors.xml`):
-- **Top Search Bar:** An outlined `TextInputLayout` with an embedded magnifying glass icon (`app:startIconDrawable="@drawable/ic_search"`) named `@+id/textInputLayoutSearchDni`.
-- **Main Container (`ScrollView` + vertical `LinearLayout`):**
-  - **Card View 1: Personal Data** (`MaterialCardView` with ID `@+id/cardPersonalData`)
-    - Horizontal `LinearLayout` splitting Last Name (`@+id/editTextLastName`) and First Name (`@+id/editTextFirstName`) using `android:layout_width="0dp"` and `android:layout_weight="1"`. User-facing hints: `"Apellido/s:"` and `"Nombre/s:"`.
-    - Horizontal `LinearLayout` pairing National ID (`@+id/editTextDni`, hint: `"DNI:"`) and Gender (implemented via an `AutoCompleteTextView` dropdown inside a `TextInputLayout`, ID `@+id/spinnerGender`, hint: `"Género:"`).
-    - Horizontal `LinearLayout` for Birth Date (`@+id/editTextBirthDate` - triggers a `MaterialDatePicker` via Java listener) and Age (`@+id/editTextAge` set to `android:enabled="false"`).
-  - **Card View 2: Contact and Location** (`@+id/cardContactData`)
-    - Vertically stacked fields for City (`@+id/editTextCity`), Zip Code (`@+id/editTextZipCode`), Address (`@+id/editTextAddress`), Neighborhood (`@+id/editTextNeighborhood`), Phone (`@+id/editTextPhone`, hint: `"Teléfono:"`), and Email (`@+id/editTextEmail`).
-  - **Card View 3: Critical Data** (`@+id/cardCriticalData`)
-    - `TextInputLayout` containing an `AutoCompleteTextView` dropdown to select Blood Type and Factor (`@+id/spinnerBloodType`, hint: `"Grupo y Factor:"`).
-    - `TextInputLayout` for entering extended Phenotypes (`@+id/editTextPhenotype`, example hint: `"Fenotipo (ej: Kell-):"`).
-    - Read-only field displaying the historical last donation timestamp (`@+id/editTextLastDonationDate`, hint: `"Última Donación:"`).
-    - **Aptitude Badge (`TextView` with ID `@+id/textViewStatusBadge`):** A custom shape component with rounded corners. It must change dynamically via Java logic: Green background with white text displaying `"APTO PARA DONAR"`, or Red background with white text displaying `"EN VEDA"`.
+#### Section Tinting Rule
+- **Card 1 - Personal Data (`@+id/cardPersonalData`):** `soft_blue` background with a `bg_header_blue` title pill.
+- **Card 2 - Contact and Location (`@+id/cardContactData`):** `soft_blue` background with a `bg_header_blue` title pill.
+- **Card 3 - Critical Data (`@+id/cardCriticalData`):** navy background (`medical_blue_dark`) with a white title over a `bg_header_dark` pill.
+
+#### XML Layout Structure (`fragment_donor_form.xml`):
+- **Card 1: Personal Data**
+  - Horizontal `LinearLayout` splitting Last Name (`@+id/editTextLastName`) and First Name (`@+id/editTextFirstName`) using `layout_weight="1"`. Hints: `"Apellido/s:"` and `"Nombre/s:"`.
+  - Horizontal row pairing National ID (`@+id/editTextDni`, `inputType="number"`) and Gender dropdown (`@+id/spinnerGender`, hint `"Género:"`, `android:inputType="none"`).
+  - Horizontal row for Birth Date (`@+id/editTextBirthDate`) and Age (`@+id/editTextAge`, disabled). Birth Date opens a `MaterialDatePicker` with a **single tap**: the field is permanently non-focusable (`focusable=false`, `setKeyListener(null)`) and the click listener is attached both to the field and to its container `@+id/textInputLayoutBirthDate` (guarded with `isEnabled()`), so the calendar opens on the first tap.
+- **Card 2: Contact and Location**
+  - Physical address rows: City (`@+id/editTextCity`), Zip Code (`@+id/editTextZipCode`), Address (`@+id/editTextAddress`), Neighborhood (`@+id/editTextNeighborhood`).
+  - **Dynamic contact rows** (`@+id/layoutPhoneRows` / `@+id/layoutEmailRows`) inflating `item_contact_row.xml` (input `@+id/editTextRowValue`). Base rows are added automatically (`requestedIfEmptyContacts`). Contact type is hardcoded at save time (`"Mobile"` for phones, `"Personal"` for emails); there are no type dropdowns nor delete buttons on base rows.
+  - **Add-row buttons:** `@+id/buttonAddPhone` ("Agregar otro teléfono") and `@+id/buttonAddEmail` ("Agregar otro email"). Rows added through these buttons include a square remove button `@+id/buttonRowRemove` (44dp, `ic_close`, tonal styling, `visibility="gone"` on base rows and hidden in VIEW mode). Using it detaches the whole row container (`LinearLayout` parent).
+- **Card 3: Critical Data (Navy "Dark Mode")**
+  - All fields use `style="@style/Widget.App.TextInputLayout.NavyField"` (fill `navy_field`, stroke `medical_blue_light` turning white on focus, light hint/label colors) and children render white text via `style="@style/Widget.App.TextInputEditText.NavyField"`. Keeping the fill and the card in the same dark family avoids the floating-label "cut / horizontal line" artifact on dark surfaces.
+  - Blood Type dropdown (`@+id/spinnerBloodType`, hint `"Grupo y Factor:"`, `inputType="none"`).
+  - Phenotype (`@+id/editTextPhenotype`).
+  - Weight / Height row (`@+id/editTextWeight` / `@+id/editTextHeight`, `inputType="numberDecimal"`) — moved from the Donations screen; persisted on `donors` and snapshotted into each `donations` row.
+  - Last donation date (`@+id/editTextLastDonationDate`, read-only): its container `@+id/textInputLayoutLastDonationDate` is **hidden (`GONE`) in `MODE_REGISTER`** and visible read-only in `MODE_VIEW` / `MODE_MODIFY`.
+  - **Aptitude selector** (`@+id/spinnerAptitude`, hint `"Aptitud para donar"`, `inputType="none"`): a dropdown with values `"Apto"` / `"No apto"` that **replaces the old status badge**. `applyAptitudeState()` colors the **stroke and label** green/red (`aptitude_green` / `veda_red` for the stroke, `aptitude_green_soft` / `aptitude_red_soft` for the label) while keeping the `navy_field` fill. Selecting `"No apto"` reveals the exclusion block (`@+id/layoutExclusionDetails`, stacked vertically):
+    - Restriction selector `@+id/spinnerAddRestriction` (dictionary dropdown, **editable** to allow type-to-filter; hides the keyboard after selection via `KeyboardUtils.hide(...)`).
+    - Selected restriction chips `@+id/chipGroupRestrictions` (rendered by `addRestrictionChip`).
+    - Veda days `@+id/editTextVedaDays` (auto-computes the return date through `setupVedaDaysWatcher`).
+    - Multiline observaciones `@+id/editTextRestrictionNotes` (`gravity="top"`, `minLines="4"`).
+    - Return date `@+id/editTextVedaReturnDate` (read-only).
+- **Dropdown alignment rule:** every `AutoCompleteTextView` uses `style="@style/Widget.Material3.TextInputEditText.OutlinedBox"` (or the `NavyField` child style) so its internal padding and font size match the regular `TextInputEditText` fields and the text never overflows the container.
 
 #### Lower Sticky Action Buttons:
-- **Registration Mode:** A single full-width filled `MaterialButton` with ID `@+id/buttonSaveDonor` mapped to string `@string/btn_save_donor` (Displays: `"CARGAR PACIENTE"`).
-- **Consultation Mode:** A horizontal `LinearLayout` pairing an outlined button style `style="@style/Widget.Material3.Button.OutlinedButton"` (`@+id/buttonModifyDonor`, displays: `"MODIFICAR"`) right next to the main confirmation button.
+- `@+id/buttonDonorAction` (full-width, text mapped per mode): in `MODE_VIEW` displays `"MODIFICAR"` and toggles `MODE_MODIFY`; otherwise it saves the donor (register/modify) via `handleSave()`.
 
 ---
 
@@ -85,7 +98,7 @@ Captures daily clinical measurements linked to an active, validated donor.
 #### XML Layout Structure (`fragment_donations.xml`):
 - **Donor Context Card (`MaterialCardView` top-docked with ID `@+id/cardDonorContext`):** A subtle gray block housing fixed `TextView` items displaying the selected donor's Full Name, ID, and Blood Type as a safety reference header.
 - **Clinical Form Elements:**
-  - **Vitals Block:** A horizontal row containing two compact `TextInputLayout` items for Weight (`@+id/editTextWeight`, hint: `"Peso (kg):"`) and Height (`@+id/editTextHeight`, hint: `"Altura (cm):"`).
+  - **Donor Vitals Snapshot:** Weight and Height are **captured automatically from the donor's file** (`donors.weight` / `donors.height`, entered in the donor form) and copied into the `donations` row as a snapshot at save time. The weight/height inputs no longer exist on this screen. If the donor lacks the data, the snapshot saves `0.0`.
   - **Short Hemogram Block:** A `MaterialCardView` (`@+id/cardHemogram`) wrapping the two mandatory clinic metrics:
     - `TextInputLayout` with `android:inputType="numberDecimal"` targeting Hematocrit (`@+id/editTextHto`, hint: `"HTO (%):"`).
     - `TextInputLayout` with `android:inputType="number"` targeting Platelet Count (`@+id/editTextPlateletsCount`, hint: `"Recuento de Plaquetas (u/µL):"`).
@@ -97,19 +110,21 @@ Captures daily clinical measurements linked to an active, validated donor.
 
 ---
 
-### 3. Screen: Weekly Schedule Agenda (`AppointmentsFragment`)
-Monitors upcoming and active patient reservations.
+### 3. Screen: Weekly Schedule Agenda (`AppointmentsFragment` / `fragment_appointments.xml`)
+Monitors upcoming and active patient reservations on a **business-week calendar (Monday through Friday)**.
 
 #### XML Layout Structure (`fragment_appointments.xml`):
-- **Agenda Header:** A clean `TextView` (`@+id/textViewWeekHeader`) outlining the current operating date bounds (e.g., `"Citados para la Semana del 13 al 19 de Mayo"`).
-- **Horizontal Day Filter:** A horizontal scrollable `RecyclerView` (`@+id/recyclerViewDaysFilter`, `android:orientation="horizontal"`) hosting small cards for week navigation (e.g., `"Lun 13"`, `"Mar 14"`, `"Mié 15"`). Tapping a cell acts as an instantaneous query filter for the list below.
+- **Agenda Header:** A header row combining a calendar icon button (`@+id/buttonOpenCalendar`, drawable `ic_calendar`) and a date label (`@+id/textViewSelectedDateLabel`). The label uses `date_label_format` and shows `"Hoy"` / `"Mañana"` for the immediate weekdays, otherwise the formatted date (e.g., `"Lunes 13"`). When the selected day falls outside the Mon–Fri window, the header shows the plain formatted date.
+- **Calendar Navigation (`AppointmentCalendarDialogFragment` / `dialog_appointment_calendar.xml`):** Tapping `buttonOpenCalendar` opens a month dialog with prev/next chevrons (`@+id/buttonPrevMonth` / `@+id/buttonNextMonth`), a month title and a day grid (`MonthCalendarAdapter`, `item_month_day.xml`) marking days that already have scheduled appointments. Selecting a day closes the dialog, switches the agenda to that date and refreshes the list. **Selecting today is disabled** (no same-day appointments).
+- **Horizontal Day Filter:** A horizontal scrollable `RecyclerView` (`@+id/recyclerViewDaysFilter`, `android:orientation="horizontal"`) hosting small day chips (`DayFilterAdapter`, `item_day_filter.xml`) for the current Mon–Fri week (e.g., `"Lun 13"`, `"Mar 14"`). Tapping a cell applies an instantaneous query filter to the list below and clears the previous selection (`clearSelection()`).
 - **Appointments Feed:** A vertical `RecyclerView` (`@+id/recyclerViewAppointmentsList`) rendering an individual card item file (`item_appointment.xml`) for each targeted donor.
-  - **item_appointment.xml Architecture:** A `MaterialCardView` using a `ConstraintLayout` to space out the appointment Time stamp, Donor Full Name, intended procedure tags, an embedded custom outlined button with a messaging vector icon (`@+id/buttonSendReminder`, text: `"Enviar Recordatorio"`), and a success check asset (`@+id/imageViewReminderChecked`, hidden by default).
 
-#### ✉ WHATSAPP REMINDER OPTIMIZATION RULE
-- **Intent Execution:** Pressing `@+id/buttonSendReminder` must construct a dynamic string pulling fields from the targeted row (`donorName`, `appointmentTime`, `donationType`).
-- **Formatting:** Use asterisks `*` in the string context to enforce native WhatsApp bold lettering on key parameters (e.g., `"Hola *%s*, te recordamos tu turno para donación de *%s* a las *%s* hs."`).
-- **State Persistence:** Upon button click, toggle a local database flag `isReminderSent = true`. The `RecyclerView` adapter must immediately re-bind the view, changing the button color or replacing it with a success check asset (`@+id/imageViewReminderChecked`) to provide visual tracking to the staff.
+#### REMINDER CHANNELS (WHATSAPP & EMAIL) RULES
+- **Two independent channels per row:** `@+id/buttonSendReminderWhatsApp` and `@+id/buttonSendReminderEmail`, each with its own success check asset (`@+id/imageViewReminderChecked` / `@+id/imageViewEmailReminderChecked`, hidden by default).
+- **WhatsApp Intent:** `wa.me` deep link normalized with the donor's last phone under country prefix `54`; message built from `whatsapp_reminder_format` (donor name, procedure, date, time).
+- **Email Intent:** `ACTION_SEND` composed from `email_reminder_subject` and `email_reminder_format`.
+- **Anti double-tap:** each channel button ignores repeated taps while its request is in flight.
+- **State persistence:** per-channel database flags `is_reminder_sent` and `is_email_reminder_sent` live on `appointments`. The adapter re-binds immediately after a click, replacing the button with its check image for staff visual tracking.
 
 ---
 
@@ -117,18 +132,17 @@ Monitors upcoming and active patient reservations.
 Contingency utility engineered to fast-track donor engagement during emergency blood stock deficits.
 
 #### XML Layout Structure (`fragment_search.xml`):
-- **Primary Filter Element:** High-visibility drop-down selector implementing `TextInputLayout` with an inner `AutoCompleteTextView` to scope critical target blood types (`@+id/spinnerSearchBloodType`, hint: `"Grupo y Factor:"`).
+- **Primary Filter Element:** High-visibility drop-down selector implementing `TextInputLayout` with an inner `AutoCompleteTextView` to scope critical target blood types (`@+id/spinnerSearchBloodType`, hint: `"Grupo y Factor:"`; `android:inputType="none"` so tapping opens the list without the soft keyboard).
 - **Trigger Component:** Prominent filled `MaterialButton`: `@+id/buttonSearchDonors` (Displays: `"BUSCAR DONANTES"`).
 - **Query Output Feed:** A vertical `RecyclerView` (`@+id/recyclerViewSearchResults`) inflating standardized search cards (`item_search_result.xml`).
   - **Card Metrics:** Each list entry includes an absolute circular avatar representing the patient's initial, full name typography, phone number string, and historical date tracking their last donation.
   - **Instant Dialer:** An explicit **`MaterialButton` styled as an Icon** (`@+id/buttonCallDonor`) hosting a telephone graphic (`Icons.Default.Phone`) anchored to the right border. Clicking this element must instantly fire an `Intent.ACTION_DIAL` string parameter carrying the target phone value to trigger the device dialer interface instantly.
 
- ### 💡 UPDATED REQUIREMENT: Donor Suitability & Restrictions
+### 💡 UPDATED REQUIREMENT: Donor Suitability & Restrictions
 
-#### 1. Restriction Management System (DonorsFragment / Database)
-- **Database Architecture:** Implement a pre-populated `restrictions` table storing canonical medical deferral codes (e.g., "Recent Tattoo", "Recent Surgery", "Medication Block").
-- **UI Component Selection:** Implement a multi-select **`AutoCompleteTextView`** embedded within a `TextInputLayout` named `@+id/spinnerMedicalRestrictions`. This component displays the pre-loaded dictionary to let users check multiple active restrictions.
-- **Custom Notes Support:** Position a multiline `TextInputLayout` directly below named `@+id/editTextRestrictionNotes` (Hint: "Observaciones de la exclusión:"). This field captures free-text specifications for unique edge cases and stores them as an operational log string.
+#### 1. Restriction Management System (DonorFormFragment / Database)
+- **Database Architecture:** A pre-populated `restrictions` table stores canonical medical deferral codes (e.g., "Recent Tattoo", "Recent Surgery", "Medication Block").
+- **Exclusion Flow (Aptitude):** The donor's aptitude is a dropdown `@+id/spinnerAptitude` ("Apto" / "No apto") inside the navy Critical Data section. Selecting "No apto" reveals `@+id/layoutExclusionDetails`, which stacks the full deferral capture: restriction selector `@+id/spinnerAddRestriction` (dictionary dropdown; editable for type-to-filter and hides the keyboard on selection via `KeyboardUtils.hide(...)`), selected chips `@+id/chipGroupRestrictions`, veda days `@+id/editTextVedaDays` (auto-computes the return date), multiline notes `@+id/editTextRestrictionNotes` (Hint: "Observaciones de la exclusión:"), and the computed read-only return date `@+id/editTextVedaReturnDate`. Aptitude is derived from active restrictions (a donor with restrictions is "No apto" / `EN_VEDA`) without mutating a backend status field.
 
 ### 👑 DIRECTOR ROLE & ADMINISTRATIVE MODULES
 
@@ -194,12 +208,22 @@ To support donors and staff users storing multiple phone numbers and email addre
   - `target_procedure` (VARCHAR(50) NOT NULL, e.g., 'Plasma', 'Platelets', 'Blood')
   - `status` (VARCHAR(20) DEFAULT 'SCHEDULED')
   - `is_reminder_sent` (TINYINT(1) DEFAULT 0) — State persistence flag for WhatsApp reminder tracking.
+  - `is_email_reminder_sent` (TINYINT(1) DEFAULT 0) — State persistence flag for Email reminder tracking.
   - `reminder_sent_at` (DATETIME NULL) — Audit timestamp when reminder was dispatched.
   - `reminder_sent_by_user_id` (INT NULL, FOREIGN KEY referencing `users(id)` ON DELETE SET NULL) — ID of the operational staff member who dispatched the reminder.
 
 ---
 
-### 3. Relational Entity Cardinality Map
+### 3. Donor Vitals & Donation Snapshot (Weight / Height)
+- **`donors` Table Extra Columns:**
+  - `weight` (DECIMAL(5,2) NULL) — Donor's weight in kg, entered through the donor form critical data section.
+  - `height` (DECIMAL(5,2) NULL) — Donor's height in cm, entered through the donor form critical data section.
+- **`donations` Table Columns:**
+  - `weight` (DECIMAL(5,2) NOT NULL DEFAULT 0) — Snapshot of the donor's weight captured at donation-save time.
+  - `height` (DECIMAL(5,2) NOT NULL DEFAULT 0) — Snapshot of the donor's height captured at donation-save time.
+  - If the donor lacks weight/height, the snapshot stores `0.0` (optional, non-blocking).
+
+### 4. Relational Entity Cardinality Map
 
 | Relationship | Type | Parent Table | Child / Junction Table | Purpose & Description |
 | :--- | :--- | :--- | :--- | :--- |

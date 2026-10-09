@@ -5,9 +5,13 @@ import com.francomartinez.donationsystem.models.Appointment;
 import com.francomartinez.donationsystem.models.Donation;
 import com.francomartinez.donationsystem.models.Donor;
 import com.francomartinez.donationsystem.models.MedicalRestriction;
+import com.francomartinez.donationsystem.models.RecoveryPolicy;
+import com.francomartinez.donationsystem.models.SearchResultItem;
+import com.francomartinez.donationsystem.models.Statistics;
 import com.francomartinez.donationsystem.models.User;
 import com.francomartinez.donationsystem.models.requests.ApproveUserRequest;
 import com.francomartinez.donationsystem.models.requests.AssignRestrictionRequest;
+import com.francomartinez.donationsystem.models.requests.CreateAppointmentRequest;
 import com.francomartinez.donationsystem.models.requests.LoginRequest;
 import com.francomartinez.donationsystem.models.requests.RegisterRequest;
 import com.francomartinez.donationsystem.models.requests.ReminderRequest;
@@ -43,12 +47,18 @@ public interface ApiService {
     @POST("users_admin.php?action=delete")
     Call<ApiResponse<Map<String, Object>>> deleteUser(@Body Map<String, Object> body);
 
+    @POST("users_admin.php?action=update_role")
+    Call<ApiResponse<Map<String, Object>>> updateUserRole(@Body ApproveUserRequest request);
+
     // --- Donors ---
     @GET("donors.php")
     Call<ApiResponse<Donor>> getDonorByDni(@Query("dni") String dni);
 
     @POST("donors.php")
     Call<ApiResponse<Map<String, Object>>> saveDonor(@Body Donor donor);
+
+    @GET("donors_search.php")
+    Call<ApiResponse<List<SearchResultItem>>> searchDonorsByDni(@Query("dni") String dni);
 
     // --- Donations ---
     @POST("donations.php")
@@ -58,8 +68,14 @@ public interface ApiService {
     @GET("appointments.php")
     Call<ApiResponse<List<Appointment>>> getAppointments(@Query("week_date") String weekDate);
 
+    @GET("appointments.php")
+    Call<ApiResponse<List<Appointment>>> getAppointmentsByMonth(@Query("month") String month);
+
     @POST("appointments.php?action=send_reminder")
     Call<ApiResponse<Map<String, Object>>> sendWhatsAppReminder(@Body ReminderRequest request);
+
+    @POST("appointments.php?action=create_appointment")
+    Call<ApiResponse<Map<String, Object>>> createAppointment(@Body CreateAppointmentRequest request);
 
     // --- Medical Restrictions ---
     @GET("restrictions.php")
@@ -71,7 +87,27 @@ public interface ApiService {
     @POST("restrictions.php?action=assign")
     Call<ApiResponse<Map<String, Object>>> assignDonorRestriction(@Body AssignRestrictionRequest request);
 
+    @POST("restrictions.php?action=delete")
+    Call<ApiResponse<Map<String, Object>>> deleteRestriction(@Body Map<String, Object> body);
+
+    // --- Statistics ---
+    @GET("statistics.php")
+    Call<ApiResponse<Statistics>> getStatistics(@Query("range") String range);
+
+    // --- Recovery Policies (Director ABM) ---
+    @GET("recovery_policies.php")
+    Call<ApiResponse<List<RecoveryPolicy>>> getRecoveryPolicies();
+
+    @POST("recovery_policies.php?action=create")
+    Call<ApiResponse<RecoveryPolicy>> createRecoveryPolicy(@Body RecoveryPolicy policy);
+
+    @POST("recovery_policies.php?action=update")
+    Call<ApiResponse<Map<String, Object>>> updateRecoveryPolicy(@Body RecoveryPolicy policy);
+
+    @POST("recovery_policies.php?action=delete")
+    Call<ApiResponse<Map<String, Object>>> deleteRecoveryPolicy(@Body Map<String, Object> body);
+
     // --- Emergency Stock Search ---
     @GET("search.php")
-    Call<ApiResponse<List<Donor>>> searchDonorsByBloodType(@Query("blood_type") String bloodType);
+    Call<ApiResponse<List<SearchResultItem>>> searchDonorsByBloodType(@Query("blood_type") String bloodType);
 }

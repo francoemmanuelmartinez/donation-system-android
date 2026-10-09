@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/adminRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface_light"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbarAdmin"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/medical_blue"
+        app:navigationIconTint="@color/on_primary"
+        app:title="@string/activity_recovery_policies_title"
+        app:titleTextColor="@color/on_primary" />
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fragmentContainerRecoveryPolicies"
+        android:name="com.francomartinez.donationsystem.views.fragments.RecoveryPoliciesFragment"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+</LinearLayout>

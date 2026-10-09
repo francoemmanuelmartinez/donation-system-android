@@ -33,11 +33,11 @@ public class RegisterViewModel extends ViewModel {
 
     public void register(String firstName, String lastName, String dni, String email, String phone, String password) {
         if (email == null || email.trim().isEmpty() || password == null || password.trim().isEmpty()) {
-            registerResult.setValue(Resource.error("Please fill in all fields"));
+            registerResult.postValue(Resource.error("Por favor completá todos los campos"));
             return;
         }
 
-        registerResult.setValue(Resource.loading());
+        registerResult.postValue(Resource.loading());
 
         userRepository.register(firstName, lastName, dni, email, phone, password, new Callback<ApiResponse<Map<String, Object>>>() {
             @Override
@@ -45,18 +45,18 @@ public class RegisterViewModel extends ViewModel {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<Map<String, Object>> body = response.body();
                     if (body.isSuccess()) {
-                        registerResult.setValue(Resource.success(body.getMessage()));
+                        registerResult.postValue(Resource.success(body.getMessage()));
                     } else {
-                        registerResult.setValue(Resource.error(body.getMessage() != null ? body.getMessage() : "Registration failed"));
+                        registerResult.postValue(Resource.error(body.getMessage() != null ? body.getMessage() : "No se pudo registrar la cuenta"));
                     }
                 } else {
-                    registerResult.setValue(Resource.error("Registration failed: " + response.code()));
+                    registerResult.postValue(Resource.error("No se pudo registrar la cuenta: " + response.code()));
                 }
             }
 
             @Override
             public void onFailure(Call<ApiResponse<Map<String, Object>>> call, Throwable t) {
-                registerResult.setValue(Resource.error("Network error: " + t.getMessage()));
+                registerResult.postValue(Resource.error("Error de red: " + t.getMessage()));
             }
         });
     }

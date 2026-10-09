@@ -31,11 +31,23 @@ try {
     // Fetch user phones and emails
     $phoneStmt = $conn->prepare("SELECT phone_number, phone_type, is_primary FROM user_phones WHERE user_id = :userId");
     $phoneStmt->execute(['userId' => $user['id']]);
-    $phones = $phoneStmt->fetchAll();
+    $phones = array_map(function ($p) {
+        return [
+            'phoneNumber' => $p['phone_number'],
+            'phoneType' => $p['phone_type'],
+            'isPrimary' => (bool)$p['is_primary']
+        ];
+    }, $phoneStmt->fetchAll());
 
     $emailStmt = $conn->prepare("SELECT email_address, email_type, is_primary FROM user_emails WHERE user_id = :userId");
     $emailStmt->execute(['userId' => $user['id']]);
-    $emails = $emailStmt->fetchAll();
+    $emails = array_map(function ($e) {
+        return [
+            'emailAddress' => $e['email_address'],
+            'emailType' => $e['email_type'],
+            'isPrimary' => (bool)$e['is_primary']
+        ];
+    }, $emailStmt->fetchAll());
 
     $userData = [
         "id" => (int)$user['id'],

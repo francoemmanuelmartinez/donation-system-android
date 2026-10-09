@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="genders">
+        <item>Masculino</item>
+        <item>Femenino</item>
+        <item>Otro</item>
+    </string-array>
+
+    <string-array name="blood_types">
+        <item>O+</item>
+        <item>O-</item>
+        <item>A+</item>
+        <item>A-</item>
+        <item>B+</item>
+        <item>B-</item>
+        <item>AB+</item>
+        <item>AB-</item>
+    </string-array>
+
+    <string-array name="search_blood_types">
+        <item>Todos</item>
+        <item>O+</item>
+        <item>O-</item>
+        <item>A+</item>
+        <item>A-</item>
+        <item>B+</item>
+        <item>B-</item>
+        <item>AB+</item>
+        <item>AB-</item>
+    </string-array>
+
+    <string-array name="phone_types">
+        <item>Celular</item>
+        <item>Casa</item>
+        <item>Trabajo</item>
+    </string-array>
+
+    <string-array name="email_types">
+        <item>Personal</item>
+        <item>Trabajo</item>
+    </string-array>
+
+    <string-array name="aptitudes">
+        <item>Apto</item>
+        <item>No apto</item>
+    </string-array>
+</resources>
