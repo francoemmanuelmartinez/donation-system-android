@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Surface container roles (M3 Filled cards) - dark -->
+    <color name="surface_container_lowest">#FF0B0F12</color>
+    <color name="surface_container_low">#FF161A1E</color>
+    <color name="surface_container">#FF1A1E22</color>
+    <color name="surface_container_high">#FF252A2F</color>
+    <color name="surface_container_highest">#FF2F353B</color>
+</resources>

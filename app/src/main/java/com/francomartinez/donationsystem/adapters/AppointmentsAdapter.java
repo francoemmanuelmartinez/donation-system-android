@@ -25,6 +25,10 @@ public class AppointmentsAdapter extends ListAdapter<Appointment, AppointmentsAd
         void onReminderClick(Appointment appointment, String channel);
     }
 
+    public interface OnDonorClickListener {
+        void onDonorClick(Appointment appointment);
+    }
+
     private static final DiffUtil.ItemCallback<Appointment> DIFF_CALLBACK =
             new DiffUtil.ItemCallback<Appointment>() {
                 @Override
@@ -41,10 +45,15 @@ public class AppointmentsAdapter extends ListAdapter<Appointment, AppointmentsAd
             };
 
     private final OnReminderClickListener reminderListener;
+    private OnDonorClickListener donorClickListener;
 
     public AppointmentsAdapter(OnReminderClickListener reminderListener) {
         super(DIFF_CALLBACK);
         this.reminderListener = reminderListener;
+    }
+
+    public void setOnDonorClickListener(OnDonorClickListener listener) {
+        this.donorClickListener = listener;
     }
 
     @NonNull
@@ -80,6 +89,12 @@ public class AppointmentsAdapter extends ListAdapter<Appointment, AppointmentsAd
         }
 
         void bind(Appointment appointment) {
+            itemView.setOnClickListener(v -> {
+                if (donorClickListener != null) {
+                    donorClickListener.onDonorClick(appointment);
+                }
+            });
+
             chipAppointmentTime.setText(appointment.getAppointmentTime());
             textViewAppointmentDonor.setText(appointment.getDonorName());
             textViewAppointmentProcedure.setText(procedureLabel(appointment.getTargetProcedure()));

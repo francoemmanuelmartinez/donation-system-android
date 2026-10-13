@@ -25,6 +25,7 @@ public class AppointmentsViewModel extends ViewModel {
     private final MutableLiveData<Resource<List<Appointment>>> monthResult = new MutableLiveData<>();
     private final MutableLiveData<Resource<Map<String, Object>>> reminderResult = new MutableLiveData<>();
     private final MutableLiveData<Resource<Map<String, Object>>> createResult = new MutableLiveData<>();
+    private final MutableLiveData<Resource<Map<String, Object>>> dispatchResult = new MutableLiveData<>();
 
     public AppointmentsViewModel() {
         this.appointmentRepository = new AppointmentRepository();
@@ -44,6 +45,34 @@ public class AppointmentsViewModel extends ViewModel {
 
     public LiveData<Resource<Map<String, Object>>> getCreateResult() {
         return createResult;
+    }
+
+    public LiveData<Resource<Map<String, Object>>> getDispatchResult() {
+        return dispatchResult;
+    }
+
+    public void dispatchReminders() {
+        dispatchResult.postValue(Resource.loading());
+        appointmentRepository.dispatchReminders(new Callback<ApiResponse<Map<String, Object>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Map<String, Object>>> call, Response<ApiResponse<Map<String, Object>>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ApiResponse<Map<String, Object>> body = response.body();
+                    if (body.isSuccess()) {
+                        dispatchResult.postValue(Resource.success(body.getData()));
+                    } else {
+                        dispatchResult.postValue(Resource.error(body.getMessage() != null ? body.getMessage() : "No se pudo lanzar el envío"));
+                    }
+                } else {
+                    dispatchResult.postValue(Resource.error("No se pudo lanzar el envío: " + response.code()));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Map<String, Object>>> call, Throwable t) {
+                dispatchResult.postValue(Resource.error("Error de red: " + t.getMessage()));
+            }
+        });
     }
 
     public void loadAppointments(String weekDate) {

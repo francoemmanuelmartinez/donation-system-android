@@ -1,9 +1,60 @@
 <?php
 require_once 'db_config.php';
+require_once 'config_reminders.php';
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
+// Lazy sweep: si hoy aún no corrió el dispatch automático y estamos en la
+// ventana horaria laboral, lanzamos el envío automático una sola vez.
+// Solo advierte, nunca bloquea: si falla, el turno sigue sin marcar.
+function tryLazySweep($conn) {
+    try {
+        // Kill-switch: corte por configuración sin desvincular el número.
+        if (defined('REMINDER_ENABLED') && REMINDER_ENABLED === false) {
+            return;
+        }
+
+        $stmt = $conn->prepare("SELECT last_run_at FROM reminder_dispatch_control WHERE id = 1");
+        $stmt->execute();
+        $row = $stmt->fetch();
+
+        $ranToday = $row && $row['last_run_at'] !== null && date('Y-m-d', strtotime($row['last_run_at'])) === date('Y-m-d');
+        if ($ranToday) {
+            return;
+        }
+
+        $now = time();
+        $start = strtotime(REMINDER_WINDOW_START . ':00');
+        $end   = strtotime(REMINDER_WINDOW_END . ':00');
+        if ($now < $start || $now > $end) {
+            return;
+        }
+
+        $sweepLock = __DIR__ . '/logs/reminders.sweep';
+        if (file_exists($sweepLock) && (time() - filemtime($sweepLock) < 120)) {
+            return; // otro request ya disparó el sweep hace menos de 2 minutos
+        }
+        @file_put_contents($sweepLock, time());
+
+        $script = escapeshellarg(dirname(__FILE__) . '/send_reminders.php');
+        $phpBin = resolvePhpCliBinary();
+        $cmd = escapeshellarg($phpBin) . ' ' . $script;
+
+        if (PHP_OS_FAMILY === 'Windows') {
+            // Lanzar en background sin bloquear el request
+            // start "" /B -> el primer argumento vacío evita que la ruta se tome como título
+            pclose(popen('start "" /B ' . $cmd, 'r'));
+        } else {
+            exec($cmd . ' > /dev/null 2>&1 &');
+        }
+    } catch (Throwable $ignored) {
+        // el sweep nunca bloquea el request
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    tryLazySweep($conn);
+
     $weekDate = trim($_GET['week_date'] ?? $_GET['date'] ?? date('Y-m-d'));
     $month = trim($_GET['month'] ?? '');
 
@@ -63,6 +114,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             ]);
         } catch(PDOException $e) {
             sendJsonResponse("error", "Database error: " . $e->getMessage(), null, 500);
+        }
+    } elseif ($action === 'dispatch_reminders') {
+        // Disparo manual del envío automático (botón de la app / pruebas).
+        // Reutiliza send_reminders.php por CLI; el request no se bloquea.
+        try {
+            if (defined('REMINDER_ENABLED') && REMINDER_ENABLED === false) {
+                sendJsonResponse("success", "Kill-switch activo: envío de recordatorios deshabilitado", [
+                    "dispatched" => false,
+                    "mode" => "kill-switch"
+                ]);
+            }
+
+            $manual = trim($data->manual ?? '') === 'true' ? 'manual' : '';
+            $script = escapeshellarg(dirname(__FILE__) . '/send_reminders.php');
+            $phpBin = resolvePhpCliBinary();
+            $cmd = escapeshellarg($phpBin) . ' ' . $script . ($manual !== '' ? ' manual' : '');
+
+            if (PHP_OS_FAMILY === 'Windows') {
+                pclose(popen('start "" /B ' . $cmd, 'r'));
+            } else {
+                exec($cmd . ' > /dev/null 2>&1 &');
+            }
+
+            sendJsonResponse("success", "Dispatch de recordatorios lanzado correctamente", [
+                "dispatched" => true,
+                "mode" => $manual !== '' ? 'manual' : 'auto'
+            ]);
+        } catch (Throwable $e) {
+            sendJsonResponse("error", "No se pudo lanzar el dispatch: " . $e->getMessage(), null, 500);
         }
     } elseif ($action === 'create_appointment') {
         $donorId = (int)($data->donorId ?? $data->donor_id ?? 0);

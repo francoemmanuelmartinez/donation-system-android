@@ -6,7 +6,7 @@ import com.francomartinez.donationsystem.models.Donation;
 import com.francomartinez.donationsystem.models.Donor;
 import com.francomartinez.donationsystem.models.MedicalRestriction;
 import com.francomartinez.donationsystem.models.RecoveryPolicy;
-import com.francomartinez.donationsystem.models.SearchResultItem;
+import com.francomartinez.donationsystem.models.SearchPage;
 import com.francomartinez.donationsystem.models.Statistics;
 import com.francomartinez.donationsystem.models.User;
 import com.francomartinez.donationsystem.models.requests.ApproveUserRequest;
@@ -54,11 +54,20 @@ public interface ApiService {
     @GET("donors.php")
     Call<ApiResponse<Donor>> getDonorByDni(@Query("dni") String dni);
 
+    @GET("donors.php")
+    Call<ApiResponse<Donor>> getDonorById(@Query("id") int id);
+
     @POST("donors.php")
     Call<ApiResponse<Map<String, Object>>> saveDonor(@Body Donor donor);
 
-    @GET("donors_search.php")
-    Call<ApiResponse<List<SearchResultItem>>> searchDonorsByDni(@Query("dni") String dni);
+    // --- Unified Donor Search ---
+    @GET("search.php")
+    Call<ApiResponse<SearchPage>> searchDonors(
+            @Query("q") String q,
+            @Query("group") String group,
+            @Query("factor") String factor,
+            @Query("limit") int limit,
+            @Query("offset") int offset);
 
     // --- Donations ---
     @POST("donations.php")
@@ -73,6 +82,9 @@ public interface ApiService {
 
     @POST("appointments.php?action=send_reminder")
     Call<ApiResponse<Map<String, Object>>> sendWhatsAppReminder(@Body ReminderRequest request);
+
+    @POST("appointments.php?action=dispatch_reminders")
+    Call<ApiResponse<Map<String, Object>>> dispatchReminders(@Body Map<String, Object> body);
 
     @POST("appointments.php?action=create_appointment")
     Call<ApiResponse<Map<String, Object>>> createAppointment(@Body CreateAppointmentRequest request);
@@ -106,8 +118,4 @@ public interface ApiService {
 
     @POST("recovery_policies.php?action=delete")
     Call<ApiResponse<Map<String, Object>>> deleteRecoveryPolicy(@Body Map<String, Object> body);
-
-    // --- Emergency Stock Search ---
-    @GET("search.php")
-    Call<ApiResponse<List<SearchResultItem>>> searchDonorsByBloodType(@Query("blood_type") String bloodType);
 }

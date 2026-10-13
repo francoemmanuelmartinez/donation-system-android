@@ -11,7 +11,7 @@ This document serves as the official technical specification and design guide fo
 - **Navigation:** Root layout structured around a `CoordinatorLayout` or `ConstraintLayout` hosting a fixed **`BottomNavigationView`** at the bottom of the screen.
 - **Data Input:** Use `TextInputLayout` with `style="@style/Widget.Material3.TextInputLayout.OutlinedBox"` to implement space-saving floating labels.
 - **Keyboard Optimization:** Always specify `android:inputType="number"` or `"numberDecimal"` on numerical input fields (ID, Phone, Weight, Height, HTO, Platelets) to trigger the correct software keyboard.
-- **Dropdown Selection Rule:** Pure selector dropdowns (`AutoCompleteTextView` inside a `TextInputLayout` with `app:endIconMode="dropdown_menu"`) must set `android:inputType="none"` on the `AutoCompleteTextView` so tapping the field opens the list **without** invoking the soft keyboard. Applies to `spinnerGender`, `spinnerBloodType`, `spinnerAptitude` and `spinnerSearchBloodType`. Dropdowns that require type-to-filter (e.g., the restrictions dictionary `spinnerAddRestriction`) keep the keyboard visible and **must hide it after an item is selected** by calling `KeyboardUtils.hide(...)` inside the `OnItemClickListener`. `KeyboardUtils` (`utils/KeyboardUtils.java`) is the single helper centralizing `InputMethodManager.hideSoftInputFromWindow`.
+- **Dropdown Selection Rule:** Pure selector dropdowns (`AutoCompleteTextView` inside a `TextInputLayout` with `app:endIconMode="dropdown_menu"`) must set `android:inputType="none"` on the `AutoCompleteTextView` so tapping the field opens the list **without** invoking the soft keyboard. Applies to `spinnerGender`, `spinnerBloodType`, `spinnerAptitude`, `spinnerSearchGroup` and `spinnerSearchFactor`. Dropdowns that require type-to-filter (e.g., the restrictions dictionary `spinnerAddRestriction`) keep the keyboard visible and **must hide it after an item is selected** by calling `KeyboardUtils.hide(...)` inside the `OnItemClickListener`. `KeyboardUtils` (`utils/KeyboardUtils.java`) is the single helper centralizing `InputMethodManager.hideSoftInputFromWindow`.
 - **List Rendering:** Mandatory usage of `RecyclerView` paired with a `ListAdapter` or `RecyclerView.Adapter` for memory-efficient scrollable lists.
 
 ---
@@ -43,12 +43,11 @@ Core gatekeeping gateway utilizing credentials previously generated in the syste
 
 ## 🏛️ Application Architecture & Navigation
 
-The main activity (`MainActivity`) must include a **`BottomNavigationView`** inflated via a menu resource file (`res/menu/bottom_nav_menu.xml`) with the following 4 options (IDs in English):
+The main activity (`MainActivity`) must include a **`BottomNavigationView`** inflated via a menu resource file (`res/menu/bottom_nav_menu.xml`) with the following 3 options (IDs in English):
 
-1. **Donors (`@+id/navigationDonors`):** Registration, modification, and consultation of the donor's file.
-2. **Donations (`@+id/navigationDonations`):** Clinical logs for current hemogram values, vitals, and procedure selection.
-3. **Appointments (`@+id/navigationAppointments`):** Weekly schedule and attendance notification management.
-4. **Search (`@+id/navigationSearch`):** Rapid query utility for critical blood stock shortages and specific phenotypes.
+1. **Register Donor (`@+id/navigationDonations`, label "Registrar Donante"):** Root screen is the donor registration form (`DonorFormFragment`). Saving a donor appends the clinical donation entry (`DonationsFragment`) on top; back returns to an empty registration form.
+2. **Appointments (`@+id/navigationAppointments`):** Weekly schedule and attendance notification management.
+3. **Search (`@+id/navigationSearch`):** Unified donor lookup — free text (DNI, name or last name) plus group/factor filters, paginated results, and estado (APTO / EN VEDA). Existing donors are opened from a result card into the clinical donation form.
 
 Navigation between these views must be handled in Java by swapping **`Fragment`s** within a core `FragmentContainerView` using `SupportFragmentManager`.
 
@@ -128,15 +127,16 @@ Monitors upcoming and active patient reservations on a **business-week calendar 
 
 ---
 
-### 4. Screen: Critical Search Lookup (`SearchFragment`)
-Contingency utility engineered to fast-track donor engagement during emergency blood stock deficits.
+### 4. Screen: Unified Donor Search (`SearchFragment`)
+Single, scalable search module (replaces the former `DonorSearchFragment` / critical-stock lookup). On open it lists **all** donors (aptos first, paginated); the operator narrows results with a free-text field and optional filters. One backend endpoint (`search.php`) resolves text, group/factor, state and pagination.
 
 #### XML Layout Structure (`fragment_search.xml`):
-- **Primary Filter Element:** High-visibility drop-down selector implementing `TextInputLayout` with an inner `AutoCompleteTextView` to scope critical target blood types (`@+id/spinnerSearchBloodType`, hint: `"Grupo y Factor:"`; `android:inputType="none"` so tapping opens the list without the soft keyboard).
-- **Trigger Component:** Prominent filled `MaterialButton`: `@+id/buttonSearchDonors` (Displays: `"BUSCAR DONANTES"`).
-- **Query Output Feed:** A vertical `RecyclerView` (`@+id/recyclerViewSearchResults`) inflating standardized search cards (`item_search_result.xml`).
-  - **Card Metrics:** Each list entry includes an absolute circular avatar representing the patient's initial, full name typography, phone number string, and historical date tracking their last donation.
-  - **Instant Dialer:** An explicit **`MaterialButton` styled as an Icon** (`@+id/buttonCallDonor`) hosting a telephone graphic (`Icons.Default.Phone`) anchored to the right border. Clicking this element must instantly fire an `Intent.ACTION_DIAL` string parameter carrying the target phone value to trigger the device dialer interface instantly.
+- **Free-text Field:** Outlined `TextInputLayout` with an inner `TextInputEditText` (`@+id/editTextSearchText`, hint `"DNI, nombre o apellido"`, `app:endIconMode="clear_text"`, start icon `@drawable/ic_search`, `imeOptions="actionSearch"`). Debounced (~350 ms); triggers from 2 characters (or when cleared → shows all).
+- **Collapsible Filters:** An outlined `MaterialButton` toggle (`@+id/buttonToggleFilters`, "Filtros") reveals `@+id/layoutSearchFilters` (hidden by default) with two `TextInputLayout` + `AutoCompleteTextView` selectors: `@+id/spinnerSearchGroup` (`"Grupo:"`) and `@+id/spinnerSearchFactor` (`"Factor:"`), both `android:inputType="none"` so tapping opens the list without the soft keyboard. Each includes a `"Todos"` option.
+- **Query Output Feed:** A vertical `RecyclerView` (`@+id/recyclerViewSearchResults`) inflating the unified donor card (`item_donor_card.xml`, `DonorCardAdapter.Mode.UNIFIED`).
+  - **Card content:** avatar inicial, nombre completo, teléfono, última donación, badge de grupo/factor, estado APTO / EN VEDA (con motivo y fin de veda si aplica) y próximo turno agendado.
+  - **Actions:** `tap` en la tarjeta carga el donante completo (`GET donors.php`) y abre el formulario clínico (`MainActivity.openClinicalForm()`); el botón de contacto abre WhatsApp (`wa.me`), con diálogo de confirmación si el donante está en veda.
+  - **Pagination:** scroll al final dispara "cargar más" mientras `hasMore` sea verdadero.
 
 ### 💡 UPDATED REQUIREMENT: Donor Suitability & Restrictions
 

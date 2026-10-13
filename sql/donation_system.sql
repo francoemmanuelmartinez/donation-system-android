@@ -14,6 +14,7 @@ DROP TABLE IF EXISTS `donors`;
 DROP TABLE IF EXISTS `user_emails`;
 DROP TABLE IF EXISTS `user_phones`;
 DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS `reminder_dispatch_control`;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- --------------------------------------------------------
@@ -213,6 +214,36 @@ CREATE TABLE `appointments` (
   FOREIGN KEY (`donor_id`) REFERENCES `donors`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`reminder_sent_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+-- Table: reminder_dispatch_control (Automatic reminder dispatch guard)
+-- Single-row table used by the lazy sweep + warm-up of send_reminders.php
+-- (see sql/migration_reminders_control.sql).
+-- --------------------------------------------------------
+CREATE TABLE `reminder_dispatch_control` (
+  `id` INT NOT NULL DEFAULT 1 PRIMARY KEY,
+  `last_run_at` DATETIME NULL,
+  `warmup_start_date` DATE NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `reminder_dispatch_control` (`id`, `last_run_at`, `warmup_start_date`)
+VALUES (1, NULL, NULL);
+
+-- --------------------------------------------------------
+-- Indexes for the unified search module (scalability)
+-- (see sql/migration_search_indexes.sql)
+-- NOTE: CREATE INDEX IF NOT EXISTS requires MariaDB (XAMPP); on plain
+-- MySQL import this section after removing the IF NOT EXISTS clauses.
+-- --------------------------------------------------------
+CREATE INDEX IF NOT EXISTS `idx_donors_blood_type` ON `donors` (`blood_type`);
+CREATE INDEX IF NOT EXISTS `idx_donors_name` ON `donors` (`last_name`, `first_name`);
+CREATE INDEX IF NOT EXISTS `idx_donors_next_eligible` ON `donors` (`next_eligible_date`);
+CREATE INDEX IF NOT EXISTS `idx_donor_restrictions_active`
+    ON `donor_restrictions` (`donor_id`, `eligible_workday_return_date`);
+CREATE INDEX IF NOT EXISTS `idx_appointments_scheduled`
+    ON `appointments` (`donor_id`, `status`, `appointment_date`);
 
 -- --------------------------------------------------------
 -- Initial Seed Data: Default Approved Director Account

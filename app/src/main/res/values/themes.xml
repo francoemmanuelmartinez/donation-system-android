@@ -16,9 +16,23 @@
 
         <item name="android:colorBackground">@color/surface_light</item>
         <item name="colorOutline">@color/outline</item>
+
+        <item name="colorSurfaceContainerLowest">@color/surface_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/surface_container_low</item>
+        <item name="colorSurfaceContainer">@color/surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/surface_container_highest</item>
     </style>
 
     <style name="Theme.DonationSystem" parent="Base.Theme.DonationSystem" />
+
+    <style name="Widget.App.Card" parent="Widget.Material3.CardView.Filled">
+        <item name="cardCornerRadius">@dimen/card_corner_radius</item>
+    </style>
+
+    <style name="Widget.App.Card.Section" parent="Widget.App.Card">
+        <item name="cardElevation">0dp</item>
+    </style>
 
     <style name="Widget.App.TextInputLayout.NavyField" parent="Widget.Material3.TextInputLayout.OutlinedBox">
         <item name="boxBackgroundColor">@color/navy_field</item>

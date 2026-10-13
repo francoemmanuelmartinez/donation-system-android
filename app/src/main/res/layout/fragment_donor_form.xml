@@ -24,11 +24,11 @@
             android:padding="16dp">
 
             <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.App.Card.Section"
                 android:id="@+id/cardPersonalData"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/soft_blue"
-                app:cardCornerRadius="12dp">
+                app:cardBackgroundColor="@color/soft_blue">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -178,12 +178,12 @@
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.App.Card.Section"
                 android:id="@+id/cardContactData"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                app:cardBackgroundColor="@color/soft_blue"
-                app:cardCornerRadius="12dp">
+                app:cardBackgroundColor="@color/soft_blue">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -221,22 +221,6 @@
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/textInputLayoutZipCode"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:hint="@string/hint_zip_code">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/editTextZipCode"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="text"
-                            android:maxLines="1" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/textInputLayoutAddress"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
@@ -246,22 +230,6 @@
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/editTextAddress"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="text"
-                            android:maxLines="1" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/textInputLayoutNeighborhood"
-                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:hint="@string/hint_neighborhood">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/editTextNeighborhood"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:inputType="text"
@@ -317,12 +285,12 @@
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.App.Card.Section"
                 android:id="@+id/cardCriticalData"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                app:cardBackgroundColor="@color/medical_blue_dark"
-                app:cardCornerRadius="12dp">
+                app:cardBackgroundColor="@color/medical_blue_dark">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -374,9 +342,10 @@
                                 android:id="@+id/editTextPhenotype"
                                 style="@style/Widget.App.TextInputEditText.NavyField"
                                 android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="text"
-                            android:maxLines="1" />
+                                android:layout_height="wrap_content"
+                                android:enabled="false"
+                                android:inputType="text"
+                                android:maxLines="1" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <LinearLayout

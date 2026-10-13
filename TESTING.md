@@ -56,10 +56,14 @@ Checklist para probar la app a mano contra el backend real (XAMPP). Ejecutar en 
 
 ## 5. Búsqueda
 
-- [ ] Buscar por grupo/factor → solo devuelve donantes APTO (excluye EN_VEDA).
+- [ ] Búsqueda por texto (DNI, nombre o apellido) → devuelve coincidencias (prefijo).
+- [ ] Filtros por grupo/factor → acotan por tipo sanguíneo (OR implícito entre grupo y factor).
+- [ ] **Se devuelven todos los donantes, incluidos los que están en veda** (el estado APTO/EN_VEDA se muestra en la tarjeta, no se filtra).
 - [ ] Sin coincidencias → lista vacía (SUCCESS, no error).
-- [ ] Búsqueda vacía → lista vacía sin error de red (guard en `SearchViewModel`).
-- [ ] Donante con veda activa no debe aparecer.
+- [ ] Búsqueda vacía (sin criterios) → devuelve todos los donantes, aptos primero, paginado.
+- [ ] Con texto → orden alfabético (apellido, nombre); sin texto → aptos primero.
+- [ ] Paginación: `hasMore` y "cargar más" al llegar al final de la lista.
+- [ ] Donante con veda activa se muestra con su estado y motivo de veda.
 
 ## 6. Donaciones
 

@@ -36,6 +36,13 @@ public class AppointmentRepository {
         call.enqueue(callback);
     }
 
+    public void dispatchReminders(Callback<ApiResponse<Map<String, Object>>> callback) {
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("manual", "true");
+        Call<ApiResponse<Map<String, Object>>> call = apiService.dispatchReminders(body);
+        call.enqueue(callback);
+    }
+
     public void createAppointment(CreateAppointmentRequest request, Callback<ApiResponse<Map<String, Object>>> callback) {
         Call<ApiResponse<Map<String, Object>>> call = apiService.createAppointment(request);
         call.enqueue(callback);

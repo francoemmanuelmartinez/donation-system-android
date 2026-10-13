@@ -52,6 +52,12 @@ public class SearchResultItem {
     @SerializedName("restrictionVedaReason")
     private String restrictionVedaReason;
 
+    @SerializedName("nextAppointmentDate")
+    private String nextAppointmentDate;
+
+    @SerializedName("nextAppointmentProcedure")
+    private String nextAppointmentProcedure;
+
     public SearchResultItem() {
     }
 
@@ -181,6 +187,27 @@ public class SearchResultItem {
 
     public void setRestrictionVedaReason(String restrictionVedaReason) {
         this.restrictionVedaReason = restrictionVedaReason;
+    }
+
+    public String getNextAppointmentDate() {
+        return nextAppointmentDate;
+    }
+
+    public void setNextAppointmentDate(String nextAppointmentDate) {
+        this.nextAppointmentDate = nextAppointmentDate;
+    }
+
+    public String getNextAppointmentProcedure() {
+        return nextAppointmentProcedure;
+    }
+
+    public void setNextAppointmentProcedure(String nextAppointmentProcedure) {
+        this.nextAppointmentProcedure = nextAppointmentProcedure;
+    }
+
+    public boolean hasUpcomingAppointment() {
+        return nextAppointmentDate != null && !nextAppointmentDate.trim().isEmpty()
+                && nextAppointmentProcedure != null && !nextAppointmentProcedure.trim().isEmpty();
     }
 
     public String getFullName() {

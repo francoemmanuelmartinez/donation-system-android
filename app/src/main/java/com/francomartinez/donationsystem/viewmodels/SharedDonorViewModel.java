@@ -9,6 +9,7 @@ import com.francomartinez.donationsystem.models.Donor;
 public class SharedDonorViewModel extends ViewModel {
 
     private final MutableLiveData<Donor> selectedDonor = new MutableLiveData<>();
+    private final MutableLiveData<String> selectedProcedure = new MutableLiveData<>();
 
     public LiveData<Donor> getSelectedDonor() {
         return selectedDonor;
@@ -20,5 +21,19 @@ public class SharedDonorViewModel extends ViewModel {
 
     public void clearSelectedDonor() {
         selectedDonor.setValue(null);
+    }
+
+    public LiveData<String> getSelectedProcedure() {
+        return selectedProcedure;
+    }
+
+    public void setSelectedProcedure(String procedure) {
+        selectedProcedure.setValue(procedure);
+    }
+
+    public String consumeSelectedProcedure() {
+        String procedure = selectedProcedure.getValue();
+        selectedProcedure.setValue(null);
+        return procedure;
     }
 }

@@ -3,14 +3,20 @@ require_once 'db_config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $dni = trim($_GET['dni'] ?? '');
+    $id = (int)($_GET['id'] ?? 0);
 
-    if (empty($dni)) {
-        sendJsonResponse("error", "DNI parameter is required", null, 400);
+    if ($id <= 0 && empty($dni)) {
+        sendJsonResponse("error", "DNI or ID parameter is required", null, 400);
     }
 
     try {
-        $stmt = $conn->prepare("SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, zip_code AS zipCode, address, neighborhood, blood_type AS bloodType, phenotype, weight, height, status, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE dni = :dni LIMIT 1");
-        $stmt->execute(['dni' => $dni]);
+        if ($id > 0) {
+            $stmt = $conn->prepare("SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, zip_code AS zipCode, address, neighborhood, blood_type AS bloodType, phenotype, weight, height, status, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE id = :id LIMIT 1");
+            $stmt->execute(['id' => $id]);
+        } else {
+            $stmt = $conn->prepare("SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, zip_code AS zipCode, address, neighborhood, blood_type AS bloodType, phenotype, weight, height, status, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE dni = :dni LIMIT 1");
+            $stmt->execute(['dni' => $dni]);
+        }
         $donor = $stmt->fetch();
 
         if (!$donor) {

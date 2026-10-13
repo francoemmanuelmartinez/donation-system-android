@@ -14,19 +14,28 @@ This system is designed to streamline the donation process for medical facilitie
 
 ## 🛠️ Setup Instructions
 
+> **Máquina nueva (notebook):** seguí la guía paso a paso en **`INSTALACION.md`**
+> (XAMPP, import de BD, junction, configuración de red de la app).
+
 ### Backend (XAMPP)
 1. Ensure XAMPP is installed (Apache & MySQL).
 2. Create a database named `donation_system`.
-3. Import the latest SQL dump from the `/sql` directory.
-4. **Symbolic Link:** For efficient development, create a symbolic link from your `htdocs` folder to the `backend/` folder in this repository:
+3. Import `sql/donation_system.sql` (self-contained: schema + `reminder_dispatch_control`
+   + search indexes + seed). Optionally import `sql/seed_40_donantes_turnos.sql` for demo data.
+4. **Junction:** publish the `backend/` folder inside `htdocs` without copying:
    ```cmd
-   mklink /D "C:\xampp\htdocs\donation-system-api" "C:\path\to\your\DonationSystem\backend"
+   mklink /J "C:\xampp\htdocs\donation-system-api" "C:\path\to\your\DonationSystem\backend"
    ```
+   (`/J` = directory junction, no admin rights needed; a plain symlink `/D` would require them.)
 
 ### Android
 1. Open the project in Android Studio.
 2. Ensure you have Internet permissions enabled in `AndroidManifest.xml`.
-3. The app is configured to talk to the local server at `10.0.2.2`.
+3. Set the backend base URL in `RetrofitClient.java` (`DEFAULT_BASE_URL`), and whitelist that
+   host in `res/xml/network_security_config.xml` for cleartext HTTP. Common values:
+   - Emulator: `http://10.0.2.2/donation-system-api/`
+   - Physical device on LAN: `http://<your-PC-IP>/donation-system-api/`
+
 
 ## 🔒 Security Features
 - **BCRYPT Hashing:** User passwords are encrypted using industry-standard BCRYPT before storage.

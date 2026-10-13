@@ -30,9 +30,9 @@
     <string name="msg_login_error">No se pudo iniciar sesión</string>
 
     <!-- Bottom Navigation -->
-    <string name="navigation_donations">Donaciones</string>
+    <string name="navigation_donations">Registrar Donante</string>
     <string name="navigation_appointments">Agenda</string>
-    <string name="navigation_search">Búsqueda Avanzada</string>
+    <string name="navigation_search">Buscar</string>
 
     <!-- Donors -->
     <string name="donors_title">Donantes</string>
@@ -44,10 +44,8 @@
     <string name="hint_birth_date">Fecha de Nacimiento:</string>
     <string name="hint_age">Edad:</string>
     <string name="card_contact_data">Contacto y Ubicación</string>
-    <string name="hint_city">Ciudad:</string>
-    <string name="hint_zip_code">Código Postal:</string>
+    <string name="hint_city">Localidad:</string>
     <string name="hint_address">Dirección:</string>
-    <string name="hint_neighborhood">Barrio:</string>
     <string name="btn_add_phone">Agregar otro teléfono</string>
     <string name="btn_add_email">Agregar otro email</string>
     <string name="hint_aptitude">Aptitud:</string>
@@ -71,17 +69,13 @@
     <string name="msg_restrictions_updated">Exclusiones médicas actualizadas</string>
     <string name="contact_primary">Principal</string>
 
-    <!-- Donation Flow (Hub & Donor Registration) -->
-    <string name="donations_flow_subtitle">Completá el registro de un donante nuevo o buscá uno existente para registrar su donación</string>
-    <string name="btn_register_new_donor">REGISTRAR NUEVO DONANTE</string>
-    <string name="btn_search_registered_donor">BUSCAR DONANTE REGISTRADO</string>
+    <!-- Donation Flow (Donor Registration) -->
     <string name="msg_donor_search_empty">No hay donantes con ese DNI</string>
     <string name="btn_see_data">VER DATOS</string>
     <string name="btn_save_changes">GUARDAR CAMBIOS</string>
 
     <!-- Donations -->
     <string name="donations_title">Donaciones</string>
-    <string name="donations_placeholder">Módulo de Donaciones</string>
     <string name="card_donor_context">Donante Seleccionado</string>
     <string name="hint_select_donor">Seleccioná un donante desde Buscar Donante Registrado</string>
     <string name="hint_weight">Peso (kg):</string>
@@ -107,6 +101,9 @@
     <string name="msg_reminder_sent">Recordatorio enviado</string>
     <string name="msg_reminder_error">No se pudo actualizar el recordatorio</string>
     <string name="msg_whatsapp_not_installed">WhatsApp no está instalado</string>
+    <string name="msg_dispatch_launched">Envío de recordatorios iniciado</string>
+    <string name="msg_dispatch_error">No se pudo iniciar el envío de recordatorios</string>
+    <string name="cd_dispatch_reminders">Enviar recordatorios automáticos ahora</string>
     <string name="empty_day_appointments">No hay citas para este día</string>
     <string name="whatsapp_reminder_format">Hola *%1$s*, te recordamos tu turno para donación de *%2$s* el día %3$s a las *%4$s* hs.</string>
     <string name="email_reminder_subject">Recordatorio de turno de donación</string>
@@ -124,6 +121,7 @@
     <string name="procedure_plasma">Plasma</string>
     <string name="procedure_platelets">Plaquetas</string>
     <string name="procedure_blood">Sangre</string>
+    <string name="label_next_appointment">Turno: %1$s · %2$s</string>
     <string name="btn_schedule_donor">AGENDAR UN DONANTE</string>
     <string name="schedule_date_picker_title">Elegí la fecha del turno</string>
     <string name="schedule_time_picker_title">Elegí la hora del turno</string>
@@ -134,12 +132,15 @@
     <string name="msg_schedule_duplicate">El donante ya tiene un turno agendado para ese día</string>
 
     <!-- Search -->
-    <string name="search_title">Búsqueda Avanzada</string>
+    <string name="search_title">Buscar donante</string>
     <string name="search_placeholder">Módulo de Búsqueda Avanzada</string>
     <string name="btn_search_donors">BUSCAR DONANTES</string>
-    <string name="label_last_donation">Última Donación</string>
+    <string name="hint_search_text">DNI, nombre o apellido</string>
+    <string name="btn_filters">Filtros</string>
+    <string name="label_last_donation">Últ. donación:</string>
     <string name="label_no_donation">Sin donaciones</string>
-    <string name="msg_search_no_results">No hay donantes aptos con ese grupo</string>
+    <string name="msg_search_no_results">No se encontraron donantes</string>
+    <string name="msg_search_min_chars">Ingresá al menos 2 caracteres</string>
     <string name="label_search_stock">Stock Crítico de Sangre</string>
 
     <!-- Director -->
@@ -229,6 +230,8 @@
 
     <!-- Search states & WhatsApp contact -->
     <string name="search_filter_all">Todos</string>
+    <string name="hint_search_group">Grupo:</string>
+    <string name="hint_search_factor">Factor:</string>
     <string name="cd_contact_whatsapp">Contactar por WhatsApp</string>
     <string name="chip_label_recovery">En recuperación hasta %1$s</string>
     <string name="chip_label_restriction">En veda hasta %1$s</string>

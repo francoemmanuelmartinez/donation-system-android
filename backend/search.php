@@ -2,90 +2,145 @@
 require_once 'db_config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-    $bloodType = trim($_GET['blood_type'] ?? $_GET['bloodType'] ?? '');
+    $q        = trim($_GET['q'] ?? '');
+    $dni      = trim($_GET['dni'] ?? '');
+    $name     = trim($_GET['name'] ?? '');
+    $lastName = trim($_GET['last_name'] ?? '');
+    $group    = strtoupper(trim($_GET['group']  ?? ''));
+    $factor   = strtoupper(trim($_GET['factor'] ?? ''));
+    $bloodType = strtoupper(trim($_GET['blood_type'] ?? $_GET['bloodType'] ?? ''));
+
+    $limit  = (int)($_GET['limit'] ?? 20);
+    $offset = (int)($_GET['offset'] ?? 0);
+    if ($limit < 1)  { $limit = 20; }
+    if ($limit > 100) { $limit = 100; }
+    if ($offset < 0) { $offset = 0; }
+
+    $hasText = ($q !== '' || $dni !== '' || $name !== '' || $lastName !== '');
 
     try {
-        $sql = "SELECT d.id, d.dni, d.first_name AS firstName, d.last_name AS lastName, d.gender, d.blood_type AS bloodType, d.phenotype, d.last_donation_date AS lastDonationDate, d.next_eligible_date AS nextEligibleDate, dp.phone_number AS phoneNumber FROM donors d LEFT JOIN donor_phones dp ON dp.donor_id = d.id AND dp.is_primary = 1";
+        $where = [];
         $params = [];
-        if (!empty($bloodType)) {
-            $sql .= " WHERE d.blood_type = :bloodType";
-            $params['bloodType'] = $bloodType;
+        // Búsqueda libre: coincide por DNI, nombre o apellido (OR).
+        if ($q !== '') {
+            $where[] = '(d.dni LIKE :q1 OR d.first_name LIKE :q2 OR d.last_name LIKE :q3)';
+            $params['q1'] = $q . '%';
+            $params['q2'] = $q . '%';
+            $params['q3'] = $q . '%';
         }
+        if ($dni !== '')      { $where[] = 'd.dni LIKE :dni';           $params['dni'] = $dni . '%'; }
+        if ($name !== '')     { $where[] = 'd.first_name LIKE :name';   $params['name'] = $name . '%'; }
+        if ($lastName !== '') { $where[] = 'd.last_name LIKE :lastName'; $params['lastName'] = $lastName . '%'; }
+
+        if ($bloodType !== '') {
+            $where[] = 'd.blood_type = :bloodType';
+            $params['bloodType'] = $bloodType;
+        } else if ($group !== '' || $factor !== '') {
+            $where[] = 'd.blood_type LIKE :bloodPattern';
+            $params['bloodPattern'] = ($group !== '' ? $group : '%') . ($factor !== '' ? $factor : '%');
+        }
+
+        $whereSql = empty($where) ? '' : (' WHERE ' . implode(' AND ', $where));
+
+        // Estado (APTO / veda) calculado en SQL: fuente única de verdad, permite
+        // ordenar y paginar de forma coherente sin traer toda la tabla.
+        $sql = "SELECT
+                    t.id, t.dni, t.firstName, t.lastName, t.bloodType, t.phenotype,
+                    t.lastDonationDate, t.nextEligibleDate, t.phoneNumber,
+                    t.recoveryEnd AS recoveryVedaEndDate,
+                    t.restrictionEndDate AS restrictionVedaEndDate,
+                    t.restrictionReason AS restrictionVedaReason,
+                    CASE
+                        WHEN t.recoveryEnd IS NULL AND t.restrictionEndDate IS NULL THEN 'APTO'
+                        WHEN t.recoveryEnd IS NOT NULL AND t.restrictionEndDate IS NOT NULL
+                            THEN IF(t.recoveryEnd >= t.restrictionEndDate, 'VEDA_RECUPERACION', 'VEDA_RESTRICCION')
+                        WHEN t.recoveryEnd IS NOT NULL THEN 'VEDA_RECUPERACION'
+                        ELSE 'VEDA_RESTRICCION'
+                    END AS state,
+                    CASE
+                        WHEN t.recoveryEnd IS NULL AND t.restrictionEndDate IS NULL THEN NULL
+                        WHEN t.recoveryEnd IS NOT NULL AND t.restrictionEndDate IS NOT NULL
+                            THEN IF(t.recoveryEnd >= t.restrictionEndDate, t.recoveryEnd, t.restrictionEndDate)
+                        WHEN t.recoveryEnd IS NOT NULL THEN t.recoveryEnd
+                        ELSE t.restrictionEndDate
+                    END AS vedaEndDate,
+                    CASE
+                        WHEN t.recoveryEnd IS NULL AND t.restrictionEndDate IS NULL THEN NULL
+                        WHEN t.recoveryEnd IS NOT NULL AND t.restrictionEndDate IS NOT NULL
+                            THEN IF(t.recoveryEnd >= t.restrictionEndDate, 'Recuperación post-donación', t.restrictionReason)
+                        WHEN t.recoveryEnd IS NOT NULL THEN 'Recuperación post-donación'
+                        ELSE t.restrictionReason
+                    END AS vedaReason
+                FROM (
+                    SELECT
+                        d.id, d.dni, d.first_name AS firstName, d.last_name AS lastName,
+                        d.blood_type AS bloodType, d.phenotype,
+                        d.last_donation_date AS lastDonationDate,
+                        d.next_eligible_date AS nextEligibleDate,
+                        dp.phone_number AS phoneNumber,
+                        IF(d.next_eligible_date IS NOT NULL AND d.next_eligible_date > CURDATE(), d.next_eligible_date, NULL) AS recoveryEnd,
+                        rr.restrictionEndDate, rr.restrictionReason
+                    FROM donors d
+                    LEFT JOIN donor_phones dp ON dp.donor_id = d.id AND dp.is_primary = 1
+                    LEFT JOIN (
+                        SELECT dr.donor_id,
+                               MAX(dr.eligible_workday_return_date) AS restrictionEndDate,
+                               SUBSTRING_INDEX(GROUP_CONCAT(r.name ORDER BY dr.eligible_workday_return_date DESC, dr.id DESC), ',', 1) AS restrictionReason
+                        FROM donor_restrictions dr
+                        JOIN restrictions r ON dr.restriction_id = r.id
+                        WHERE dr.eligible_workday_return_date >= CURDATE()
+                        GROUP BY dr.donor_id
+                    ) rr ON rr.donor_id = d.id" . $whereSql . "
+                ) t";
+
+        if ($hasText) {
+            $sql .= " ORDER BY t.lastName ASC, t.firstName ASC, t.id ASC";
+        } else {
+            // Aptos primero (ultima donacion mas vieja primero, nunca donantes primero),
+            // luego veda por fecha de fin ascendente.
+            $sql .= " ORDER BY (state = 'APTO') DESC, t.lastDonationDate ASC, vedaEndDate ASC, t.id ASC";
+        }
+
+        // Pedimos uno de mas para saber si hay pagina siguiente sin contar toda la tabla.
+        $fetchLimit = $limit + 1;
+        $sql .= " LIMIT $fetchLimit OFFSET $offset";
 
         $stmt = $conn->prepare($sql);
         $stmt->execute($params);
-        $donors = $stmt->fetchAll();
+        $rows = $stmt->fetchAll();
 
-        // Active medical restrictions (furthest returning date per donor)
-        $restrStmt = $conn->query("SELECT dr.donor_id AS donorId, dr.eligible_workday_return_date AS eligibleWorkdayReturnDate, r.name AS restrictionName FROM donor_restrictions dr JOIN restrictions r ON dr.restriction_id = r.id WHERE dr.eligible_workday_return_date >= CURRENT_DATE() ORDER BY dr.eligible_workday_return_date DESC");
-        $restrictionsByDonor = [];
-        while ($r = $restrStmt->fetch()) {
-            $did = (int)$r['donorId'];
-            if (!isset($restrictionsByDonor[$did])) {
-                $restrictionsByDonor[$did] = $r;
+        $hasMore = count($rows) > $limit;
+        if ($hasMore) {
+            array_pop($rows);
+        }
+
+        // Proximo turno agendado (mas cercano) solo para los donantes de esta pagina.
+        $nextApptByDonor = [];
+        if (!empty($rows)) {
+            $ids = array_map(function ($r) { return (int)$r['id']; }, $rows);
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $apptStmt = $conn->prepare("SELECT donor_id, appointment_date, target_procedure FROM appointments WHERE status = 'SCHEDULED' AND appointment_date >= ? AND donor_id IN ($placeholders) ORDER BY appointment_date ASC, appointment_time ASC");
+            $apptStmt->execute(array_merge([date('Y-m-d')], $ids));
+            while ($a = $apptStmt->fetch()) {
+                $did = (int)$a['donor_id'];
+                if (!isset($nextApptByDonor[$did])) {
+                    $nextApptByDonor[$did] = $a;
+                }
             }
         }
 
-        $today = date('Y-m-d');
-        foreach ($donors as &$donor) {
-            $recoveryEnd = (!empty($donor['nextEligibleDate']) && $donor['nextEligibleDate'] > $today) ? $donor['nextEligibleDate'] : null;
-            $led = isset($restrictionsByDonor[(int)$donor['id']]) ? $restrictionsByDonor[(int)$donor['id']] : null;
-            $restrictionEnd = $led ? $led['eligibleWorkdayReturnDate'] : null;
-            $restrictionReason = $led ? $led['restrictionName'] : null;
-
-            if ($recoveryEnd !== null && $restrictionEnd !== null) {
-                if ($recoveryEnd >= $restrictionEnd) {
-                    $state = 'VEDA_RECUPERACION';
-                    $vedaEndDate = $recoveryEnd;
-                    $vedaReason = 'Recuperación post-donación';
-                } else {
-                    $state = 'VEDA_RESTRICCION';
-                    $vedaEndDate = $restrictionEnd;
-                    $vedaReason = $restrictionReason;
-                }
-            } else if ($recoveryEnd !== null) {
-                $state = 'VEDA_RECUPERACION';
-                $vedaEndDate = $recoveryEnd;
-                $vedaReason = 'Recuperación post-donación';
-            } else if ($restrictionEnd !== null) {
-                $state = 'VEDA_RESTRICCION';
-                $vedaEndDate = $restrictionEnd;
-                $vedaReason = $restrictionReason;
-            } else {
-                $state = 'APTO';
-                $vedaEndDate = null;
-                $vedaReason = null;
-            }
-
-            $donor['state'] = $state;
-            $donor['status'] = ($state === 'APTO') ? 'APTO' : 'EN_VEDA';
-            $donor['vedaEndDate'] = $vedaEndDate;
-            $donor['vedaReason'] = $vedaReason;
-            $donor['recoveryVedaEndDate'] = $recoveryEnd;
-            $donor['restrictionVedaEndDate'] = $restrictionEnd;
-            $donor['restrictionVedaReason'] = $restrictionReason;
+        foreach ($rows as &$donor) {
+            $donor['status'] = ($donor['state'] === 'APTO') ? 'APTO' : 'EN_VEDA';
+            $appt = $nextApptByDonor[(int)$donor['id']] ?? null;
+            $donor['nextAppointmentDate'] = $appt ? $appt['appointment_date'] : null;
+            $donor['nextAppointmentProcedure'] = $appt ? $appt['target_procedure'] : null;
         }
         unset($donor);
 
-        // Apto donors first (last donation oldest first, never donated first),
-        // then veda donors by end date ascending (closest first).
-        usort($donors, function ($a, $b) {
-            $aApto = ($a['state'] === 'APTO') ? 1 : 0;
-            $bApto = ($b['state'] === 'APTO') ? 1 : 0;
-            if ($aApto !== $bApto) {
-                return $bApto - $aApto;
-            }
-            if ($aApto === 1) {
-                $aDate = $a['lastDonationDate'] ?? '0000-00-00';
-                $bDate = $b['lastDonationDate'] ?? '0000-00-00';
-                return strcmp($aDate, $bDate);
-            }
-            $aDate = $a['vedaEndDate'] ?? '9999-12-31';
-            $bDate = $b['vedaEndDate'] ?? '9999-12-31';
-            return strcmp($aDate, $bDate);
-        });
-
-        sendJsonResponse("success", "Donantes encontrados", $donors);
+        sendJsonResponse("success", "Donantes encontrados", [
+            "items" => $rows,
+            "hasMore" => $hasMore
+        ]);
     } catch(PDOException $e) {
         sendJsonResponse("error", "Database error: " . $e->getMessage(), null, 500);
     }

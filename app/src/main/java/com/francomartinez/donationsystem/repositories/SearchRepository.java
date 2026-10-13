@@ -3,9 +3,7 @@ package com.francomartinez.donationsystem.repositories;
 import com.francomartinez.donationsystem.api.ApiService;
 import com.francomartinez.donationsystem.api.RetrofitClient;
 import com.francomartinez.donationsystem.models.ApiResponse;
-import com.francomartinez.donationsystem.models.SearchResultItem;
-
-import java.util.List;
+import com.francomartinez.donationsystem.models.SearchPage;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -18,8 +16,19 @@ public class SearchRepository {
         apiService = RetrofitClient.getApiService();
     }
 
-    public void searchByBloodType(String bloodType, Callback<ApiResponse<List<SearchResultItem>>> callback) {
-        Call<ApiResponse<List<SearchResultItem>>> call = apiService.searchDonorsByBloodType(bloodType);
+    public void search(String q, String group, String factor,
+                       int limit, int offset,
+                       Callback<ApiResponse<SearchPage>> callback) {
+        Call<ApiResponse<SearchPage>> call = apiService.searchDonors(
+                emptyIfNull(q),
+                emptyIfNull(group),
+                emptyIfNull(factor),
+                limit,
+                offset);
         call.enqueue(callback);
+    }
+
+    private static String emptyIfNull(String value) {
+        return value != null ? value : "";
     }
 }

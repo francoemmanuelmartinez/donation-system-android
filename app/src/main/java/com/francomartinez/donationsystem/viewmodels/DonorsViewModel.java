@@ -88,6 +88,30 @@ public class DonorsViewModel extends ViewModel {
         });
     }
 
+    public void getDonorById(int id) {
+        donorResult.postValue(Resource.loading());
+        donorRepository.getDonorById(id, new Callback<ApiResponse<Donor>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Donor>> call, Response<ApiResponse<Donor>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    ApiResponse<Donor> body = response.body();
+                    if (body.isSuccess()) {
+                        donorResult.postValue(Resource.success(body.getData()));
+                    } else {
+                        donorResult.postValue(Resource.error(body.getMessage() != null ? body.getMessage() : "Donante no encontrado"));
+                    }
+                } else {
+                    donorResult.postValue(Resource.error("Donante no encontrado (HTTP " + response.code() + ")"));
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Donor>> call, Throwable t) {
+                donorResult.postValue(Resource.error("Error de red: " + t.getMessage()));
+            }
+        });
+    }
+
     public void saveDonor(Donor donor) {
         saveResult.postValue(Resource.loading());
         donorRepository.saveDonor(donor, new Callback<ApiResponse<Map<String, Object>>>() {

@@ -24,6 +24,8 @@ import com.francomartinez.donationsystem.models.Appointment;
 import com.francomartinez.donationsystem.utils.Resource;
 import com.francomartinez.donationsystem.utils.SessionManager;
 import com.francomartinez.donationsystem.viewmodels.AppointmentsViewModel;
+import com.francomartinez.donationsystem.viewmodels.DonorsViewModel;
+import com.francomartinez.donationsystem.viewmodels.SharedDonorViewModel;
 import com.francomartinez.donationsystem.views.MainActivity;
 import com.google.android.material.button.MaterialButton;
 
@@ -48,10 +50,13 @@ public class AppointmentsFragment extends Fragment {
     private TextView textViewEmptyAppointments;
     private MaterialButton buttonScheduleDonor;
     private View buttonOpenCalendar;
+    private MaterialButton buttonDispatchReminders;
     private RecyclerView recyclerViewDaysFilter;
     private RecyclerView recyclerViewAppointmentsList;
 
     private AppointmentsViewModel viewModel;
+    private DonorsViewModel donorViewModel;
+    private SharedDonorViewModel sharedDonorViewModel;
     private DayFilterAdapter dayFilterAdapter;
     private AppointmentsAdapter appointmentsAdapter;
 
@@ -63,6 +68,7 @@ public class AppointmentsFragment extends Fragment {
 
     private Integer pendingReminderAppointmentId = null;
     private String pendingReminderChannel = null;
+    private String pendingAppointmentProcedure = null;
 
     @Nullable
     @Override
@@ -77,11 +83,15 @@ public class AppointmentsFragment extends Fragment {
         viewModel = new ViewModelProvider(this).get(AppointmentsViewModel.class);
         viewModel.setCurrentUserId(SessionManager.getInstance(requireContext()).getUserIdOrNull());
 
+        donorViewModel = new ViewModelProvider(this).get(DonorsViewModel.class);
+        sharedDonorViewModel = new ViewModelProvider(requireActivity()).get(SharedDonorViewModel.class);
+
         textViewWeekHeader = view.findViewById(R.id.textViewWeekHeader);
         textViewSelectedDateLabel = view.findViewById(R.id.textViewSelectedDateLabel);
         textViewEmptyAppointments = view.findViewById(R.id.textViewEmptyAppointments);
         buttonScheduleDonor = view.findViewById(R.id.buttonScheduleDonor);
         buttonOpenCalendar = view.findViewById(R.id.buttonOpenCalendar);
+        buttonDispatchReminders = view.findViewById(R.id.buttonDispatchReminders);
         recyclerViewDaysFilter = view.findViewById(R.id.recyclerViewDaysFilter);
         recyclerViewAppointmentsList = view.findViewById(R.id.recyclerViewAppointmentsList);
 
@@ -97,6 +107,7 @@ public class AppointmentsFragment extends Fragment {
         });
 
         buttonOpenCalendar.setOnClickListener(v -> openCalendar());
+        buttonDispatchReminders.setOnClickListener(v -> handleDispatchReminders());
     }
 
     @Override
@@ -144,6 +155,7 @@ public class AppointmentsFragment extends Fragment {
                 handleWhatsAppReminder(appointment);
             }
         });
+        appointmentsAdapter.setOnDonorClickListener(this::onAppointmentDonorClick);
         recyclerViewAppointmentsList.setAdapter(appointmentsAdapter);
     }
 
@@ -186,6 +198,35 @@ public class AppointmentsFragment extends Fragment {
                 Toast.makeText(requireContext(), resource.message, Toast.LENGTH_LONG).show();
             }
         });
+
+        viewModel.getDispatchResult().observe(getViewLifecycleOwner(), resource -> {
+            if (resource == null) return;
+            if (resource.status == Resource.Status.SUCCESS) {
+                Toast.makeText(requireContext(), R.string.msg_dispatch_launched, Toast.LENGTH_SHORT).show();
+            } else if (resource.status == Resource.Status.ERROR) {
+                String message = resource.message != null ? resource.message : getString(R.string.msg_dispatch_error);
+                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+            }
+        });
+
+        donorViewModel.getDonorResult().observe(getViewLifecycleOwner(), resource -> {
+            if (resource == null) return;
+            if (resource.status == Resource.Status.SUCCESS && resource.data != null) {
+                sharedDonorViewModel.setSelectedDonor(resource.data);
+                sharedDonorViewModel.setSelectedProcedure(pendingAppointmentProcedure);
+                MainActivity mainActivity = (MainActivity) getActivity();
+                if (mainActivity != null) {
+                    mainActivity.openClinicalForm();
+                }
+            } else if (resource.status == Resource.Status.ERROR && resource.message != null) {
+                Toast.makeText(requireContext(), resource.message, Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void onAppointmentDonorClick(Appointment appointment) {
+        pendingAppointmentProcedure = appointment.getTargetProcedure();
+        donorViewModel.getDonorById(appointment.getDonorId());
     }
 
     private void applyDayFilter(LocalDate day) {
@@ -221,6 +262,13 @@ public class AppointmentsFragment extends Fragment {
         calendarDayPicked = true;
         displaySource = monthAppointments;
         applyDayFilter(day);
+    }
+
+    private void handleDispatchReminders() {
+        if (isReminderInFlight()) {
+            return;
+        }
+        viewModel.dispatchReminders();
     }
 
     private void handleWhatsAppReminder(Appointment appointment) {

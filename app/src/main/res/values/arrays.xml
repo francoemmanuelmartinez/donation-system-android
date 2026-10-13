@@ -17,16 +17,18 @@
         <item>AB-</item>
     </string-array>
 
-    <string-array name="search_blood_types">
+    <string-array name="search_blood_groups">
         <item>Todos</item>
-        <item>O+</item>
-        <item>O-</item>
-        <item>A+</item>
-        <item>A-</item>
-        <item>B+</item>
-        <item>B-</item>
-        <item>AB+</item>
-        <item>AB-</item>
+        <item>O</item>
+        <item>A</item>
+        <item>B</item>
+        <item>AB</item>
+    </string-array>
+
+    <string-array name="search_blood_factors">
+        <item>Todos</item>
+        <item>+</item>
+        <item>-</item>
     </string-array>
 
     <string-array name="phone_types">

@@ -53,8 +53,8 @@ Security was prioritized from Day 1 to meet medical data standards:
 
 ## 4. Synchronization & Workflow
 To support development across multiple devices (e.g., PC and Notebook):
-- **Database Dumps:** Regular SQL exports are stored in `/sql`.
-- **System Links:** Using OS-level symbolic links, we allow the IDE to manage files directly while the local web server (XAMPP) serves them without manual copying.
+- **Database Dumps:** The self-contained SQL dump lives in `/sql` (`donation_system.sql` includes schema, the `reminder_dispatch_control` table and the search indexes). Demo data is optional (`seed_40_donantes_turnos.sql`).
+- **Junction:** The `backend/` folder is exposed to XAMPP via a Windows **directory junction** (`mklink /J "<xampp>\htdocs\donation-system-api" "<repo>\backend"`), so the web server serves the IDE-managed files without manual copying. Full fresh-machine steps are in `INSTALACION.md`.
 
 ---
 

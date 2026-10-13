@@ -9,14 +9,13 @@
     tools:context=".views.fragments.RecoveryPoliciesFragment">
 
     <com.google.android.material.card.MaterialCardView
+        style="@style/Widget.App.Card.Section"
         android:id="@+id/cardNewRecoveryPolicy"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="1dp">
+        android:layout_marginEnd="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"

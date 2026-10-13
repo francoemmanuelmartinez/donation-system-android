@@ -14,3 +14,5 @@
 .cxx
 local.properties
 backend/config_override.db.php
+backend/config_reminders_override.php
+backend/logs/

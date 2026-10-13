@@ -13,9 +13,7 @@ import androidx.fragment.app.FragmentManager;
 import com.francomartinez.donationsystem.R;
 import com.francomartinez.donationsystem.views.fragments.AppointmentsFragment;
 import com.francomartinez.donationsystem.views.fragments.DonationsFragment;
-import com.francomartinez.donationsystem.views.fragments.DonationsHomeFragment;
 import com.francomartinez.donationsystem.views.fragments.DonorFormFragment;
-import com.francomartinez.donationsystem.views.fragments.DonorSearchFragment;
 import com.francomartinez.donationsystem.views.fragments.ScheduleAppointmentFragment;
 import com.francomartinez.donationsystem.views.fragments.SearchFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -39,14 +37,14 @@ public class MainActivity extends AppCompatActivity {
         bottomNavigationView = findViewById(R.id.bottomNavigationView);
 
         if (savedInstanceState == null) {
-            showTab(new DonationsHomeFragment());
+            showTab(DonorFormFragment.newRegisterInstance());
         }
 
         bottomNavigationView.setOnItemSelectedListener(item -> {
             Fragment fragment;
             int itemId = item.getItemId();
             if (itemId == R.id.navigationDonations) {
-                fragment = new DonationsHomeFragment();
+                fragment = DonorFormFragment.newRegisterInstance();
             } else if (itemId == R.id.navigationAppointments) {
                 fragment = new AppointmentsFragment();
             } else {
@@ -72,14 +70,6 @@ public class MainActivity extends AppCompatActivity {
                 .commit();
     }
 
-    public void openDonorRegister() {
-        push(DonorFormFragment.newRegisterInstance());
-    }
-
-    public void openDonorSearch() {
-        push(new DonorSearchFragment());
-    }
-
     public void openDonorDetails() {
         push(DonorFormFragment.newViewInstance());
     }
@@ -92,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
         FragmentManager fm = getSupportFragmentManager();
         fm.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
         fm.beginTransaction()
-                .replace(R.id.fragmentContainerView, new DonationsHomeFragment())
+                .replace(R.id.fragmentContainerView, DonorFormFragment.newRegisterInstance())
                 .commit();
         push(new DonationsFragment());
     }

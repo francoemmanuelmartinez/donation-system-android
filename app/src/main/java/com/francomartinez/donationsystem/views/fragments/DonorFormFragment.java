@@ -72,9 +72,7 @@ public class DonorFormFragment extends Fragment {
     private TextInputLayout textInputLayoutBirthDate;
     private TextInputEditText editTextAge;
     private TextInputEditText editTextCity;
-    private TextInputEditText editTextZipCode;
     private TextInputEditText editTextAddress;
-    private TextInputEditText editTextNeighborhood;
     private LinearLayout layoutPhoneRows;
     private LinearLayout layoutEmailRows;
     private AutoCompleteTextView spinnerBloodType;
@@ -188,9 +186,7 @@ public class DonorFormFragment extends Fragment {
         textInputLayoutBirthDate = view.findViewById(R.id.textInputLayoutBirthDate);
         editTextAge = view.findViewById(R.id.editTextAge);
         editTextCity = view.findViewById(R.id.editTextCity);
-        editTextZipCode = view.findViewById(R.id.editTextZipCode);
         editTextAddress = view.findViewById(R.id.editTextAddress);
-        editTextNeighborhood = view.findViewById(R.id.editTextNeighborhood);
         layoutPhoneRows = view.findViewById(R.id.layoutPhoneRows);
         layoutEmailRows = view.findViewById(R.id.layoutEmailRows);
         spinnerBloodType = view.findViewById(R.id.spinnerBloodType);
@@ -415,9 +411,7 @@ public class DonorFormFragment extends Fragment {
         editTextBirthDate.setText(safe(donor.getBirthDate()));
         updateAge(donor.getBirthDate());
         editTextCity.setText(safe(donor.getCity()));
-        editTextZipCode.setText(safe(donor.getZipCode()));
         editTextAddress.setText(safe(donor.getAddress()));
-        editTextNeighborhood.setText(safe(donor.getNeighborhood()));
         spinnerBloodType.setText(safe(donor.getBloodType()), false);
         editTextPhenotype.setText(safe(donor.getPhenotype()));
         editTextWeight.setText(formatDecimal(donor.getWeight()));
@@ -620,11 +614,8 @@ public class DonorFormFragment extends Fragment {
             editTextBirthDate.setClickable(!viewOnly);
         }
         setEditTextEnabled(editTextCity, !viewOnly);
-        setEditTextEnabled(editTextZipCode, !viewOnly);
         setEditTextEnabled(editTextAddress, !viewOnly);
-        setEditTextEnabled(editTextNeighborhood, !viewOnly);
         setEditTextEnabled(spinnerBloodType, !viewOnly);
-        setEditTextEnabled(editTextPhenotype, !viewOnly);
         setEditTextEnabled(editTextWeight, !viewOnly);
         setEditTextEnabled(editTextHeight, !viewOnly);
         setEditTextEnabled(spinnerAptitude, !viewOnly);
@@ -793,9 +784,7 @@ public class DonorFormFragment extends Fragment {
         donor.setGender(getText(spinnerGender));
         donor.setBirthDate(getText(editTextBirthDate));
         donor.setCity(getText(editTextCity));
-        donor.setZipCode(getText(editTextZipCode));
         donor.setAddress(getText(editTextAddress));
-        donor.setNeighborhood(getText(editTextNeighborhood));
         donor.setBloodType(getText(spinnerBloodType));
         donor.setPhenotype(getText(editTextPhenotype));
         donor.setWeight(parseNullableDouble(getText(editTextWeight)));

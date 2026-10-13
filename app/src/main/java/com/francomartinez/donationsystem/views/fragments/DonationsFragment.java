@@ -25,6 +25,7 @@ import com.francomartinez.donationsystem.viewmodels.SharedDonorViewModel;
 import com.francomartinez.donationsystem.views.MainActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -42,7 +43,7 @@ public class DonationsFragment extends Fragment {
     private TextView textViewDonorContextName;
     private TextView textViewDonorContextDni;
     private TextView textViewDonorContextBlood;
-    private TextView textViewDonorContextStatusBadge;
+    private Chip chipDonorContextStatus;
     private MaterialButton buttonSeeDonorData;
     private TextInputEditText editTextHto;
     private TextInputEditText editTextPlateletsCount;
@@ -75,7 +76,7 @@ public class DonationsFragment extends Fragment {
         textViewDonorContextName = view.findViewById(R.id.textViewDonorContextName);
         textViewDonorContextDni = view.findViewById(R.id.textViewDonorContextDni);
         textViewDonorContextBlood = view.findViewById(R.id.textViewDonorContextBlood);
-        textViewDonorContextStatusBadge = view.findViewById(R.id.textViewDonorContextStatusBadge);
+        chipDonorContextStatus = view.findViewById(R.id.chipDonorContextStatus);
         buttonSeeDonorData = view.findViewById(R.id.buttonSeeDonorData);
         editTextHto = view.findViewById(R.id.editTextHto);
         editTextPlateletsCount = view.findViewById(R.id.editTextPlateletsCount);
@@ -153,7 +154,7 @@ public class DonationsFragment extends Fragment {
                 textViewDonorContextName.setText(R.string.hint_select_donor);
                 textViewDonorContextDni.setText("");
                 textViewDonorContextBlood.setText("");
-                textViewDonorContextStatusBadge.setVisibility(View.GONE);
+                chipDonorContextStatus.setVisibility(View.GONE);
                 buttonSeeDonorData.setEnabled(false);
             } else {
                 textViewDonorContextName.setText(buildFullName(donor));
@@ -161,20 +162,46 @@ public class DonationsFragment extends Fragment {
                 textViewDonorContextBlood.setText(safe(donor.getBloodType()));
                 bindBadge(donor);
                 buttonSeeDonorData.setEnabled(true);
+                applyPreselectedProcedure();
             }
         });
+    }
+
+    private void applyPreselectedProcedure() {
+        String procedure = sharedDonorViewModel.consumeSelectedProcedure();
+        if (procedure == null) {
+            return;
+        }
+        int targetId;
+        switch (procedure) {
+            case "PLASMA":
+                targetId = R.id.buttonTypePlasma;
+                break;
+            case "PLATELETS":
+                targetId = R.id.buttonTypePlatelets;
+                break;
+            case "BLOOD":
+                targetId = R.id.buttonTypeBlood;
+                break;
+            default:
+                return;
+        }
+        mutexUpdating = true;
+        toggleGroupDonationType.clearChecked();
+        mutexUpdating = false;
+        toggleGroupDonationType.check(targetId);
     }
 
     private void bindBadge(Donor donor) {
         boolean enVeda = "EN_VEDA".equals(donor.getStatus());
         if (enVeda) {
-            textViewDonorContextStatusBadge.setText(R.string.badge_veda);
-            textViewDonorContextStatusBadge.setBackgroundResource(R.drawable.bg_badge_red);
+            chipDonorContextStatus.setText(R.string.badge_veda);
+            chipDonorContextStatus.setChipBackgroundColorResource(R.color.veda_red);
         } else {
-            textViewDonorContextStatusBadge.setText(R.string.badge_apto);
-            textViewDonorContextStatusBadge.setBackgroundResource(R.drawable.bg_badge_green);
+            chipDonorContextStatus.setText(R.string.badge_apto);
+            chipDonorContextStatus.setChipBackgroundColorResource(R.color.aptitude_green);
         }
-        textViewDonorContextStatusBadge.setVisibility(View.VISIBLE);
+        chipDonorContextStatus.setVisibility(View.VISIBLE);
     }
 
     private String buildFullName(Donor donor) {

@@ -14,7 +14,7 @@ import org.junit.Test;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 public class SearchViewModelIntegrationTest extends BaseApiTest {
 
@@ -22,39 +22,47 @@ public class SearchViewModelIntegrationTest extends BaseApiTest {
     public final InstantTaskExecutorRule instantTaskExecutorRule = new InstantTaskExecutorRule();
 
     @Test
-    public void searchReturnsOnlyAptoDonors() throws Exception {
+    public void searchByTextReturnsMatchingDonors() throws Exception {
         int aptoId = TestDatabase.insertDonor("55555555", "Juan", "Sosa", "O+", "APTO", null);
         TestDatabase.insertDonorPhone(aptoId, "3515555555", true);
-        int vedaId = TestDatabase.insertDonor("66666666", "Pedro", "Rios", "O+", "APTO", null);
-        TestDatabase.insertDonorPhone(vedaId, "3516666666", true);
-        TestDatabase.execute("UPDATE donors SET status = 'EN_VEDA' WHERE id = " + vedaId);
+        TestDatabase.insertDonor("66666666", "Pedro", "Rios", "O+", "APTO", null);
 
         SearchViewModel vm = new SearchViewModel();
-        vm.searchByBloodType("O+");
+        vm.search("Sosa", "", "");
 
         Resource<List<SearchResultItem>> result = VmTestUtils.await(vm.getSearchResult(), 5000);
         assertEquals(Resource.Status.SUCCESS, result.status);
         assertEquals(1, result.data.size());
+        assertEquals("Sosa", result.data.get(0).getLastName());
         assertEquals("Juan", result.data.get(0).getFirstName());
     }
 
     @Test
-    public void searchWithoutMatchesReturnsEmptyList() throws Exception {
+    public void searchReturnsDonorsInVeda() throws Exception {
+        int vedaId = TestDatabase.insertDonor("66666666", "Pedro", "Rios", "O+", "APTO", null);
+        // Veda por recuperación post-donación: next_eligible_date futuro (el estado se calcula en SQL).
+        TestDatabase.execute("UPDATE donors SET next_eligible_date = DATE_ADD(CURDATE(), INTERVAL 30 DAY) "
+                + "WHERE id = " + vedaId);
+
         SearchViewModel vm = new SearchViewModel();
-        vm.searchByBloodType("AB-");
+        vm.search("66666666", "", "");
 
         Resource<List<SearchResultItem>> result = VmTestUtils.await(vm.getSearchResult(), 5000);
         assertEquals(Resource.Status.SUCCESS, result.status);
-        assertTrue(result.data.isEmpty());
+        assertEquals(1, result.data.size());
+        assertFalse("Los donantes en veda no deben quedar excluidos", "APTO".equals(result.data.get(0).getState()));
     }
 
     @Test
-    public void searchEmptyQueryReturnsEmptyList() throws Exception {
+    public void searchEmptyQueryReturnsAllDonors() throws Exception {
+        TestDatabase.insertDonor("55555555", "Juan", "Sosa", "O+", "APTO", null);
+        TestDatabase.insertDonor("66666666", "Pedro", "Rios", "O+", "APTO", null);
+
         SearchViewModel vm = new SearchViewModel();
-        vm.searchByBloodType("");
+        vm.search("", "", "");
 
         Resource<List<SearchResultItem>> result = VmTestUtils.await(vm.getSearchResult(), 5000);
         assertEquals(Resource.Status.SUCCESS, result.status);
-        assertTrue(result.data.isEmpty());
+        assertEquals(2, result.data.size());
     }
 }

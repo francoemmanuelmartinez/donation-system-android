@@ -5,10 +5,16 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+$requestMethod = $_SERVER['REQUEST_METHOD'] ?? '';
+if ($requestMethod === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
+
+// Zona horaria del banco (Argentina). PHP en XAMPP viene con UTC/Europe-Berlin
+// por defecto y MySQL corre en hora local: fijarse explícitamente evita
+// desfases de 5h en la ventana de envío y en el cálculo de HOY.
+date_default_timezone_set('America/Argentina/Buenos_Aires');
 
 $host = "localhost";
 $db_name = "donation_system";
@@ -22,9 +28,14 @@ if (file_exists(__DIR__ . '/config_override.db.php')) {
 }
 
 try {
-    $conn = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8mb4", $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    // Timeout de conexion corto: si MySQL deja de responder, la API falla en
+    // segundos con 500 en vez de colgar la request hasta el timeout del cliente.
+    $options = [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_TIMEOUT            => 5,
+    ];
+    $conn = new PDO("mysql:host=$host;dbname=$db_name;charset=utf8mb4", $username, $password, $options);
 } catch(PDOException $e) {
     http_response_code(500);
     echo json_encode([

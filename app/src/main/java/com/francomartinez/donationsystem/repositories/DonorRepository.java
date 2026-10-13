@@ -5,7 +5,6 @@ import com.francomartinez.donationsystem.api.RetrofitClient;
 import com.francomartinez.donationsystem.models.ApiResponse;
 import com.francomartinez.donationsystem.models.Donor;
 import com.francomartinez.donationsystem.models.MedicalRestriction;
-import com.francomartinez.donationsystem.models.SearchResultItem;
 import com.francomartinez.donationsystem.models.requests.AssignRestrictionRequest;
 
 import java.util.List;
@@ -27,13 +26,13 @@ public class DonorRepository {
         call.enqueue(callback);
     }
 
-    public void saveDonor(Donor donor, Callback<ApiResponse<Map<String, Object>>> callback) {
-        Call<ApiResponse<Map<String, Object>>> call = apiService.saveDonor(donor);
+    public void getDonorById(int id, Callback<ApiResponse<Donor>> callback) {
+        Call<ApiResponse<Donor>> call = apiService.getDonorById(id);
         call.enqueue(callback);
     }
 
-    public void searchDonorsByDni(String dni, Callback<ApiResponse<List<SearchResultItem>>> callback) {
-        Call<ApiResponse<List<SearchResultItem>>> call = apiService.searchDonorsByDni(dni);
+    public void saveDonor(Donor donor, Callback<ApiResponse<Map<String, Object>>> callback) {
+        Call<ApiResponse<Map<String, Object>>> call = apiService.saveDonor(donor);
         call.enqueue(callback);
     }
 

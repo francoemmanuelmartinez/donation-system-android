@@ -2,21 +2,18 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/cardDonorItem"
+    style="@style/Widget.App.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="16dp"
-    android:layout_marginEnd="16dp"
-    android:layout_marginBottom="8dp"
-    android:clickable="true"
-    android:focusable="true"
-    app:cardCornerRadius="12dp">
+    android:layout_marginStart="@dimen/card_margin_h"
+    android:layout_marginEnd="@dimen/card_margin_h"
+    android:layout_marginBottom="@dimen/card_margin_v">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:padding="@dimen/card_padding">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -25,7 +22,7 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/textViewDonorCardName"
+                android:id="@+id/textViewDonorName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="?attr/textAppearanceTitleSmall"
@@ -33,25 +30,100 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/textViewDonorCardDni"
+                android:id="@+id/textViewDonorMeta"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceBodySmall"
                 android:textColor="@color/on_surface_variant" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupDonorState"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                app:chipSpacingHorizontal="8dp">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipStatePrimary"
+                    style="@style/Widget.Material3.Chip.Suggestion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="false"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    app:chipBackgroundColor="@color/aptitude_green" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipBloodBadge"
+                    style="@style/Widget.Material3.Chip.Suggestion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="false"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    app:chipBackgroundColor="@color/medical_blue" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipStateSecondary"
+                    style="@style/Widget.Material3.Chip.Suggestion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="false"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    app:chipBackgroundColor="@color/badge_grey" />
+            </com.google.android.material.chip.ChipGroup>
+
+            <TextView
+                android:id="@+id/textViewDonorVeda"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/on_surface_variant"
+                android:visibility="gone" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipUpcomingAppointment"
+                style="@style/Widget.Material3.Chip.Suggestion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:checkable="false"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                android:visibility="gone"
+                app:chipBackgroundColor="@color/medical_blue_dark"
+                app:chipIcon="@drawable/ic_calendar"
+                app:chipIconTint="@color/white" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/textViewDonorCardStatusBadge"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp"
-            android:textColor="@color/white"
-            android:textStyle="bold"
-            android:background="@drawable/bg_badge_green" />
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonContact"
+                style="@style/Widget.Material3.Button.IconButton"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="4dp"
+                android:contentDescription="@string/cd_contact_whatsapp"
+                android:visibility="gone"
+                app:icon="@drawable/ic_whatsapp"
+                app:iconSize="24dp"
+                app:iconTint="@color/on_surface_variant" />
+        </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

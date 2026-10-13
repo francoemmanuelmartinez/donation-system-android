@@ -7,6 +7,7 @@ import com.francomartinez.donationsystem.models.ApiResponse;
 import com.francomartinez.donationsystem.models.ContactEmail;
 import com.francomartinez.donationsystem.models.ContactPhone;
 import com.francomartinez.donationsystem.models.Donor;
+import com.francomartinez.donationsystem.models.SearchPage;
 import com.francomartinez.donationsystem.models.requests.AssignRestrictionRequest;
 
 import org.junit.Test;
@@ -85,23 +86,30 @@ public class DonorsIntegrationTest extends BaseApiTest {
     }
 
     @Test
-    public void searchReturnsOnlyAptoDonors() throws Exception {
+    public void searchByTextAndGroupReturnsMatchingDonors() throws Exception {
         int aptoId = TestDatabase.insertDonor("55555555", "Juan", "Sosa", "O+", "APTO", null);
         TestDatabase.insertDonorPhone(aptoId, "3515555555", true);
         int vedaId = TestDatabase.insertDonor("66666666", "Pedro", "Rios", "O+", "APTO", null);
         TestDatabase.insertDonorPhone(vedaId, "3516666666", true);
-        // Not in veda filter: another blood type.
-        TestDatabase.insertDonor("77777777", "Luis", "Toro", "O-", "APTO", null);
+        // Distinto grupo: no debe aparecer al filtrar por "O".
+        TestDatabase.insertDonor("77777777", "Luis", "Toro", "A-", "APTO", null);
 
-        // Mark Pedro as EN_VEDA directly (active restriction not required for this filter).
-        TestDatabase.execute("UPDATE donors SET status = 'EN_VEDA' WHERE id = " + vedaId);
+        // Marca a Pedro en veda por recuperación (estado calculado en SQL a partir de next_eligible_date).
+        TestDatabase.execute("UPDATE donors SET next_eligible_date = DATE_ADD(CURDATE(), INTERVAL 30 DAY) "
+                + "WHERE id = " + vedaId);
 
-        ApiResponse<List<com.francomartinez.donationsystem.models.SearchResultItem>> response =
-                ApiTestClient.call(ApiTestClient.api().searchDonorsByBloodType("O+"));
-        assertTrue(response.isSuccess());
-        assertNotNull(response.getData());
-        assertEquals(1, response.getData().size());
-        assertEquals("Juan", response.getData().get(0).getFirstName());
+        ApiResponse<SearchPage> byGroup = ApiTestClient.call(
+                ApiTestClient.api().searchDonors("", "O", "", 20, 0));
+        assertTrue(byGroup.isSuccess());
+        assertNotNull(byGroup.getData());
+        assertEquals(2, byGroup.getData().getItems().size());
+
+        ApiResponse<SearchPage> byText = ApiTestClient.call(
+                ApiTestClient.api().searchDonors("Sosa", "", "", 20, 0));
+        assertTrue(byText.isSuccess());
+        assertNotNull(byText.getData());
+        assertEquals(1, byText.getData().getItems().size());
+        assertEquals("Juan", byText.getData().getItems().get(0).getFirstName());
     }
 
     @Test

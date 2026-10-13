@@ -26,9 +26,10 @@ import com.francomartinez.donationsystem.models.SearchResultItem;
 import com.francomartinez.donationsystem.models.requests.CreateAppointmentRequest;
 import com.francomartinez.donationsystem.utils.Resource;
 import com.francomartinez.donationsystem.viewmodels.AppointmentsViewModel;
-import com.francomartinez.donationsystem.viewmodels.DonorSearchViewModel;
+import com.francomartinez.donationsystem.viewmodels.SearchViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.button.MaterialButtonToggleGroup;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.datepicker.CalendarConstraints;
 import com.google.android.material.datepicker.DateValidatorPointForward;
 import com.google.android.material.datepicker.MaterialDatePicker;
@@ -52,12 +53,13 @@ public class ScheduleAppointmentFragment extends Fragment {
     private ScrollView scrollScheduleConfirm;
     private TextView textViewScheduleDonorName;
     private TextView textViewScheduleDonorDni;
-    private TextView textViewScheduleDonorStatusBadge;
+    private Chip chipScheduleDonorStatus;
+    private Chip chipScheduleUpcomingAppointment;
     private TextView textViewScheduleConfirmation;
     private MaterialButtonToggleGroup toggleGroupScheduleProcedure;
     private MaterialButton buttonConfirmAppointment;
 
-    private DonorSearchViewModel searchViewModel;
+    private SearchViewModel searchViewModel;
     private AppointmentsViewModel appointmentsViewModel;
     private DonorCardAdapter adapter;
 
@@ -81,15 +83,17 @@ public class ScheduleAppointmentFragment extends Fragment {
         scrollScheduleConfirm = view.findViewById(R.id.scrollScheduleConfirm);
         textViewScheduleDonorName = view.findViewById(R.id.textViewScheduleDonorName);
         textViewScheduleDonorDni = view.findViewById(R.id.textViewScheduleDonorDni);
-        textViewScheduleDonorStatusBadge = view.findViewById(R.id.textViewScheduleDonorStatusBadge);
+        chipScheduleDonorStatus = view.findViewById(R.id.chipScheduleDonorStatus);
+        chipScheduleUpcomingAppointment = view.findViewById(R.id.chipScheduleUpcomingAppointment);
         textViewScheduleConfirmation = view.findViewById(R.id.textViewScheduleConfirmation);
         toggleGroupScheduleProcedure = view.findViewById(R.id.toggleGroupScheduleProcedure);
         buttonConfirmAppointment = view.findViewById(R.id.buttonConfirmAppointment);
 
-        searchViewModel = new ViewModelProvider(this).get(DonorSearchViewModel.class);
+        searchViewModel = new ViewModelProvider(this).get(SearchViewModel.class);
         appointmentsViewModel = new ViewModelProvider(this).get(AppointmentsViewModel.class);
 
-        adapter = new DonorCardAdapter(item -> onDonorCardClick(item));
+        adapter = new DonorCardAdapter(DonorCardAdapter.Mode.COMPACT);
+        adapter.setOnDonorClickListener(this::onDonorCardClick);
         recyclerViewDonorSearch.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerViewDonorSearch.setAdapter(adapter);
 
@@ -110,15 +114,15 @@ public class ScheduleAppointmentFragment extends Fragment {
     }
 
     private void performSearch() {
-        String dni = editTextDonorSearchDni.getText() != null
+        String query = editTextDonorSearchDni.getText() != null
                 ? editTextDonorSearchDni.getText().toString().trim()
                 : "";
-        if (dni.isEmpty()) {
-            Toast.makeText(requireContext(), R.string.hint_search_dni, Toast.LENGTH_SHORT).show();
+        if (query.length() < 2) {
+            Toast.makeText(requireContext(), R.string.msg_search_min_chars, Toast.LENGTH_SHORT).show();
             return;
         }
         hideKeyboard();
-        searchViewModel.searchByDni(dni);
+        searchViewModel.search(query, "", "");
     }
 
     private void onSearchResult(Resource<List<SearchResultItem>> result) {
@@ -208,6 +212,22 @@ public class ScheduleAppointmentFragment extends Fragment {
         }
     }
 
+    private String procedureLabel(String procedure) {
+        if (procedure == null) {
+            return "";
+        }
+        switch (procedure.trim().toUpperCase(Locale.ROOT)) {
+            case "PLASMA":
+                return getString(R.string.procedure_plasma);
+            case "PLATELETS":
+                return getString(R.string.procedure_platelets);
+            case "BLOOD":
+                return getString(R.string.procedure_blood);
+            default:
+                return procedure;
+        }
+    }
+
     private void showTimePicker() {
         TimePickerDialog timePicker = new TimePickerDialog(requireContext(),
                 (dialog, hourOfDay, minute) -> {
@@ -227,11 +247,20 @@ public class ScheduleAppointmentFragment extends Fragment {
 
         boolean enVeda = "EN_VEDA".equals(selectedItem.getStatus());
         if (enVeda) {
-            textViewScheduleDonorStatusBadge.setText(R.string.badge_veda);
-            textViewScheduleDonorStatusBadge.setBackgroundResource(R.drawable.bg_badge_red);
+            chipScheduleDonorStatus.setText(R.string.badge_veda);
+            chipScheduleDonorStatus.setChipBackgroundColorResource(R.color.veda_red);
         } else {
-            textViewScheduleDonorStatusBadge.setText(R.string.badge_apto);
-            textViewScheduleDonorStatusBadge.setBackgroundResource(R.drawable.bg_badge_green);
+            chipScheduleDonorStatus.setText(R.string.badge_apto);
+            chipScheduleDonorStatus.setChipBackgroundColorResource(R.color.aptitude_green);
+        }
+
+        if (selectedItem.hasUpcomingAppointment()) {
+            chipScheduleUpcomingAppointment.setVisibility(View.VISIBLE);
+            chipScheduleUpcomingAppointment.setText(getString(R.string.label_next_appointment,
+                    procedureLabel(selectedItem.getNextAppointmentProcedure()),
+                    formatDisplayDate(selectedItem.getNextAppointmentDate())));
+        } else {
+            chipScheduleUpcomingAppointment.setVisibility(View.GONE);
         }
 
         textViewScheduleConfirmation.setText(getString(R.string.msg_schedule_confirmation,
