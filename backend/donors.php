@@ -41,10 +41,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             return $e;
         }, $emailStmt->fetchAll());
 
-        // Active Medical Restrictions
-        $restrStmt = $conn->prepare("SELECT dr.id, r.name AS restrictionName, dr.start_date AS startDate, dr.veda_days AS vedaDays, dr.calculated_end_date AS calculatedEndDate, dr.eligible_workday_return_date AS eligibleWorkdayReturnDate, dr.notes FROM donor_restrictions dr JOIN restrictions r ON dr.restriction_id = r.id WHERE dr.donor_id = :donorId AND dr.eligible_workday_return_date >= CURRENT_DATE() ORDER BY dr.eligible_workday_return_date DESC");
+        // Active Medical Restrictions (la veda permanente nunca vence)
+        $restrStmt = $conn->prepare("SELECT dr.id, dr.restriction_id AS restrictionId, r.name AS restrictionName, dr.start_date AS startDate, dr.veda_days AS vedaDays, dr.is_permanent AS isPermanent, dr.calculated_end_date AS calculatedEndDate, dr.eligible_workday_return_date AS eligibleWorkdayReturnDate, dr.notes FROM donor_restrictions dr JOIN restrictions r ON dr.restriction_id = r.id WHERE dr.donor_id = :donorId AND (dr.is_permanent = 1 OR dr.eligible_workday_return_date >= CURRENT_DATE()) ORDER BY dr.is_permanent DESC, dr.eligible_workday_return_date DESC, dr.id DESC");
         $restrStmt->execute(['donorId' => $donorId]);
-        $restrictions = $restrStmt->fetchAll();
+        $restrictions = array_map(function ($r) {
+            $r['isPermanent'] = (bool)$r['isPermanent'];
+            return $r;
+        }, $restrStmt->fetchAll());
 
         $donor['activeRestrictions'] = $restrictions;
         $donor['status'] = (!empty($restrictions)) ? 'EN_VEDA' : 'APTO';

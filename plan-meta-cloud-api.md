@@ -60,6 +60,7 @@
 - `send_reminders.php`: **hecho** — nuevo `buildMetaParams()` y el dispatcher pasa `$metaParams` (nombre/procedimiento/fecha/hora) a `sendWhatsappText()` en el envío y el reintento.
 - Retry, logs, lock, ventana, warm-up, pacing: **sin cambios**.
 - **Pendiente (no es código):** completar `META_TOKEN` / `META_PHONE_NUMBER_ID` y cambiar `REMINDER_PROVIDER='meta'` cuando haya WABA + plantilla aprobados.
+- **Firma unificada:** `sendWhatsappText($number, $text, $params)` ya recibe las variables de plantilla; OpenWA usa el texto libre (`$text`) y Meta las variables (`$params`). El dispatcher arma **ambos** por cada candidato.
 
 ## Fase 3 — Pruebas y corte
 1. Probar con **test number sandbox + 5 destinatarios verificados**: el circuito completo se valida **sin costo ni tarjeta**, usando primero `hello_world` (al instante) y luego `recordatorio_turno` (una vez APPROVED).

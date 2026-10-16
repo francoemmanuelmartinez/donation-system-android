@@ -6,6 +6,9 @@ import com.francomartinez.donationsystem.models.ApiResponse;
 import com.francomartinez.donationsystem.models.Donor;
 import com.francomartinez.donationsystem.models.MedicalRestriction;
 import com.francomartinez.donationsystem.models.requests.AssignRestrictionRequest;
+import com.francomartinez.donationsystem.models.requests.AssignRestrictionsRequest;
+import com.francomartinez.donationsystem.models.requests.RevokeRestrictionRequest;
+import com.francomartinez.donationsystem.models.requests.UpdateRestrictionRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -43,6 +46,21 @@ public class DonorRepository {
 
     public void assignRestriction(AssignRestrictionRequest request, Callback<ApiResponse<Map<String, Object>>> callback) {
         Call<ApiResponse<Map<String, Object>>> call = apiService.assignDonorRestriction(request);
+        call.enqueue(callback);
+    }
+
+    public void assignRestrictions(AssignRestrictionsRequest request, Callback<ApiResponse<Map<String, Object>>> callback) {
+        Call<ApiResponse<Map<String, Object>>> call = apiService.assignDonorRestrictions(request);
+        call.enqueue(callback);
+    }
+
+    public void updateRestriction(UpdateRestrictionRequest request, Callback<ApiResponse<Map<String, Object>>> callback) {
+        Call<ApiResponse<Map<String, Object>>> call = apiService.updateDonorRestriction(request);
+        call.enqueue(callback);
+    }
+
+    public void revokeRestriction(RevokeRestrictionRequest request, Callback<ApiResponse<Map<String, Object>>> callback) {
+        Call<ApiResponse<Map<String, Object>>> call = apiService.revokeDonorRestriction(request);
         call.enqueue(callback);
     }
 }

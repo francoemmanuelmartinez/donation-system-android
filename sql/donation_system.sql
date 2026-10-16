@@ -1,6 +1,7 @@
 -- Donation System (Plasma & Platelets Bank) Schema
 -- Database: donation_system
 
+SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `donation_procedures`;
 DROP TABLE IF EXISTS `donations`;
@@ -135,9 +136,10 @@ CREATE TABLE `donor_restrictions` (
   `donor_id` INT NOT NULL,
   `restriction_id` INT NOT NULL,
   `start_date` DATE NOT NULL,
-  `veda_days` INT NOT NULL,
-  `calculated_end_date` DATE NOT NULL,
-  `eligible_workday_return_date` DATE NOT NULL,
+  `veda_days` INT NULL,
+  `is_permanent` TINYINT(1) NOT NULL DEFAULT 0,
+  `calculated_end_date` DATE NULL,
+  `eligible_workday_return_date` DATE NULL,
   `notes` TEXT NULL,
   `created_by_user_id` INT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -246,8 +248,10 @@ CREATE INDEX IF NOT EXISTS `idx_appointments_scheduled`
     ON `appointments` (`donor_id`, `status`, `appointment_date`);
 
 -- --------------------------------------------------------
--- Initial Seed Data: Default Approved Director Account
--- Password: "adminpassword" (BCRYPT hash)
+-- Initial Seed Data: Default Approved Accounts
+-- Password director@clinic.org: "password" (BCRYPT hash)
+-- Password admin: "admin" (BCRYPT hash)
 -- --------------------------------------------------------
 INSERT INTO `users` (`id`, `first_name`, `last_name`, `dni`, `email`, `password_hash`, `role`, `is_approved`) VALUES
-(1, 'Directora', 'General', '00000000', 'director@clinic.org', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'DIRECTORA', 1);
+(1, 'Directora', 'General', '00000000', 'director@clinic.org', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'DIRECTORA', 1),
+(2, 'Admin', 'Admin', '11111111', 'admin', '$2y$10$8mw30qAmG6yCjygTJcOEvOp3OdWlYMoFpXEUWqwh8eNa5zkM9Lj8K', 'DIRECTORA', 1);

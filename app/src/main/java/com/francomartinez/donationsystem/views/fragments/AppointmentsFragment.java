@@ -226,6 +226,7 @@ public class AppointmentsFragment extends Fragment {
 
     private void onAppointmentDonorClick(Appointment appointment) {
         pendingAppointmentProcedure = appointment.getTargetProcedure();
+        sharedDonorViewModel.setSelectedAppointment(appointment);
         donorViewModel.getDonorById(appointment.getDonorId());
     }
 

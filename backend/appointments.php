@@ -14,6 +14,12 @@ function tryLazySweep($conn) {
             return;
         }
 
+        // Lazy sweep desactivable por máquina: con false, abrir la Agenda no
+        // dispara envíos; el único disparo es el botón (action=dispatch_reminders).
+        if (defined('REMINDER_LAZY_SWEEP_ENABLED') && REMINDER_LAZY_SWEEP_ENABLED === false) {
+            return;
+        }
+
         $stmt = $conn->prepare("SELECT last_run_at FROM reminder_dispatch_control WHERE id = 1");
         $stmt->execute();
         $row = $stmt->fetch();

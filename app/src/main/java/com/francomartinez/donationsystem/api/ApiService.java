@@ -11,10 +11,13 @@ import com.francomartinez.donationsystem.models.Statistics;
 import com.francomartinez.donationsystem.models.User;
 import com.francomartinez.donationsystem.models.requests.ApproveUserRequest;
 import com.francomartinez.donationsystem.models.requests.AssignRestrictionRequest;
+import com.francomartinez.donationsystem.models.requests.AssignRestrictionsRequest;
 import com.francomartinez.donationsystem.models.requests.CreateAppointmentRequest;
 import com.francomartinez.donationsystem.models.requests.LoginRequest;
 import com.francomartinez.donationsystem.models.requests.RegisterRequest;
 import com.francomartinez.donationsystem.models.requests.ReminderRequest;
+import com.francomartinez.donationsystem.models.requests.RevokeRestrictionRequest;
+import com.francomartinez.donationsystem.models.requests.UpdateRestrictionRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -98,6 +101,15 @@ public interface ApiService {
 
     @POST("restrictions.php?action=assign")
     Call<ApiResponse<Map<String, Object>>> assignDonorRestriction(@Body AssignRestrictionRequest request);
+
+    @POST("restrictions.php?action=assign")
+    Call<ApiResponse<Map<String, Object>>> assignDonorRestrictions(@Body AssignRestrictionsRequest request);
+
+    @POST("restrictions.php?action=update")
+    Call<ApiResponse<Map<String, Object>>> updateDonorRestriction(@Body UpdateRestrictionRequest request);
+
+    @POST("restrictions.php?action=revoke")
+    Call<ApiResponse<Map<String, Object>>> revokeDonorRestriction(@Body RevokeRestrictionRequest request);
 
     @POST("restrictions.php?action=delete")
     Call<ApiResponse<Map<String, Object>>> deleteRestriction(@Body Map<String, Object> body);

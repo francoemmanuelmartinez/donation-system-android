@@ -88,7 +88,7 @@
                     android:contentDescription="@string/dashboard_menu_donations"
                     android:padding="10dp"
                     android:src="@drawable/ic_workflow"
-                    android:tint="@color/on_primary" />
+                    app:tint="@color/on_primary" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -128,7 +128,7 @@
                     android:contentDescription="@string/dashboard_menu_statistics"
                     android:padding="10dp"
                     android:src="@drawable/ic_statistics"
-                    android:tint="@color/on_primary" />
+                    app:tint="@color/on_primary" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -168,7 +168,7 @@
                     android:contentDescription="@string/dashboard_menu_restrictions"
                     android:padding="10dp"
                     android:src="@drawable/ic_restrictions"
-                    android:tint="@color/on_primary" />
+                    app:tint="@color/on_primary" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -208,7 +208,7 @@
                     android:contentDescription="@string/dashboard_menu_users"
                     android:padding="10dp"
                     android:src="@drawable/ic_users"
-                    android:tint="@color/on_primary" />
+                    app:tint="@color/on_primary" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -249,7 +249,7 @@
                     android:contentDescription="@string/dashboard_menu_recovery_policies"
                     android:padding="10dp"
                     android:src="@drawable/ic_recovery"
-                    android:tint="@color/on_primary" />
+                    app:tint="@color/on_primary" />
 
                 <TextView
                     android:layout_width="wrap_content"

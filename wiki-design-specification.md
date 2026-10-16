@@ -11,7 +11,7 @@ This document serves as the official technical specification and design guide fo
 - **Navigation:** Root layout structured around a `CoordinatorLayout` or `ConstraintLayout` hosting a fixed **`BottomNavigationView`** at the bottom of the screen.
 - **Data Input:** Use `TextInputLayout` with `style="@style/Widget.Material3.TextInputLayout.OutlinedBox"` to implement space-saving floating labels.
 - **Keyboard Optimization:** Always specify `android:inputType="number"` or `"numberDecimal"` on numerical input fields (ID, Phone, Weight, Height, HTO, Platelets) to trigger the correct software keyboard.
-- **Dropdown Selection Rule:** Pure selector dropdowns (`AutoCompleteTextView` inside a `TextInputLayout` with `app:endIconMode="dropdown_menu"`) must set `android:inputType="none"` on the `AutoCompleteTextView` so tapping the field opens the list **without** invoking the soft keyboard. Applies to `spinnerGender`, `spinnerBloodType`, `spinnerAptitude`, `spinnerSearchGroup` and `spinnerSearchFactor`. Dropdowns that require type-to-filter (e.g., the restrictions dictionary `spinnerAddRestriction`) keep the keyboard visible and **must hide it after an item is selected** by calling `KeyboardUtils.hide(...)` inside the `OnItemClickListener`. `KeyboardUtils` (`utils/KeyboardUtils.java`) is the single helper centralizing `InputMethodManager.hideSoftInputFromWindow`.
+- **Dropdown Selection Rule:** Pure selector dropdowns (`AutoCompleteTextView` inside a `TextInputLayout` with `app:endIconMode="dropdown_menu"`) must set `android:inputType="none"` on the `AutoCompleteTextView` so tapping the field opens the list **without** invoking the soft keyboard. Applies to `spinnerGender`, `spinnerBloodType`, `spinnerSearchGroup` and `spinnerSearchFactor`. Dropdowns that require type-to-filter (e.g., the restrictions dictionary `spinnerAddRestriction` on the donations screen) keep the keyboard visible and **must hide it after an item is selected** by calling `KeyboardUtils.hide(...)` inside the `OnItemClickListener`. `KeyboardUtils` (`utils/KeyboardUtils.java`) is the single helper centralizing `InputMethodManager.hideSoftInputFromWindow`.
 - **List Rendering:** Mandatory usage of `RecyclerView` paired with a `ListAdapter` or `RecyclerView.Adapter` for memory-efficient scrollable lists.
 
 ---
@@ -78,12 +78,7 @@ Handles three logical UI states driven by Java (`setMode`): **Registration (`MOD
   - Phenotype (`@+id/editTextPhenotype`).
   - Weight / Height row (`@+id/editTextWeight` / `@+id/editTextHeight`, `inputType="numberDecimal"`) — moved from the Donations screen; persisted on `donors` and snapshotted into each `donations` row.
   - Last donation date (`@+id/editTextLastDonationDate`, read-only): its container `@+id/textInputLayoutLastDonationDate` is **hidden (`GONE`) in `MODE_REGISTER`** and visible read-only in `MODE_VIEW` / `MODE_MODIFY`.
-  - **Aptitude selector** (`@+id/spinnerAptitude`, hint `"Aptitud para donar"`, `inputType="none"`): a dropdown with values `"Apto"` / `"No apto"` that **replaces the old status badge**. `applyAptitudeState()` colors the **stroke and label** green/red (`aptitude_green` / `veda_red` for the stroke, `aptitude_green_soft` / `aptitude_red_soft` for the label) while keeping the `navy_field` fill. Selecting `"No apto"` reveals the exclusion block (`@+id/layoutExclusionDetails`, stacked vertically):
-    - Restriction selector `@+id/spinnerAddRestriction` (dictionary dropdown, **editable** to allow type-to-filter; hides the keyboard after selection via `KeyboardUtils.hide(...)`).
-    - Selected restriction chips `@+id/chipGroupRestrictions` (rendered by `addRestrictionChip`).
-    - Veda days `@+id/editTextVedaDays` (auto-computes the return date through `setupVedaDaysWatcher`).
-    - Multiline observaciones `@+id/editTextRestrictionNotes` (`gravity="top"`, `minLines="4"`).
-    - Return date `@+id/editTextVedaReturnDate` (read-only).
+  - **Aptitude / restrictions are no longer part of this form** (see §2 `DonationsFragment`): the alta always registers the donor as `APTO`. The former `spinnerAptitude` + `layoutExclusionDetails` block (restriction selector `spinnerAddRestriction`, chips `chipGroupRestrictions`, veda days, notes, return date) was removed from `fragment_donor_form.xml`.
 - **Dropdown alignment rule:** every `AutoCompleteTextView` uses `style="@style/Widget.Material3.TextInputEditText.OutlinedBox"` (or the `NavyField` child style) so its internal padding and font size match the regular `TextInputEditText` fields and the text never overflows the container.
 
 #### Lower Sticky Action Buttons:
@@ -106,6 +101,10 @@ Captures daily clinical measurements linked to an active, validated donor.
     *XML Configuration:* The single-selection restriction attribute **must be disabled** (`app:singleSelection="false"`) to allow concurrent apheresis options (e.g., extracting both Plasma + Platelets in a single session).
     *Java Mutex Logic Requirement:* Whole Blood is strictly mutually exclusive with apheresis procedures. In Java, checking `@+id/buttonTypeBlood` must automatically clear selection for Plasma and Platelets. Conversely, selecting Plasma or Platelets must automatically uncheck Whole Blood.
 - **Core Form Action:** A full-width `MaterialButton` placed at the bottom layout threshold: `@+id/buttonSaveDonation` referencing resource `@string/btn_save_donation` (Displays: `"GUARDAR DONACIÓN"`).
+- **Medical Restrictions Block (moved here from the donor form):**
+  - **"Aplicar restricciones (No apto)"** checkbox (`@+id/checkApplyRestrictions`) switches the screen into *restriction mode*: hides the donation capture and relabels the action button to `"GUARDAR RESTRICCIONES"`.
+  - Restriction capture mirrors the former exclusion block: dictionary dropdown `@+id/spinnerAddRestriction` (type-to-filter, hides the keyboard via `KeyboardUtils.hide(...)`), veda days `@+id/editTextVedaDays` or a **permanent** checkbox, auto-computed return date `@+id/editTextVedaReturnDate` (skips weekends), multiline notes, and an optional **schedule/reschedule** section.
+  - **Active restrictions card** (`@+id/cardRestrictions`): lists active deferrals (`@+id/recyclerViewActiveRestrictions`, row `item_active_restriction.xml`) with per-item **Editar** (in-place `update` through `dialog_restriction_edit.xml`) and **Incluir ahora** (`revoke`).
 
 ---
 
@@ -140,9 +139,9 @@ Single, scalable search module (replaces the former `DonorSearchFragment` / crit
 
 ### 💡 UPDATED REQUIREMENT: Donor Suitability & Restrictions
 
-#### 1. Restriction Management System (DonorFormFragment / Database)
-- **Database Architecture:** A pre-populated `restrictions` table stores canonical medical deferral codes (e.g., "Recent Tattoo", "Recent Surgery", "Medication Block").
-- **Exclusion Flow (Aptitude):** The donor's aptitude is a dropdown `@+id/spinnerAptitude` ("Apto" / "No apto") inside the navy Critical Data section. Selecting "No apto" reveals `@+id/layoutExclusionDetails`, which stacks the full deferral capture: restriction selector `@+id/spinnerAddRestriction` (dictionary dropdown; editable for type-to-filter and hides the keyboard on selection via `KeyboardUtils.hide(...)`), selected chips `@+id/chipGroupRestrictions`, veda days `@+id/editTextVedaDays` (auto-computes the return date), multiline notes `@+id/editTextRestrictionNotes` (Hint: "Observaciones de la exclusión:"), and the computed read-only return date `@+id/editTextVedaReturnDate`. Aptitude is derived from active restrictions (a donor with restrictions is "No apto" / `EN_VEDA`) without mutating a backend status field.
+#### 1. Restriction Management System (DonationsFragment / Database)
+- **Database Architecture:** A pre-populated `restrictions` table stores canonical medical deferral codes (e.g., "Recent Tattoo", "Recent Surgery", "Medication Block"); `donor_restrictions` stores each deferral with `veda_days`, `is_permanent`, `calculated_end_date` and `eligible_workday_return_date`.
+- **Restriction Flow (moved to `DonationsFragment`):** the donor form no longer captures aptitude/exclusions (it always saves `APTO`). Deferrals are applied from the clinical/donations screen through the **"Aplicar restricciones (No apto)"** checkbox: `POST restrictions.php` `assign`/`update` with a temporal veda (`veda_days` → return date that skips weekends) or a **permanent** veda. Active deferrals are listed in the restrictions card and can be edited in place or removed with **Incluir ahora** (`revoke`). If a scheduled appointment exists, the operator may **reagendar** (the backend cancels the current appointment and creates a new one on the return date in a single transaction). Aptitude/status is derived from active restrictions (a donor with active restrictions is "No apto" / `EN_VEDA`) without mutating a persisted status field.
 
 ### 👑 DIRECTOR ROLE & ADMINISTRATIVE MODULES
 

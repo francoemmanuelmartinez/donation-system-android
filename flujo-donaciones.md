@@ -9,12 +9,10 @@ flowchart TD
 
     %% ---------- Alta de donante ----------
     subgraph ALTA [Alta de donante]
-        C --> C1[Formulario: datos personales,<br/>contacto, críticos, restricciones]
+        C --> C1[Formulario: datos personales,<br/>contacto, críticos]
         C1 -->|"CARGAR DONANTE"| C2{POST donors.php}
         C2 -->|ERROR| C3["Toast error<br/>permanecer en formulario"]
-        C2 -->|OK + restricciones| C4["POST assign restrictions"]
-        C4 --> C5[Recarga donante por DNI]
-        C2 -->|OK sin restricciones| C5
+        C2 -->|OK| C5[Recarga donante por DNI]
         C5 --> E[openClinicalForm]
     end
 
@@ -54,6 +52,17 @@ flowchart TD
         J -->|OK| L["Toast: donación registrada<br/>+ limpiar formulario"]
         L --> M["Recarga donante (nextEligibleDate,<br/>annualCounts, badge) →<br/>SharedDonorViewModel"]
         M --> F3
+
+        %% ---- Restricciones (movidas desde el alta) ----
+        F1 --> RF["Card Restricciones:<br/>lista de restricciones activas<br/>Editar / Incluir ahora"]
+        RF -->|"Editar"| RE["Dialog: restricción, veda<br/>(días o permanente), notas<br/>+ opción de ajustar turno"]
+        RF -->|"Incluir ahora"| RR["POST restrictions.php revoke<br/>(quita la veda)"]
+        F3 --> RC["Checkbox: Aplicar restricciones (No apto)"]
+        RC -->|"marcado"| RCA["Captura de restricción + veda<br/>+ fecha de retorno editable<br/>botón → GUARDAR RESTRICCIONES<br/>(oculta carga de donación)"]
+        RCA -->|"GUARDAR RESTRICCIONES"| RS{¿Agendar/reagendar turno?}
+        RS -->|"No"| RA["POST restrictions.php<br/>assign / update"]
+        RS -->|"Sí"| RQ["POST restrictions.php reschedule:<br/>cancela turno actual +<br/>crea turno nuevo (transacción)"]
+        RQ --> RA
     end
 
     K --> F3
@@ -70,6 +79,7 @@ flowchart TD
 - **Entradas que convergen en `MainActivity.openClinicalForm()` (MainActivity.java:81)**: el **tab Registrar Donante** (tras guardar el alta), el **tab Buscar** (tap en una tarjeta) y **Agenda** (tap en un turno). Todas dejan el **alta de donante** como raíz del tab y apilan `DonationsFragment`; el back desde el form clínico vuelve al alta vacía.
 - **Búsqueda unificada**: `SearchFragment` (tab *Buscar*) reemplaza al antiguo `DonorSearchFragment`. Un único endpoint `search.php` resuelve texto libre (DNI/nombre/apellido), filtros Grupo/Factor, estado calculado en SQL y paginación (`hasMore`). Un donante existente se carga desde ahí (tap en la tarjeta).
 - **`VER DATOS`** abre `DonorFormFragment` en modo solo lectura (`openDonorDetails()`) sin salir del formulario clínico.
+- **Las restricciones médicas se gestionan en `DonationsFragment`** (ya no en el alta): el alta siempre registra al donante como APTO. Desde el formulario clínico se aplican con el checkbox **"Aplicar restricciones (No apto)"** (`assign`/`update` + veda temporal o **permanente**), y la card de *Restricciones activas* permite **Editar** (in-place) e **Incluir ahora** (`revoke`). Si hay un turno en la Agenda, se ofrece **reagendar** (cancela el turno tipeado y crea uno nuevo en la fecha de retorno de veda, en una sola transacción).
 - **Las advertencias son no bloqueantes**: el dialog solo permite continuar igual — la decisión queda en manos del operador. Se disparan cuando `next_eligible_date` es futura o cuando el conteo anual de donaciones alcanza/supera el tope de la política de recuperación.
 - **Tras guardar la donación** se reconsulta el donante por DNI para refrescar `nextEligibleDate`, `annualCounts` y el badge de estado en `SharedDonorViewModel`.
 - **Orden de estados en el badge**: `EN_VEDA` si hay restricción médica activa **o** si `next_eligible_date` es futura; en caso contrario `APTO`.

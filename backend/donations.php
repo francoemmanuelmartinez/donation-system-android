@@ -46,14 +46,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $policies[$row['procedureType']] = $row;
         }
 
-        // Validate that recovery policy exists for each requested procedure
-        foreach ($procedures as $proc) {
+        // Ignore requested procedures that have no configured recovery policy.
+        $validProcedures = [];
+        foreach ((array)$procedures as $proc) {
             $procType = strtoupper(trim((string)$proc));
-            if (!isset($policies[$procType])) {
-                $conn->rollBack();
-                sendJsonResponse("error", "No existe política de recuperación para el procedimiento $procType", null, 400);
+            if ($procType !== '' && isset($policies[$procType]) && !in_array($procType, $validProcedures, true)) {
+                $validProcedures[] = $procType;
             }
         }
+        if (empty($validProcedures)) {
+            $conn->rollBack();
+            sendJsonResponse("error", "No hay procedimientos válidos para registrar", null, 400);
+        }
+        $procedures = $validProcedures;
 
         $stmt = $conn->prepare("INSERT INTO donations (donor_id, weight, height, hto, platelets_count, annual_limit_override, staff_user_id) VALUES (:donorId, :weight, :height, :hto, :plateletsCount, 0, :staffUserId)");
         $stmt->execute([

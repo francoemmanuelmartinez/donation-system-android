@@ -48,9 +48,6 @@
     <string name="hint_address">Dirección:</string>
     <string name="btn_add_phone">Agregar otro teléfono</string>
     <string name="btn_add_email">Agregar otro email</string>
-    <string name="hint_aptitude">Aptitud:</string>
-    <string name="aptitude_apto">Apto</string>
-    <string name="aptitude_no_apto">No apto</string>
     <string name="hint_veda_return_date">Fecha de Retorno:</string>
     <string name="card_critical_data">Datos Críticos</string>
     <string name="hint_blood_type">Grupo y Factor:</string>
@@ -243,4 +240,32 @@
     <string name="dialog_whatsapp_veda_message">El donante está en veda (%1$s, hasta %2$s). ¿Enviar el mensaje de todos modos?</string>
     <string name="btn_send_whatsapp">ENVIAR</string>
     <string name="whatsapp_contact_format">Hola %1$s, nos comunicamos del banco de sangre.</string>
+
+    <!-- Restrictions on Donations screen -->
+    <string name="card_restrictions">Restricciones / Veda</string>
+    <string name="label_apply_restrictions">Aplicar restricciones (No apto)</string>
+    <string name="label_active_restrictions">Restricciones activas</string>
+    <string name="msg_no_active_restrictions">Sin restricciones activas</string>
+    <string name="label_add_restriction">Agregar restricción:</string>
+    <string name="label_permanent_veda">Veda permanente</string>
+    <string name="label_schedule_appointment">Agendar turno nuevo</string>
+    <string name="label_reschedule_appointment">Reagendar el turno del donante</string>
+    <string name="hint_appointment_date">Fecha del turno:</string>
+    <string name="hint_appointment_time">Hora del turno (HH:mm):</string>
+    <string name="hint_appointment_procedure">Tipo de donación:</string>
+    <string name="btn_save_restrictions">GUARDAR RESTRICCIONES</string>
+    <string name="btn_edit">EDITAR</string>
+    <string name="btn_remove">QUITAR</string>
+    <string name="restriction_permanent_label">Veda permanente</string>
+    <string name="restriction_until_format">En veda hasta %1$s</string>
+    <string name="msg_select_restriction">Seleccioná al menos una restricción</string>
+    <string name="msg_veda_days_required">Ingresá los días de veda o marcá veda permanente</string>
+    <string name="msg_restrictions_saved">Restricciones actualizadas</string>
+    <string name="msg_restriction_removed">Restricción quitada: el donante puede donar ahora</string>
+    <string name="dialog_edit_restriction_title">Editar restricción</string>
+    <string name="dialog_remove_restriction_title">Quitar restricción</string>
+    <string name="dialog_remove_restriction_message">¿Incluir ahora a %1$s en donación? Se quitará la restricción «%2$s».</string>
+    <string name="label_restriction_name">Restricción:</string>
+    <string name="msg_restriction_edit_error">No se pudo actualizar la restricción</string>
+    <string name="msg_restriction_remove_error">No se pudo quitar la restricción</string>
 </resources>

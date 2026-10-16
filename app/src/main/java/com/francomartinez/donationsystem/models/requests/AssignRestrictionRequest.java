@@ -19,6 +19,9 @@ public class AssignRestrictionRequest {
     @SerializedName("createdByUserId")
     private Integer createdByUserId;
 
+    @SerializedName("isPermanent")
+    private boolean isPermanent;
+
     public AssignRestrictionRequest() {
     }
 
@@ -28,6 +31,13 @@ public class AssignRestrictionRequest {
         this.vedaDays = vedaDays;
         this.notes = notes;
         this.createdByUserId = createdByUserId;
+    }
+
+    public AssignRestrictionRequest(int restrictionId, int vedaDays, String notes, boolean isPermanent) {
+        this.restrictionId = restrictionId;
+        this.vedaDays = vedaDays;
+        this.notes = notes;
+        this.isPermanent = isPermanent;
     }
 
     public int getDonorId() {
@@ -68,5 +78,13 @@ public class AssignRestrictionRequest {
 
     public void setCreatedByUserId(Integer createdByUserId) {
         this.createdByUserId = createdByUserId;
+    }
+
+    public boolean isPermanent() {
+        return isPermanent;
+    }
+
+    public void setPermanent(boolean permanent) {
+        isPermanent = permanent;
     }
 }

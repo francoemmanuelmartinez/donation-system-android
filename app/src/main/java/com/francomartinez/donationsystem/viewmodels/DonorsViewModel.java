@@ -8,6 +8,9 @@ import com.francomartinez.donationsystem.models.ApiResponse;
 import com.francomartinez.donationsystem.models.Donor;
 import com.francomartinez.donationsystem.models.MedicalRestriction;
 import com.francomartinez.donationsystem.models.requests.AssignRestrictionRequest;
+import com.francomartinez.donationsystem.models.requests.AssignRestrictionsRequest;
+import com.francomartinez.donationsystem.models.requests.RevokeRestrictionRequest;
+import com.francomartinez.donationsystem.models.requests.UpdateRestrictionRequest;
 import com.francomartinez.donationsystem.repositories.DonorRepository;
 import com.francomartinez.donationsystem.utils.Resource;
 
@@ -25,6 +28,7 @@ public class DonorsViewModel extends ViewModel {
     private final MutableLiveData<Resource<Map<String, Object>>> saveResult = new MutableLiveData<>();
     private final MutableLiveData<Resource<List<MedicalRestriction>>> restrictionsResult = new MutableLiveData<>();
     private final MutableLiveData<Resource<Map<String, Object>>> assignResult = new MutableLiveData<>();
+    private final MutableLiveData<Resource<Map<String, Object>>> restrictionActionResult = new MutableLiveData<>();
 
     public DonorsViewModel() {
         this.donorRepository = new DonorRepository();
@@ -44,6 +48,10 @@ public class DonorsViewModel extends ViewModel {
 
     public LiveData<Resource<Map<String, Object>>> getAssignResult() {
         return assignResult;
+    }
+
+    public LiveData<Resource<Map<String, Object>>> getRestrictionActionResult() {
+        return restrictionActionResult;
     }
 
     public void loadRestrictions() {
@@ -162,5 +170,65 @@ public class DonorsViewModel extends ViewModel {
                 assignResult.postValue(Resource.error("Error de red: " + t.getMessage()));
             }
         });
+    }
+
+    public void assignRestrictions(AssignRestrictionsRequest request) {
+        restrictionActionResult.postValue(Resource.loading());
+        donorRepository.assignRestrictions(request, new Callback<ApiResponse<Map<String, Object>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Map<String, Object>>> call, Response<ApiResponse<Map<String, Object>>> response) {
+                postMutationResult(restrictionActionResult, response, "No se pudieron asignar las restricciones");
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Map<String, Object>>> call, Throwable t) {
+                restrictionActionResult.postValue(Resource.error("Error de red: " + t.getMessage()));
+            }
+        });
+    }
+
+    public void updateRestriction(UpdateRestrictionRequest request) {
+        restrictionActionResult.postValue(Resource.loading());
+        donorRepository.updateRestriction(request, new Callback<ApiResponse<Map<String, Object>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Map<String, Object>>> call, Response<ApiResponse<Map<String, Object>>> response) {
+                postMutationResult(restrictionActionResult, response, "No se pudo actualizar la restricción");
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Map<String, Object>>> call, Throwable t) {
+                restrictionActionResult.postValue(Resource.error("Error de red: " + t.getMessage()));
+            }
+        });
+    }
+
+    public void revokeRestriction(RevokeRestrictionRequest request) {
+        restrictionActionResult.postValue(Resource.loading());
+        donorRepository.revokeRestriction(request, new Callback<ApiResponse<Map<String, Object>>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Map<String, Object>>> call, Response<ApiResponse<Map<String, Object>>> response) {
+                postMutationResult(restrictionActionResult, response, "No se pudo quitar la restricción");
+            }
+
+            @Override
+            public void onFailure(Call<ApiResponse<Map<String, Object>>> call, Throwable t) {
+                restrictionActionResult.postValue(Resource.error("Error de red: " + t.getMessage()));
+            }
+        });
+    }
+
+    private void postMutationResult(MutableLiveData<Resource<Map<String, Object>>> target,
+                                    Response<ApiResponse<Map<String, Object>>> response,
+                                    String fallbackMessage) {
+        if (response.isSuccessful() && response.body() != null) {
+            ApiResponse<Map<String, Object>> body = response.body();
+            if (body.isSuccess()) {
+                target.postValue(Resource.success(body.getData()));
+            } else {
+                target.postValue(Resource.error(body.getMessage() != null ? body.getMessage() : fallbackMessage));
+            }
+        } else {
+            target.postValue(Resource.error(fallbackMessage + " (HTTP " + response.code() + ")"));
+        }
     }
 }

@@ -1,10 +1,7 @@
 package com.francomartinez.donationsystem.views.fragments;
 
-import android.content.res.ColorStateList;
 import android.os.Bundle;
-import android.text.Editable;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,17 +22,11 @@ import com.francomartinez.donationsystem.models.AnnualCount;
 import com.francomartinez.donationsystem.models.ContactEmail;
 import com.francomartinez.donationsystem.models.ContactPhone;
 import com.francomartinez.donationsystem.models.Donor;
-import com.francomartinez.donationsystem.models.MedicalRestriction;
-import com.francomartinez.donationsystem.models.requests.AssignRestrictionRequest;
-import com.francomartinez.donationsystem.utils.KeyboardUtils;
 import com.francomartinez.donationsystem.utils.Resource;
-import com.francomartinez.donationsystem.utils.SessionManager;
 import com.francomartinez.donationsystem.viewmodels.DonorsViewModel;
 import com.francomartinez.donationsystem.viewmodels.SharedDonorViewModel;
 import com.francomartinez.donationsystem.views.MainActivity;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.chip.Chip;
-import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.datepicker.MaterialDatePicker;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -46,7 +37,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -84,14 +74,6 @@ public class DonorFormFragment extends Fragment {
     private TextInputLayout textInputLayoutNextEligibleDate;
     private TextInputEditText editTextNextEligibleDate;
     private TextView textViewAnnualCounts;
-    private TextInputLayout textInputLayoutAptitude;
-    private AutoCompleteTextView spinnerAptitude;
-    private LinearLayout layoutExclusionDetails;
-    private TextInputEditText editTextVedaReturnDate;
-    private AutoCompleteTextView spinnerAddRestriction;
-    private TextInputEditText editTextVedaDays;
-    private ChipGroup chipGroupRestrictions;
-    private TextInputEditText editTextRestrictionNotes;
     private MaterialButton buttonAddPhone;
     private MaterialButton buttonAddEmail;
     private MaterialButton buttonDonorAction;
@@ -101,9 +83,6 @@ public class DonorFormFragment extends Fragment {
 
     private int mode = MODE_REGISTER;
     private Donor currentDonor;
-    private final List<MedicalRestriction> dictionaryRestrictions = new ArrayList<>();
-    private final LinkedHashMap<String, Integer> selectedRestrictions = new LinkedHashMap<>();
-    private final java.util.Set<String> alreadyActiveNames = new java.util.HashSet<>();
 
     public static DonorFormFragment newRegisterInstance() {
         return newInstance(MODE_REGISTER);
@@ -140,7 +119,6 @@ public class DonorFormFragment extends Fragment {
 
         bindViews(view);
         setupDropdowns();
-        setupVedaDaysWatcher();
         observeViewModel();
 
         editTextBirthDate.setOnClickListener(v -> showDatePicker());
@@ -164,7 +142,6 @@ public class DonorFormFragment extends Fragment {
             }
         });
 
-        viewModel.loadRestrictions();
         requestedIfEmptyContacts();
 
         if (mode == MODE_VIEW || mode == MODE_MODIFY) {
@@ -198,14 +175,6 @@ public class DonorFormFragment extends Fragment {
         textInputLayoutNextEligibleDate = view.findViewById(R.id.textInputLayoutNextEligibleDate);
         editTextNextEligibleDate = view.findViewById(R.id.editTextNextEligibleDate);
         textViewAnnualCounts = view.findViewById(R.id.textViewAnnualCounts);
-        textInputLayoutAptitude = view.findViewById(R.id.textInputLayoutAptitude);
-        spinnerAptitude = view.findViewById(R.id.spinnerAptitude);
-        layoutExclusionDetails = view.findViewById(R.id.layoutExclusionDetails);
-        editTextVedaReturnDate = view.findViewById(R.id.editTextVedaReturnDate);
-        spinnerAddRestriction = view.findViewById(R.id.spinnerAddRestriction);
-        editTextVedaDays = view.findViewById(R.id.editTextVedaDays);
-        chipGroupRestrictions = view.findViewById(R.id.chipGroupRestrictions);
-        editTextRestrictionNotes = view.findViewById(R.id.editTextRestrictionNotes);
         buttonAddPhone = view.findViewById(R.id.buttonAddPhone);
         buttonAddEmail = view.findViewById(R.id.buttonAddEmail);
         buttonDonorAction = view.findViewById(R.id.buttonDonorAction);
@@ -219,40 +188,6 @@ public class DonorFormFragment extends Fragment {
         ArrayAdapter<CharSequence> bloodAdapter = ArrayAdapter.createFromResource(requireContext(),
                 R.array.blood_types, android.R.layout.simple_dropdown_item_1line);
         spinnerBloodType.setAdapter(bloodAdapter);
-
-        ArrayAdapter<CharSequence> aptitudeAdapter = ArrayAdapter.createFromResource(requireContext(),
-                R.array.aptitudes, android.R.layout.simple_dropdown_item_1line);
-        spinnerAptitude.setAdapter(aptitudeAdapter);
-        spinnerAptitude.setText(getString(R.string.aptitude_apto), false);
-        spinnerAptitude.setOnItemClickListener((parent, view, position, id) -> applyAptitudeState());
-
-        spinnerAddRestriction.setOnItemClickListener((parent, view, position, id) -> {
-            MedicalRestriction restriction = dictionaryRestrictions.get(position);
-            if (restriction != null && !selectedRestrictions.containsKey(restriction.getName())) {
-                selectedRestrictions.put(restriction.getName(), restriction.getId());
-                addRestrictionChip(restriction.getName(), true);
-                spinnerAddRestriction.setText("");
-                applyAptitudeState();
-            }
-            KeyboardUtils.hide(spinnerAddRestriction);
-        });
-    }
-
-    private void setupVedaDaysWatcher() {
-        editTextVedaDays.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                recomputeReturnDate();
-            }
-        });
     }
 
     private void observeViewModel() {
@@ -262,6 +197,7 @@ public class DonorFormFragment extends Fragment {
                 currentDonor = resource.data;
                 sharedDonorViewModel.setSelectedDonor(currentDonor);
                 if (mode == MODE_REGISTER) {
+                    sharedDonorViewModel.setSelectedAppointment(null);
                     navigateToClinicalForm();
                     return;
                 }
@@ -284,14 +220,8 @@ public class DonorFormFragment extends Fragment {
                     break;
                 case SUCCESS:
                     buttonDonorAction.setEnabled(true);
-                    int donorId = extractDonorId(resource.data, currentDonor != null ? currentDonor.getId() : -1);
-                    List<AssignRestrictionRequest> pending = buildPendingRestrictionRequests(donorId);
-                    if (!pending.isEmpty()) {
-                        viewModel.assignRestrictions(pending);
-                    } else {
-                        Toast.makeText(requireContext(), R.string.msg_donor_saved, Toast.LENGTH_SHORT).show();
-                        refreshAfterSave();
-                    }
+                    Toast.makeText(requireContext(), R.string.msg_donor_saved, Toast.LENGTH_SHORT).show();
+                    refreshAfterSave();
                     break;
                 case ERROR:
                     buttonDonorAction.setEnabled(true);
@@ -299,34 +229,6 @@ public class DonorFormFragment extends Fragment {
                         Toast.makeText(requireContext(), resource.message, Toast.LENGTH_LONG).show();
                     }
                     break;
-            }
-        });
-
-        viewModel.getRestrictionsResult().observe(getViewLifecycleOwner(), resource -> {
-            if (resource == null) return;
-            if (resource.status == Resource.Status.SUCCESS) {
-                dictionaryRestrictions.clear();
-                if (resource.data != null) {
-                    dictionaryRestrictions.addAll(resource.data);
-                }
-                List<String> names = new ArrayList<>();
-                for (MedicalRestriction r : dictionaryRestrictions) {
-                    names.add(r.getName());
-                }
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
-                        android.R.layout.simple_dropdown_item_1line, names);
-                spinnerAddRestriction.setAdapter(adapter);
-            }
-        });
-
-        viewModel.getAssignResult().observe(getViewLifecycleOwner(), resource -> {
-            if (resource == null) return;
-            if (resource.status == Resource.Status.SUCCESS) {
-                Toast.makeText(requireContext(), R.string.msg_restrictions_updated, Toast.LENGTH_SHORT).show();
-                refreshAfterSave();
-            } else if (resource.status == Resource.Status.ERROR && resource.message != null) {
-                Toast.makeText(requireContext(), resource.message, Toast.LENGTH_LONG).show();
-                refreshAfterSave();
             }
         });
     }
@@ -342,35 +244,6 @@ public class DonorFormFragment extends Fragment {
         if (getActivity() instanceof MainActivity) {
             ((MainActivity) getActivity()).openClinicalForm();
         }
-    }
-
-    private int extractDonorId(Map<String, Object> data, int fallback) {
-        if (data != null) {
-            Object id = data.get("donorId");
-            if (id instanceof Number) {
-                return ((Number) id).intValue();
-            }
-        }
-        return fallback;
-    }
-
-    private List<AssignRestrictionRequest> buildPendingRestrictionRequests(int donorId) {
-        Integer userId = getSessionUserId();
-        String notes = getText(editTextRestrictionNotes);
-        int vedaDays = parseDays();
-        List<AssignRestrictionRequest> requests = new ArrayList<>();
-        for (Map.Entry<String, Integer> entry : selectedRestrictions.entrySet()) {
-            if (alreadyActiveNames.contains(entry.getKey())) {
-                continue;
-            }
-            requests.add(new AssignRestrictionRequest(donorId, entry.getValue(), vedaDays, notes, userId));
-        }
-        return requests;
-    }
-
-    private Integer getSessionUserId() {
-        SessionManager session = SessionManager.getInstance(requireContext());
-        return session.getUserIdOrNull();
     }
 
     private void showDatePicker() {
@@ -432,39 +305,6 @@ public class DonorFormFragment extends Fragment {
             }
         }
         requestedIfEmptyContacts();
-
-        selectedRestrictions.clear();
-        alreadyActiveNames.clear();
-        chipGroupRestrictions.removeAllViews();
-        if (donor.getActiveRestrictions() != null && !donor.getActiveRestrictions().isEmpty()) {
-            int maxVedaDays = 0;
-            String maxReturnDate = "";
-            for (MedicalRestriction r : donor.getActiveRestrictions()) {
-                alreadyActiveNames.add(r.getName());
-                addRestrictionChip(r.getName(), false);
-                if (r.getVedaDays() > maxVedaDays) {
-                    maxVedaDays = r.getVedaDays();
-                }
-                if (r.getEligibleWorkdayReturnDate() != null
-                        && r.getEligibleWorkdayReturnDate().compareTo(maxReturnDate) > 0) {
-                    maxReturnDate = r.getEligibleWorkdayReturnDate();
-                }
-                if (getText(editTextRestrictionNotes).isEmpty() && r.getNotes() != null) {
-                    editTextRestrictionNotes.setText(r.getNotes());
-                }
-            }
-            if (maxVedaDays > 0) {
-                editTextVedaDays.setText(String.valueOf(maxVedaDays));
-            } else {
-                editTextVedaDays.setText("");
-            }
-            editTextVedaReturnDate.setText(maxReturnDate);
-        } else {
-            editTextVedaDays.setText("");
-            editTextVedaReturnDate.setText("");
-        }
-
-        syncAptitudeWithDonor();
     }
 
     private void bindRecoveryInfo(Donor donor) {
@@ -554,51 +394,6 @@ public class DonorFormFragment extends Fragment {
         return raw;
     }
 
-    private void addRestrictionChip(String name, boolean closeable) {
-        Chip chip = new Chip(requireContext());
-        chip.setText(name);
-        chip.setCloseIconVisible(closeable);
-        if (closeable) {
-            chip.setOnCloseIconClickListener(v -> {
-                chipGroupRestrictions.removeView(chip);
-                selectedRestrictions.remove(name);
-                alreadyActiveNames.remove(name);
-                updateBadge();
-            });
-        }
-        chipGroupRestrictions.addView(chip);
-    }
-
-    private void updateBadge() {
-        if (selectedRestrictions.isEmpty()) {
-            spinnerAptitude.setText(getString(R.string.aptitude_apto), false);
-        }
-        applyAptitudeState();
-    }
-
-    private void syncAptitudeWithDonor() {
-        boolean enVeda = currentDonor != null && "EN_VEDA".equals(currentDonor.getStatus());
-        spinnerAptitude.setText(enVeda ? getString(R.string.aptitude_no_apto) : getString(R.string.aptitude_apto), false);
-        applyAptitudeState();
-    }
-
-    private void applyAptitudeState() {
-        if (spinnerAptitude == null || layoutExclusionDetails == null || textInputLayoutAptitude == null) {
-            return;
-        }
-        boolean noApto = getString(R.string.aptitude_no_apto).equals(getText(spinnerAptitude));
-        layoutExclusionDetails.setVisibility(noApto ? View.VISIBLE : View.GONE);
-
-        int strokeColor = getResources().getColor(noApto ? R.color.veda_red : R.color.aptitude_green);
-        int labelColor = getResources().getColor(noApto ? R.color.aptitude_red_soft : R.color.aptitude_green_soft);
-        textInputLayoutAptitude.setBoxBackgroundColor(getResources().getColor(R.color.navy_field));
-        int[][] states = new int[][]{new int[]{android.R.attr.state_focused}, new int[]{}};
-        int[] colors = new int[]{strokeColor, strokeColor};
-        textInputLayoutAptitude.setBoxStrokeColorStateList(new ColorStateList(states, colors));
-        textInputLayoutAptitude.setDefaultHintTextColor(ColorStateList.valueOf(labelColor));
-        textInputLayoutAptitude.setHintTextColor(ColorStateList.valueOf(labelColor));
-    }
-
     private void setMode(int newMode) {
         mode = newMode;
         boolean viewOnly = mode == MODE_VIEW;
@@ -618,10 +413,6 @@ public class DonorFormFragment extends Fragment {
         setEditTextEnabled(spinnerBloodType, !viewOnly);
         setEditTextEnabled(editTextWeight, !viewOnly);
         setEditTextEnabled(editTextHeight, !viewOnly);
-        setEditTextEnabled(spinnerAptitude, !viewOnly);
-        setEditTextEnabled(spinnerAddRestriction, !viewOnly);
-        setEditTextEnabled(editTextVedaDays, !viewOnly);
-        setEditTextEnabled(editTextRestrictionNotes, !viewOnly);
 
         if (textInputLayoutLastDonationDate != null) {
             textInputLayoutLastDonationDate.setVisibility(mode == MODE_REGISTER ? View.GONE : View.VISIBLE);
@@ -641,20 +432,12 @@ public class DonorFormFragment extends Fragment {
         buttonAddEmail.setVisibility(viewOnly ? View.GONE : View.VISIBLE);
 
         if (viewOnly) {
-            for (int i = 0; i < chipGroupRestrictions.getChildCount(); i++) {
-                View child = chipGroupRestrictions.getChildAt(i);
-                if (child instanceof Chip) {
-                    ((Chip) child).setCloseIconVisible(false);
-                }
-            }
             buttonDonorAction.setText(R.string.btn_modify_donor);
         } else if (mode == MODE_MODIFY) {
             buttonDonorAction.setText(R.string.btn_save_changes);
         } else {
             buttonDonorAction.setText(R.string.btn_save_donor);
         }
-
-        applyAptitudeState();
     }
 
     private void setEditTextEnabled(EditText editText, boolean enabled) {
@@ -676,23 +459,6 @@ public class DonorFormFragment extends Fragment {
             if (removeButton != null && !enabled) {
                 removeButton.setEnabled(false);
                 removeButton.setVisibility(View.GONE);
-            }
-        }
-    }
-
-    private void recomputeReturnDate() {
-        if (mode == MODE_REGISTER || mode == MODE_MODIFY) {
-            int days = parseDays();
-            if (days > 0) {
-                LocalDate returnDate = LocalDate.now().plusDays(days);
-                if (returnDate.getDayOfWeek() == java.time.DayOfWeek.SATURDAY) {
-                    returnDate = returnDate.plusDays(2);
-                } else if (returnDate.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) {
-                    returnDate = returnDate.plusDays(1);
-                }
-                editTextVedaReturnDate.setText(returnDate.toString());
-            } else {
-                editTextVedaReturnDate.setText("");
             }
         }
     }
@@ -761,18 +527,6 @@ public class DonorFormFragment extends Fragment {
                     Toast.LENGTH_LONG).show();
             return false;
         }
-        if (getString(R.string.aptitude_no_apto).equals(getText(spinnerAptitude)) && selectedRestrictions.isEmpty()) {
-            Toast.makeText(requireContext(),
-                    "Seleccioná al menos una restricción, o volvé a elegir Apto",
-                    Toast.LENGTH_LONG).show();
-            return false;
-        }
-        if (!selectedRestrictions.isEmpty() && parseDays() <= 0) {
-            Toast.makeText(requireContext(),
-                    "Ingresá los días de veda para la restricción seleccionada",
-                    Toast.LENGTH_LONG).show();
-            return false;
-        }
         return true;
     }
 
@@ -814,14 +568,6 @@ public class DonorFormFragment extends Fragment {
         }
         donor.setEmails(emails);
         return donor;
-    }
-
-    private int parseDays() {
-        try {
-            return Integer.parseInt(getText(editTextVedaDays));
-        } catch (NumberFormatException e) {
-            return 0;
-        }
     }
 
     private String textOfView(View view, int id) {

@@ -1,34 +1,99 @@
 # AGENTS.md — DonationSystem
 
-## Entorno (esta máquina)
-- Backend PHP en `C:\Users\games\AndroidStudioProjects\DonationSystem\backend`.
-  Se sirve por Apache como `http://192.168.0.202/donation-system-api/` (esta PC **es** 192.168.0.202).
-- `G:\apps\xampp\htdocs\donation-system-api` es un **junction** → `...\DonationSystem\backend`:
-  editar el repo = editar el backend live (no hay copia separada).
-- XAMPP en `G:\apps\xampp` (Apache 2.4.58 / PHP 8.2.12 / MariaDB 10.4.32).
-  - MySQL: `G:\apps\xampp\mysql\bin\mysqld.exe`, arranque `mysql_start.bat` / parada `mysql_stop.bat`.
-  - DB: `donation_system`, usuario `root`, sin contraseña.
-  - Log de error: `G:\apps\xampp\mysql\data\mysql_error.log`.
-  - Base URL en la app: `http://192.168.0.202/donation-system-api/` (`RetrofitClient.java`).
-- Recordatorios WhatsApp vía **OpenWA**, gateway como **servicio Windows `OpenWA-Gateway`** (NSSM, `C:\Users\games\openwa`).
-  Dashboard manual: `openwa-dashboard.bat`. Ver `whatsapp-reminders-guide.md`.
-- `db_config.php` usa `PDO::ATTR_TIMEOUT => 5` para que MySQL colgado falle rápido (500) en vez de colgar la request.
+## Dispositivos (referencia canónica de rutas)
+El proyecto se trabaja en **dos máquinas**. Esta tabla es la fuente de verdad de las rutas
+(la referencian `INSTALACION.md` y `TESTING.md`). Ajustá los comandos a la máquina en la que estés.
+
+| Elemento | Notebook (`PARDO-NET`) | PC de escritorio |
+|---|---|---|
+| Rol / IP LAN | Notebook de desarrollo · `192.168.0.130` (Wi-Fi) | Servidor de desarrollo · `192.168.0.202` |
+| Usuario Windows | `games` | `games` |
+| Repo (raíz) | `C:\Users\games\StudioProjects\donation-system-android` | `C:\Users\games\AndroidStudioProjects\DonationSystem` |
+| XAMPP | `C:\xampp` | `G:\apps\xampp` |
+| PHP CLI | `C:\xampp\php\php.exe` | `G:\apps\xampp\php\php.exe` |
+| MySQL CLI / dump | `C:\xampp\mysql\bin\` | `G:\apps\xampp\mysql\bin\` |
+| `htdocs` | `C:\xampp\htdocs` | `G:\apps\xampp\htdocs` |
+| Backend publicado (junction) | `C:\xampp\htdocs\donation-system-api` → `<repo>\backend` | `G:\apps\xampp\htdocs\donation-system-api` → `<repo>\backend` |
+| Base URL app (device físico) | `http://192.168.0.130/donation-system-api/` | `http://192.168.0.202/donation-system-api/` |
+| Recordatorios OpenWA | Servicio Windows `OpenWA-Gateway` (NSSM, `C:\Users\games\openwa`) | Servicio Windows `OpenWA-Gateway` (NSSM, `C:\Users\games\openwa`) |
+
+En lo que sigue, `<XAMPP>` = `C:\xampp` (notebook) o `G:\apps\xampp` (escritorio), y `<repo>` = la
+raíz del repo según la tabla.
+
+- **Backend:** PHP 8.x servido por Apache; `db_config.php` conecta a `localhost:3306`, DB
+  `donation_system`, usuario `root` **sin** contraseña, `PDO::ATTR_TIMEOUT => 5`.
+- **Base URL del emulador (ambas):** `http://10.0.2.2/donation-system-api/`.
+- **IP hardcodeada:** `RetrofitClient.java` (`DEFAULT_BASE_URL`) y `res/xml/network_security_config.xml`
+  (host en cleartext) traen la IP de una máquina. Al cambiar de dispositivo hay que actualizar **ambos**
+  con la IP de la máquina que sirve el backend.
+
+## Scripts
+- `scripts\sync-db.ps1` — sincroniza la BD real de XAMPP con los SQL del repo:
+  `-Push` (default) recrea `donation_system` desde `sql\donation_system.sql`; `-Seed` carga
+  `sql\seed_40_donantes_turnos.sql`; `-Pull` vuelca la BD real al snapshot. Params `-Database` /
+  `-MysqlBin`. Guarda: no toca `donation_system_test` sin `-Force` (ver `TESTING.md`).
+- `scripts\start-xampp-mysql.ps1` — libera el puerto 3306 (detiene MySQL97) y arranca MariaDB de
+  XAMPP. `-Restore` lo revierte. Requiere administrador (UAC).
+
+## OpenWA (recordatorios automáticos por WhatsApp)
+Gateway open-source (Node + Baileys, **sin Chromium**) en `C:\Users\games\openwa`; corre como
+servicio Windows **`OpenWA-Gateway`** (NSSM, auto-start/restart). Sirve API + dashboard en
+`http://localhost:2785`. Solo lo consume el backend (`send_reminders.php`); la app Android no lo usa.
+- **Instalado (notebook, 14-oct-2026):** Node 24 LTS, Python 3.12, NSSM (winget); `.env` con
+  `ENGINE_TYPE=baileys`, `DATABASE_TYPE=sqlite`, `AUTO_START_SESSIONS=true`, `SERVE_DASHBOARD=true`;
+  `npm ci` con `PUPPETEER_SKIP_DOWNLOAD=1` (evita bajar Chromium) + `npm run build:all`.
+- **Sesión:** `donacion`, chip `5492233556122`. Credenciales en
+  `backend/config_reminders_override.php` (gitignored). Re-vincular = escanear QR (único paso manual).
+- **Scheduler:** tarea `RecordatoriosDonacion`, diaria 08:00 (`backend/install_scheduler.php`).
+  *(En la notebook fue **eliminada** y el lazy sweep quedó **desactivado**; el único disparo es el
+  botón de la Agenda — ver "Nota (recordatorios)" más abajo.)*
+- **Scripts:** `openwa\openwa-dashboard.bat` / `openwa\start-openwa.bat` / `openwa\stop-openwa.bat`.
+- **Estado:** `Get-Service OpenWA-Gateway` · `curl http://localhost:2785/api/health`.
+- Guía completa: `whatsapp-reminders-guide.md` §7.
 
 ## Problemas conocidos y fixes
+### Puerto 3306 ocupado por MySQL97 (notebook)
+- **Síntoma:** la app da 500 `Access denied for user 'root'@'localhost'` o "no conecta".
+- **Causa:** el servicio Windows `MySQL97` (MySQL Server 9.7, aparte de XAMPP) toma el 3306 y
+  exige contraseña de root; MariaDB de XAMPP no puede bindear (en `mysql_error.log`:
+  *"Do you already have another mysqld server running on port: 3306"*) y **aborta**.
+- **Fix:** `scripts\start-xampp-mysql.ps1` (admin): detiene `MySQL97`, lo deja en **Manual** y
+  arranca MariaDB de XAMPP. Revertir con `-Restore`. Verificar: `mysqladmin -u root ping` →
+  *"mysqld is alive"*.
+- **Ojo:** `mysql_stop.bat` mata **todos** los `mysqld.exe` (incluido MySQL97); usar
+  `mysqladmin -u root shutdown` o el script para detener solo MariaDB.
+
 ### MySQL/MariaDB no arranca: `multi-master.info` corrupto
 - **Síntoma:** la app "no loguea / timeout"; `mysqladmin ping` se cuelga; el panel `xampp-control.exe` crashea (APPCRASH `c0000005`).
-- **Causa:** el archivo `G:\apps\xampp\mysql\data\multi-master.info` quedó con **líneas de log** en vez de nombres de conexiones
+- **Causa:** el archivo `<XAMPP>\mysql\data\multi-master.info` quedó con **líneas de log** en vez de nombres de conexiones
   (típicamente tras un apagado sucio / BSOD). mysqld lo interpreta como conexiones de replicación, crea archivos basura
   (`master-*`, `mysql-relay-bin-*`, `relay-log-*`) y **muere antes de "ready for connections"** (el log se corta en `Server socket created`).
 - **Fix:**
   1. Asegurar mysqld detenido (`mysql_stop.bat` o `taskkill /F /IM mysqld.exe`).
   2. Mover a respaldo **fuera del datadir** (no borrar): `multi-master.info` + todos los `master-*`, `mysql-relay-bin-*`, `relay-log-*`.
-     Ej.: `G:\apps\xampp\mysql\_repl_backup_<fecha>\`.
+     Ej.: `<XAMPP>\mysql\_repl_backup_<fecha>\`.
   3. Arrancar MySQL (`mysql_start.bat`). Verificar: `mysqladmin -u root ping` → *"mysqld is alive"* y en el log aparece *"ready for connections"*.
 - **Prevención:** apagar XAMPP por el panel / `mysql_stop.bat`; evitar cortes de energía forzados.
 - **Ojo:** no crear carpetas dentro de `mysql\data` (MySQL las lista como bases de datos).
-- Servicio `MySQL97` (MySQL 9.7 aparte) dejado en **Manual** para no pelear por el puerto 3306.
 
 ## Notas
 - Directorio de trabajo en español; textos UI con tildes permitidas.
 - Ver `TESTING.md` para el enfoque de pruebas.
+- Los ajustes recientes (base URL `10.0.2.2`, cleartext `192.168.0.130`, cuenta `admin`, scripts de
+  sync y BD) son para dejar operativa la app en la **notebook**; la PC de escritorio ya funciona.
+- La **notebook ya tiene OpenWA instalado** (servicio `OpenWA-Gateway`); ver sección "OpenWA".
+  Sin scheduler ni lazy sweep: los recordatorios se disparan **solo desde el botón** de la Agenda.
+
+> **Nota (recordatorios, notebook PARDO-NET — cambio exclusivo de este dispositivo):** en la
+> notebook se **eliminó** la tarea programada `RecordatoriosDonacion` (`schtasks /Delete /TN
+> "RecordatoriosDonacion" /F`) y se **desactivó el lazy sweep** vía
+> `REMINDER_LAZY_SWEEP_ENABLED = false` en `backend/config_reminders_override.php` (gitignored, no
+> afecta a la PC de escritorio). Único disparo: el **botón de la Agenda**
+> (`action=dispatch_reminders`, `manual=true`). El envío sigue siendo **pausado/secuencial** (mismos
+> `MANUAL_DELAY_*` / `BATCH_SPREAD_MIN_SECONDS` que el escritorio). Para reactivar el automático:
+> `php backend/install_scheduler.php` y poner el flag en `true`.
+
+> **Nota (notebook PARDO-NET):** los ajustes de este repo —base URL al emulador (`10.0.2.2`), host
+> `192.168.0.130` en el cleartext, cuenta `admin`, scripts de sync y BD— están orientados a dejar
+> operativa la app en la **notebook**. La **PC de escritorio** ya funciona con su configuración
+> actual y no requiere estos cambios.

@@ -37,6 +37,11 @@ if (!defined('OPENWA_BASE_URL'))   define('OPENWA_BASE_URL', 'http://localhost:2
 if (!defined('OPENWA_API_KEY'))    define('OPENWA_API_KEY', '');
 if (!defined('OPENWA_SESSION_ID')) define('OPENWA_SESSION_ID', '');
 
+// --- Lazy sweep: disparo automático al abrir la Agenda (respaldo sin cron) ---
+// true por defecto. Se puede desactivar por máquina en config_reminders_override.php
+// (ej.: la notebook lo deja en false para que el único disparo sea el botón de la Agenda).
+if (!defined('REMINDER_LAZY_SWEEP_ENABLED')) define('REMINDER_LAZY_SWEEP_ENABLED', true);
+
 // --- API oficial de Meta (Cloud API) - EN PAUSA (12-oct-2026) ---
 // Fase 2 implementada pero en pausa por decisión del usuario: el Business Portfolio quedó
 // restringido por hold de cuenta de Facebook nueva. OpenWA es el proveedor operativo.

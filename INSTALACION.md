@@ -7,9 +7,12 @@ Este documento cubre: XAMPP, importación de la base de datos, el **junction** q
 el backend en `htdocs`, la configuración de red de la app Android y una nota sobre OpenWA.
 La app **funciona sin OpenWA** (OpenWA solo habilita el recordatorio automático por WhatsApp).
 
-> En la máquina de desarrollo principal (192.168.0.202) XAMPP vive en `G:\apps\xampp`.
-> En una instalación estándar de XAMPP la ruta es `C:\xampp`. Donde veas `C:\xampp`
-> reemplazalo por la ruta real de tu XAMPP.
+> **Nota (notebook PARDO-NET):** los ajustes de esta guía —base URL al emulador (`10.0.2.2`), host `192.168.0.130` en el cleartext, cuenta `admin`, scripts de sync y BD— están orientados a dejar operativa la app en la **notebook**. La **PC de escritorio** ya funciona con su configuración actual y no requiere estos cambios.
+
+> **Rutas por dispositivo:** la fuente canónica es la tabla **"Dispositivos"** de `AGENTS.md`.
+> Ahí están XAMPP, el repo, `htdocs` e IP de cada máquina: notebook `PARDO-NET` (`192.168.0.130`,
+> XAMPP en `C:\xampp`) y PC de escritorio (`192.168.0.202`, XAMPP en `G:\apps\xampp`).
+> Donde este documento use `C:\xampp`, reemplazalo por la ruta real de tu XAMPP.
 
 ---
 
@@ -67,7 +70,7 @@ Todos los comandos siguientes asumen que el repo quedó en
 
 `sql/donation_system.sql` **ya incluye** todo el esquema: tablas, la tabla
 `reminder_dispatch_control`, los índices del módulo de búsqueda, el diccionario de
-restricciones, las políticas de recuperación y una cuenta Directora seed.
+restricciones, las políticas de recuperación y dos cuentas seed (Directora y `admin`).
 
 ```powershell
 cmd /c '"C:\xampp\mysql\bin\mysql.exe" -u root donation_system < "C:\Users\<usuario>\AndroidStudioProjects\DonationSystem\sql\donation_system.sql"'
@@ -100,11 +103,36 @@ Deberías ver 13 tablas (incluida `reminder_dispatch_control`).
 
 | Uso | Usuario | Contraseña |
 |---|---|---|
-| Cuenta Directora (import de `donation_system.sql`) | `director@clinic.org` | `adminpassword` |
+| Cuenta Directora (import de `donation_system.sql`) | `director@clinic.org` | `password` |
+| Cuenta demo (import de `donation_system.sql`) | `admin` | `admin` |
 | Tests automatizados (solo existen en `donation_system_test`) | `director@test.local` | `password` |
 
 > En `donation_system` (datos reales) la cuenta de test **no existe**. Si la necesitás,
 > creá una Directora desde la pantalla de registro de la app o insertala en MySQL (hash BCrypt).
+
+### 4.6 Sincronización con el repo (script)
+
+`scripts\sync-db.ps1` empaqueta los pasos 4.1–4.3 y mantiene alineadas la **BD real de XAMPP**
+y los **SQL del repo**:
+
+```powershell
+# Recrea donation_system desde sql\donation_system.sql y carga el seed de demo
+powershell -ExecutionPolicy Bypass -File .\scripts\sync-db.ps1 -Push -Seed
+
+# Volcar la BD real al snapshot versionado (mysqldump -> sql\donation_system.sql)
+powershell -ExecutionPolicy Bypass -File .\scripts\sync-db.ps1 -Pull
+```
+
+- `-Push` (default): `DROP`+`CREATE` de la base e importa `sql\donation_system.sql`.
+- `-Seed`: importa `sql\seed_40_donantes_turnos.sql` (un solo uso; los DNI son `UNIQUE`).
+- `-Pull`: vuelca la BD real al snapshot del repo.
+- `-Database` / `-MysqlBin`: otra base o ruta de XAMPP.
+- **Guarda:** no opera sobre `donation_system_test` sin `-Force` (ver `TESTING.md`).
+- Requiere MariaDB de XAMPP en `localhost:3306`. Si el puerto lo tiene `MySQL97`,
+  ver sección 8 (o correr `scripts\start-xampp-mysql.ps1`).
+
+> En la PC de escritorio (XAMPP en `G:\apps\xampp`) pasá
+> `-MysqlBin G:\apps\xampp\mysql\bin`.
 
 ---
 
@@ -153,7 +181,7 @@ La URL por defecto está hardcodeada y es **específica de la máquina**:
 `app/src/main/java/com/francomartinez/donationsystem/api/RetrofitClient.java`
 
 ```java
-private static final String DEFAULT_BASE_URL = "http://192.168.0.202/donation-system-api/";
+private static final String DEFAULT_BASE_URL = "http://10.0.2.2/donation-system-api/";
 ```
 
 Cambiala según corresponda:
@@ -172,6 +200,7 @@ host listado. Si tu base URL usa otro host, agregalo aquí o Android **bloquear�
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">10.0.2.2</domain>
         <domain includeSubdomains="true">192.168.0.202</domain>
+        <domain includeSubdomains="true">192.168.0.130</domain>
     </domain-config>
 </network-security-config>
 ```
@@ -201,12 +230,23 @@ servidor. Si no vas a usarlo:
 
 - Dejar `REMINDER_ENABLED = false` en `backend/config_reminders.php` para evitar intentos de envío.
 - Las credenciales de OpenWA (`OPENWA_API_KEY`, `OPENWA_SESSION_ID`) **no** están versionadas;
-  viven en `backend/config_reminders_override.php` (ver 7.3).
+  viven en `backend/config_reminders_override.php` (ver 7.1).
 
 Guía completa (instalación de OpenWA, sesión/QR, servicio Windows con NSSM, fallback a Meta):
 **`whatsapp-reminders-guide.md`, sección 7** (7.8 instalación · 7.12 operación).
 
-### 7.3 Secretos fuera del repo
+> **Nota (notebook PARDO-NET):** OpenWA ya está instalado — Node 24 LTS + gateway en
+> `C:\Users\games\openwa`, servicio Windows `OpenWA-Gateway` (NSSM, auto-start) y sesión
+> `donacion` (chip `5492233556122`). Estado: `Get-Service OpenWA-Gateway` ·
+> `curl http://localhost:2785/api/health`. Ver `AGENTS.md` → "OpenWA".
+
+> **Nota (recordatorios, notebook PARDO-NET — cambio exclusivo de este dispositivo):** en la
+> notebook **no hay scheduler** (se eliminó la tarea `RecordatoriosDonacion`) y el **lazy sweep
+> quedó desactivado** (`REMINDER_LAZY_SWEEP_ENABLED = false` en
+> `backend/config_reminders_override.php`, gitignored). El **único disparo** es el **botón de la
+> Agenda**. El envío sigue siendo pausado/secuencial. La PC de escritorio no se ve afectada.
+
+### 7.1 Secretos fuera del repo
 
 `backend/config_reminders.php` no contiene secretos. Si definís
 `backend/config_reminders_override.php` (en `.gitignore`), se carga automáticamente:
@@ -229,6 +269,8 @@ define('OPENWA_SESSION_ID', '<session-id>');
 | Requests HTTP bloqueadas | Host no listado en cleartext | Agregar la IP en `network_security_config.xml` (sección 6.2). |
 | `http://localhost/donation-system-api/` da 404 | Junction no creado o mal | Recrear el junction (sección 5). |
 | 500 `Database Connection Failed` | MySQL apagado o base ausente | Arrancar MySQL / importar `donation_system.sql`. |
+| 500 `Access denied for user 'root'@'localhost'` | El servicio `MySQL97` (MySQL 9.7) ocupa el 3306 y exige contraseña | `scripts\start-xampp-mysql.ps1` (admin): detiene MySQL97, lo deja en Manual y arranca MariaDB. Ver `AGENTS.md` → "Puerto 3306 ocupado por MySQL97". |
+| MariaDB aborta: *"running on port: 3306"* | Otro `mysqld` (p. ej. MySQL97) tiene el puerto | Igual que la fila anterior. |
 | MySQL colgado / no arranca | `multi-master.info` corrupto (apagado sucio) | Ver `AGENTS.md` → "MySQL/MariaDB no arranca". |
 | `mklink` falla | Destino ya existe | Borrar/renombrar la carpeta destino y reintentar. |
 | `CREATE INDEX IF NOT EXISTS` falla | Estás en MySQL puro (no MariaDB) | Quitar `IF NOT EXISTS` del dump (XAMPP trae MariaDB, funciona). |
@@ -237,11 +279,15 @@ define('OPENWA_SESSION_ID', '<session-id>');
 
 ## 9. Anexo — rutas de referencia
 
-| Elemento | Esta máquina | XAMPP estándar |
+Fuente canónica: tabla **"Dispositivos"** de `AGENTS.md`. Resumen:
+
+| Elemento | Notebook (`PARDO-NET`, `192.168.0.130`) | PC de escritorio (`192.168.0.202`) |
 |---|---|---|
-| XAMPP | `G:\apps\xampp` | `C:\xampp` |
-| PHP CLI | `G:\apps\xampp\php\php.exe` | `C:\xampp\php\php.exe` |
-| MySQL CLI | `G:\apps\xampp\mysql\bin\mysql.exe` | `C:\xampp\mysql\bin\mysql.exe` |
-| `htdocs` | `G:\apps\xampp\htdocs` | `C:\xampp\htdocs` |
-| Backend publicado | `…\htdocs\donation-system-api` (junction) | idem |
-| Base URL app (default) | `http://192.168.0.202/donation-system-api/` | según sección 6.1 |
+| Repo | `C:\Users\games\StudioProjects\donation-system-android` | `C:\Users\games\AndroidStudioProjects\DonationSystem` |
+| XAMPP | `C:\xampp` | `G:\apps\xampp` |
+| PHP CLI | `C:\xampp\php\php.exe` | `G:\apps\xampp\php\php.exe` |
+| MySQL CLI | `C:\xampp\mysql\bin\mysql.exe` | `G:\apps\xampp\mysql\bin\mysql.exe` |
+| `htdocs` | `C:\xampp\htdocs` | `G:\apps\xampp\htdocs` |
+| Backend publicado | `<htdocs>\donation-system-api` (junction → `<repo>\backend`) | idem |
+| Base URL app (device) | `http://192.168.0.130/donation-system-api/` | `http://192.168.0.202/donation-system-api/` |
+| Base URL emulador | `http://10.0.2.2/donation-system-api/` | idem |

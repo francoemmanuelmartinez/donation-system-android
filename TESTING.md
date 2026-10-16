@@ -4,7 +4,9 @@ Checklist para probar la app a mano contra el backend real (XAMPP). Ejecutar en 
 
 ## 0. Preparación
 
-- [ ] XAMPP levantado (Apache + MySQL en `G:\apps\xampp`, puertos 80 y 3306).
+- [ ] XAMPP levantado (Apache + MySQL en la ruta de tu dispositivo — ver `AGENTS.md` →
+      "Dispositivos"; puertos 80 y 3306). En la notebook, un 500 `Access denied for user 'root'`
+      indica que `MySQL97` tomó el 3306: ver `AGENTS.md` → "Puerto 3306 ocupado por MySQL97".
 - [ ] El API responde en `http://localhost/donation-system-api/` (la carpeta es un junction al repo `backend/`).
 - [ ] La app en el emulador apunta a `http://10.0.2.2/donation-system-api/` (default de `RetrofitClient`).
 - [ ] La app usa la base `donation_system` (datos reales). El modo de test automatizado
@@ -46,11 +48,15 @@ Checklist para probar la app a mano contra el backend real (XAMPP). Ejecutar en 
       (números/emails visibles, primary marcado).
 - [ ] DNI inexistente → mensaje de no encontrado.
 
-## 4. Restricciones
+## 4. Restricciones (desde la pantalla de Donaciones)
 
-- [ ] Asignar restricción con veda → el donante pasa a EN_VEDA.
-- [ ] Confirmar fecha de retorno laborable calculada (eligible workday return date).
-- [ ] Crear restricción nueva → aparece en el diccionario.
+- [ ] El alta de donante **no** muestra Aptitud/Exclusión; el donante se guarda siempre APTO.
+- [ ] Checkbox **"Aplicar restricciones (No apto)"**: oculta la carga de donación y cambia el botón a *"GUARDAR RESTRICCIONES"*.
+- [ ] Asignar restricción con veda (días) → el donante pasa a EN_VEDA y se calcula la fecha de retorno laborable (salta fines de semana).
+- [ ] Asignar **veda permanente** → donante EN_VEDA sin fecha de retorno.
+- [ ] Restricciones activas listadas en la card: **Editar** (in-place, conserva la fecha de inicio) e **Incluir ahora** (`revoke` → APTO si no quedan otras).
+- [ ] Con turno en la Agenda, al guardar se ofrece **reagendar**: cancela el turno actual y crea uno nuevo en la fecha de retorno.
+- [ ] Crear restricción nueva en el diccionario (panel Directora) → aparece en el dropdown.
 - [ ] Crear sin nombre → 400.
 - [ ] Eliminar restricción → desaparece del diccionario.
 
@@ -106,3 +112,4 @@ Advertencias:
 - `testDebugUnitTest` crea y resetea esa base en cada corrida (drop + recreate del esquema).
 - **Nunca** correr la suite sin el override: el helper de test aplica drop al esquema en la base sobre
   la que el API esté apuntando en ese momento.
+- `scripts\sync-db.ps1` **no** toca `donation_system_test` sin `-Force` (guarda contra pisarla por error).

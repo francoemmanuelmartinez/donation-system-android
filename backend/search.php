@@ -48,8 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     t.id, t.dni, t.firstName, t.lastName, t.bloodType, t.phenotype,
                     t.lastDonationDate, t.nextEligibleDate, t.phoneNumber,
                     t.recoveryEnd AS recoveryVedaEndDate,
-                    t.restrictionEndDate AS restrictionVedaEndDate,
+                    IF(t.restrictionIsPermanent = 1, NULL, t.restrictionEndDate) AS restrictionVedaEndDate,
                     t.restrictionReason AS restrictionVedaReason,
+                    t.restrictionIsPermanent AS isPermanentRestriction,
                     CASE
                         WHEN t.recoveryEnd IS NULL AND t.restrictionEndDate IS NULL THEN 'APTO'
                         WHEN t.recoveryEnd IS NOT NULL AND t.restrictionEndDate IS NOT NULL
@@ -59,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     END AS state,
                     CASE
                         WHEN t.recoveryEnd IS NULL AND t.restrictionEndDate IS NULL THEN NULL
+                        WHEN t.restrictionIsPermanent = 1 AND (t.recoveryEnd IS NULL OR t.restrictionEndDate >= t.recoveryEnd) THEN NULL
                         WHEN t.recoveryEnd IS NOT NULL AND t.restrictionEndDate IS NOT NULL
                             THEN IF(t.recoveryEnd >= t.restrictionEndDate, t.recoveryEnd, t.restrictionEndDate)
                         WHEN t.recoveryEnd IS NOT NULL THEN t.recoveryEnd
@@ -79,16 +81,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                         d.next_eligible_date AS nextEligibleDate,
                         dp.phone_number AS phoneNumber,
                         IF(d.next_eligible_date IS NOT NULL AND d.next_eligible_date > CURDATE(), d.next_eligible_date, NULL) AS recoveryEnd,
-                        rr.restrictionEndDate, rr.restrictionReason
+                        rr.restrictionEndDate, rr.restrictionReason, rr.restrictionIsPermanent
                     FROM donors d
                     LEFT JOIN donor_phones dp ON dp.donor_id = d.id AND dp.is_primary = 1
                     LEFT JOIN (
                         SELECT dr.donor_id,
-                               MAX(dr.eligible_workday_return_date) AS restrictionEndDate,
-                               SUBSTRING_INDEX(GROUP_CONCAT(r.name ORDER BY dr.eligible_workday_return_date DESC, dr.id DESC), ',', 1) AS restrictionReason
+                               MAX(CASE WHEN dr.is_permanent = 1 THEN DATE '9999-12-31' ELSE dr.eligible_workday_return_date END) AS restrictionEndDate,
+                               MAX(CASE WHEN dr.is_permanent = 1 THEN 1 ELSE 0 END) AS restrictionIsPermanent,
+                               SUBSTRING_INDEX(GROUP_CONCAT(r.name ORDER BY dr.is_permanent DESC, dr.eligible_workday_return_date DESC, dr.id DESC), ',', 1) AS restrictionReason
                         FROM donor_restrictions dr
                         JOIN restrictions r ON dr.restriction_id = r.id
-                        WHERE dr.eligible_workday_return_date >= CURDATE()
+                        WHERE dr.is_permanent = 1 OR dr.eligible_workday_return_date >= CURDATE()
                         GROUP BY dr.donor_id
                     ) rr ON rr.donor_id = d.id" . $whereSql . "
                 ) t";

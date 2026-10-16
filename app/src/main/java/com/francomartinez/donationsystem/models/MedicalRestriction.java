@@ -7,6 +7,9 @@ public class MedicalRestriction {
     @SerializedName("id")
     private int id;
 
+    @SerializedName("restrictionId")
+    private int restrictionId;
+
     @SerializedName("name")
     private String name;
 
@@ -21,6 +24,9 @@ public class MedicalRestriction {
 
     @SerializedName("vedaDays")
     private int vedaDays;
+
+    @SerializedName("isPermanent")
+    private boolean isPermanent;
 
     @SerializedName("calculatedEndDate")
     private String calculatedEndDate;
@@ -46,6 +52,14 @@ public class MedicalRestriction {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public int getRestrictionId() {
+        return restrictionId;
+    }
+
+    public void setRestrictionId(int restrictionId) {
+        this.restrictionId = restrictionId;
     }
 
     public String getName() {
@@ -86,6 +100,14 @@ public class MedicalRestriction {
 
     public void setVedaDays(int vedaDays) {
         this.vedaDays = vedaDays;
+    }
+
+    public boolean isPermanent() {
+        return isPermanent;
+    }
+
+    public void setPermanent(boolean permanent) {
+        isPermanent = permanent;
     }
 
     public String getCalculatedEndDate() {

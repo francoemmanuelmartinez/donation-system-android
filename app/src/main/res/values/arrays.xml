@@ -42,8 +42,9 @@
         <item>Trabajo</item>
     </string-array>
 
-    <string-array name="aptitudes">
-        <item>Apto</item>
-        <item>No apto</item>
+    <string-array name="appointment_procedures">
+        <item>Plasma</item>
+        <item>Plaquetas</item>
+        <item>Sangre</item>
     </string-array>
 </resources>

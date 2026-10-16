@@ -6,7 +6,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
-    private static final String DEFAULT_BASE_URL = "http://192.168.0.202/donation-system-api/";
+    private static final String DEFAULT_BASE_URL = "http://10.0.2.2/donation-system-api/";
     private static String baseUrl = DEFAULT_BASE_URL;
     private static Retrofit retrofit = null;
 

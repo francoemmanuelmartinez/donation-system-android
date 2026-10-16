@@ -70,7 +70,7 @@ try {
     $stmt->execute(['from' => $fromDate, 'to' => $toDate]);
     $donorsRegistered = (int)($stmt->fetch()['total'] ?? 0);
 
-    $stmt = $conn->query("SELECT COUNT(DISTINCT donor_id) AS total FROM donor_restrictions WHERE calculated_end_date >= CURDATE()");
+    $stmt = $conn->query("SELECT COUNT(DISTINCT donor_id) AS total FROM donor_restrictions WHERE is_permanent = 1 OR eligible_workday_return_date >= CURDATE()");
     $donorsInVeda = (int)($stmt->fetch()['total'] ?? 0);
 
     $stmt = $conn->prepare("SELECT DATE_FORMAT(d.created_at, :fmt) AS date, COUNT(*) AS cnt

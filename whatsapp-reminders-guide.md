@@ -2,6 +2,8 @@
 
 Implementación de la función de recordatorios de turnos por WhatsApp (y email) del módulo Agenda: cómo funciona, qué archivos la componen y cómo usarla/probarla. Incluye el envío **manual** (el operador toca 💬) y el envío **automático** 2 días antes vía OpenWA (sección 7).
 
+> **Nota (notebook PARDO-NET):** los ajustes de esta guía —base URL al emulador (`10.0.2.2`), host `192.168.0.130` en el cleartext, cuenta `admin`, scripts de sync y BD— están orientados a dejar operativa la app en la **notebook**. La **PC de escritorio** ya funciona con su configuración actual y no requiere estos cambios.
+
 ```mermaid
 flowchart LR
     A[item_appointment.xml<br/>botón WhatsApp / check] --> B[AppointmentsAdapter<br/>bindChannel + OnReminderClickListener]
@@ -489,9 +491,9 @@ Además del envío **manual** (sección 4, el operador toca 💬), el sistema pu
 ```mermaid
 flowchart TD
     A[Turno agendado] --> B{¿2 días antes?}
-    B -->|cron diario 08:00| C[send_reminders.php]
-    B -->|GET agenda<br/>lazy sweep| C
-    B -->|botón manual app| C
+    B -->|cron diario 08:00<br/>off en notebook| C[send_reminders.php]
+    B -->|GET agenda<br/>lazy sweep<br/>off en notebook| C
+    B -->|botón manual app<br/>único en notebook| C
 
     C --> D{¿dentro de ventana 08-13?}
     D -->|no| E[modo compact: delay corto]
@@ -549,13 +551,13 @@ $REMINDER_GREETINGS = [
     'Hola {donorName}!',
     'Hola {donorName}, ¿cómo estás?',
     'Estimado/a {donorName}:',
-    'Hola {donorName}, te escribimos del banco de sangre.',
+    '{donorName}, te esperamos en el Banco de Sangre.',
 ];
 
-// OpenWA (proveedor actual)
-define('OPENWA_BASE_URL', 'http://localhost:2785');
-define('OPENWA_API_KEY', '<api-key-que-OpenWA-genera-al-primer-arranque>');
-define('OPENWA_SESSION_ID', '<id-de-la-sesion-escaneada>');
+// OpenWA (proveedor actual). Las credenciales NO se versionan:
+// se definen en config_reminders_override.php (gitignored). Ver §7.8.
+define('OPENWA_BASE_URL', 'http://localhost:2785');       // default del código
+// OPENWA_API_KEY / OPENWA_SESSION_ID -> config_reminders_override.php
 
 // Pacing
 define('MANUAL_DELAY_MIN', 20);
@@ -586,7 +588,7 @@ php send_reminders.php manual
 
 # simulación: no envía ni marca nada, solo imprime
 php send_reminders.php dryrun
-php send_reminders.php dryrun manual
+php send_reminders.php manual dryrun   # el dryrun no envía; 'manual' no cambia la salida
 ```
 
 **Qué hace**:
@@ -611,8 +613,9 @@ Formato del log:
 Abstrae el proveedor. Cambiar de OpenWA a Meta es cambiar `REMINDER_PROVIDER` (y completar credenciales), sin tocar el dispatcher.
 
 ```php
-sendWhatsappText(string $phone, string $message): array
-// -> ['ok' => bool, 'error' => ?string]
+sendWhatsappText($number, $text, $params = null): array
+// -> ['ok' => bool, 'message' => string, 'raw' => mixed]
+//    $params = variables de plantilla Meta; OpenWA las ignora (usa $text)
 
 normalizeWaNumber(string $phone): string
 // agrega prefijo país 54 si falta (Argentina)
@@ -634,7 +637,14 @@ sendViaMeta(...)     // implementado (Fase 2), INACTIVO: Meta EN PAUSA — ver �
     "data": { "dispatched": true, "mode": "manual" } }
   ```
 
-- **Lazy sweep**: cuando la app hace el `GET` de la Agenda, el backend revisa si pasó el horario de disparo y, de ser así, corre el dispatcher una vez por día (controlado por la tabla `reminder_dispatch_control`). Es el **respaldo sin cron**: si nadie abre la app, no ocurre; por eso se combina con cron.
+- **Lazy sweep**: cuando la app hace el `GET` de la Agenda, el backend revisa si hoy ya corrió el dispatch (`reminder_dispatch_control.last_run_at`) y, de no ser así **y estando dentro de la ventana 08:00–13:00**, corre el dispatcher una vez (con un lock `logs/reminders.sweep` de 2 min para que varios requests no lo disparen a la vez). Es el **respaldo sin cron**: si nadie abre la app, no ocurre; por eso se combina con cron. Se puede desactivar por máquina con `REMINDER_LAZY_SWEEP_ENABLED = false` (en `config_reminders_override.php`).
+
+> **Notebook PARDO-NET (cambio exclusivo de este dispositivo):** aquí el **scheduler y el lazy
+> sweep están desactivados** — la tarea `RecordatoriosDonacion` fue eliminada (`schtasks /Delete /TN
+> "RecordatoriosDonacion" /F`) y `REMINDER_LAZY_SWEEP_ENABLED = false`. El **único disparo** es el
+> **botón de la Agenda**. El envío sigue siendo pausado/secuencial (mismos `MANUAL_DELAY_MIN/MAX` y
+> `BATCH_SPREAD_MIN_SECONDS`). Para reactivar: `php backend/install_scheduler.php` y flag en `true`.
+> La **PC de escritorio** mantiene scheduler + lazy sweep.
 
 ### 7.6 Instalador del scheduler — `backend/install_scheduler.php`
 
@@ -648,6 +658,10 @@ php install_scheduler.php
 - **Linux** → agrega una línea a `crontab`.
 
 > El scheduler corre **en el servidor** (donde vive el backend + OpenWA), no en las PCs de los operadores.
+>
+> **Notebook PARDO-NET:** el scheduler está **eliminado** (no correr `install_scheduler.php`). El único
+> disparo es el botón de la Agenda. Para revertir: correr este instalador y poner
+> `REMINDER_LAZY_SWEEP_ENABLED = true` en `config_reminders_override.php`.
 
 ### 7.7 Requisito: binario PHP-CLI (`PHP_CLI_PATH`)
 
@@ -677,7 +691,7 @@ DATABASE_TYPE=sqlite
 npm run build && npm start
 ```
 
-**Primer arranque**: OpenWA **genera una API key automáticamente** y la imprime en el log (`API Key (newly created): owa_k1_...`). Copiarla a `OPENWA_API_KEY` en `config_reminders.php`.
+**Primer arranque**: OpenWA **genera una API key automáticamente** y la imprime en el log (`API Key (newly created): owa_k1_...`). Copiarla a `OPENWA_API_KEY` en `backend/config_reminders_override.php` (gitignored; **no** en `config_reminders.php`, que está versionado).
 
 **Crear y vincular la sesión** (API REST, o hacerlo desde el dashboard):
 
@@ -730,7 +744,9 @@ Además de las columnas de la sección 3.1, el dispatch automático usa:
 CREATE TABLE IF NOT EXISTS reminder_dispatch_control (
   id INT PRIMARY KEY DEFAULT 1,
   last_run_at DATETIME NULL,
-  warmup_start_date DATE NULL
+  warmup_start_date DATE NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 -- fila única
 INSERT IGNORE INTO reminder_dispatch_control (id) VALUES (1);
@@ -792,9 +808,21 @@ define('REMINDER_PROVIDER', 'openwa');   // 'openwa' (gratis, no oficial) | 'met
 | Detener (mantenimiento) | `Stop-Service OpenWA-Gateway` (NUNCA `taskkill`: el servicio lo relanza) |
 | Logs | `C:\Users\games\openwa\openwa.out.log` / `openwa.err.log` |
 | Verificar | `curl http://localhost:2785/api/health` → `{"status":"ok"}` |
-| Dashboard QR/sesiones | `C:\Users\games\openwa\openwa-dashboard.bat` → UI :2886 (manual, solo cuando se administra) |
+| Dashboard QR/sesiones | `C:\Users\games\openwa\openwa-dashboard.bat` → UI en `http://localhost:2785` (bundled, solo cuando se administra) |
 
 (Histórico: `start-openwa.bat` quedó obsoleto para el gateway; `stop-openwa.bat` solo por emergencia.)
+
+> **Notebook PARDO-NET (14-oct-2026):** OpenWA instalado en `C:\Users\games\openwa` — Node 24 LTS,
+  Python 3.12, NSSM (winget); `.env` con `ENGINE_TYPE=baileys` + `DATABASE_TYPE=sqlite`;
+  `PUPPETEER_SKIP_DOWNLOAD=1` (sin Chromium); servicio `OpenWA-Gateway` (auto-start). Sesión
+  `donacion` (chip `5492233556122`); API key y session id en
+  `backend/config_reminders_override.php`. El dashboard está **bundled**: se sirve en
+  `http://localhost:2785` (no hace falta el dev server de :2886).
+>
+> **Sin disparos automáticos (cambio exclusivo de este dispositivo):** la tarea
+> `RecordatoriosDonacion` fue **eliminada** y `REMINDER_LAZY_SWEEP_ENABLED = false`. Los
+> recordatorios se envían **solo tocando el botón** de la Agenda, de forma **pausada/secuencial**.
+> La PC de escritorio mantiene scheduler + lazy sweep.
 
 **Reglas operativas**:
 - `send_reminders.php` arma **texto + variables** siempre: OpenWA usa el texto libre, Meta las variables de la plantilla (`sendWhatsappText($number, $text, $params)`).

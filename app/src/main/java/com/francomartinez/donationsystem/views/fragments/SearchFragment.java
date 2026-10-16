@@ -214,6 +214,7 @@ public class SearchFragment extends Fragment {
     }
 
     private void onDonorCardClick(SearchResultItem item) {
+        sharedDonorViewModel.setSelectedAppointment(null);
         donorViewModel.getDonorByDni(item.getDni());
     }
 
