@@ -76,6 +76,31 @@ servicio Windows **`OpenWA-Gateway`** (NSSM, auto-start/restart). Sirve API + da
 - **Prevención:** apagar XAMPP por el panel / `mysql_stop.bat`; evitar cortes de energía forzados.
 - **Ojo:** no crear carpetas dentro de `mysql\data` (MySQL las lista como bases de datos).
 
+### MariaDB no arranca: redo log de InnoDB corrupto (`Missing MLOG_CHECKPOINT`)
+- **Síntoma:** el panel XAMPP dice *"MySQL shutdown unexpectedly"*; `mysqld` **aborta al arrancar**.
+- **Causa:** el redo log de InnoDB quedó inconsistente (apagado sucio / kill `taskkill /F` mientras
+  MariaDB corría). En `<XAMPP>\mysql\data\mysql_error.log` aparece:
+  *"InnoDB: Missing MLOG_CHECKPOINT at N between the checkpoint N and the end M"* y luego
+  *"Unknown/unsupported storage engine: InnoDB"* → aborta. **No** es `multi-master.info` ni puerto 3306.
+- **Fix (rebuild limpio — la instancia vieja NO se recupera sola):**
+  1. Resguardo frío: detener mysqld y copiar `<XAMPP>\mysql\data` completo + `my.ini` a
+     `<XAMPP>\mysql\_corrupt_<fecha>\` (por si hace falta).
+  2. Opcional: `mysqldump -u root --databases donation_system > _corrupt_<fecha>\donation_system.sql`
+     (sirve si la instancia aún arranca; los datos son reproducibles desde `sql\`).
+  3. Detener mysqld (`mysqladmin -u root shutdown`). Mover `<XAMPP>\mysql\data` a
+     `_corrupt_<fecha>\data_used`.
+  4. Generar un datadir **desde cero**: `mysql_install_db.exe --datadir="<XAMPP>\mysql\data"`
+     (crea las tablas del sistema y el redo log con LSN consistente; root queda sin contraseña).
+  5. Arrancar mysqld y verificar `mysqladmin -u root ping` → *"mysqld is alive"*.
+  6. Reconstruir la BD: `scripts\sync-db.ps1 -Push -Seed`.
+- **Ojo:** borrar solo los `ib_logfile*` deja que MariaDB arranque, pero `ibdata1` queda con un
+  checkpoint atrás y en cada arranque aparecen *"Page [...] log sequence number ... is in the
+  future! Current system log sequence number ..."* (persistente). Preferir el rebuild con
+  `mysql_install_db.exe`.
+- **Prevención:** `innodb_log_file_size=128M` en `my.ini` (era `5M`); apagar por el panel /
+  `mysqladmin -u root shutdown`; **no** usar `mysql_stop.bat` ni `taskkill /F /IM mysqld.exe`;
+  cuidar cortes de energía.
+
 ## Notas
 - Directorio de trabajo en español; textos UI con tildes permitidas.
 - Ver `TESTING.md` para el enfoque de pruebas.
