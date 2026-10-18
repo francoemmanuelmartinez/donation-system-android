@@ -85,7 +85,7 @@ En esta guía vas a ver **los tres**, porque juntos cubren todo.
 | **Backend** | Un programa que corre en un servidor (una computadora encendida siempre). Recibe pedidos y responde. En esta guía está en **PHP**. |
 | **Servidor** | La computadora (o servicio) donde vive el backend. Puede ser tu propia PC con XAMPP. |
 | **API** | La "puerta de entrada" de un programa. Le mandás un pedido y te devuelve una respuesta. |
-| **API key** | Una contraseña larga que identifica que vos tenés permiso de usar la API. Es secreta. |
+| **API key** | Una contraseña larga que identifica que vos tenés permiso de usar la API. Es secreta. Si no la copiaste al inicio, OpenWA la guarda en `data\.api-key`. |
 | **OpenWA** | Un programa hecho en **Node.js** que maneja un WhatsApp y permite enviar mensajes por internet. Es gratis y no oficial. |
 | **Node.js** | El "motor" que necesita OpenWA para funcionar. Sin Node.js, OpenWA no arranca. |
 | **Baileys** | La librería de Node.js que OpenWA usa **por dentro** para hablar con WhatsApp. Se conecta como si fuera **WhatsApp Web** (un "dispositivo vinculado"), **sin** navegador ni Chromium: por eso **no** hace falta el celular encendido todo el tiempo. Usa la API **no oficial** de WhatsApp. |
@@ -177,6 +177,7 @@ NODE_ENV=production
 PORT=2785
 ENGINE_TYPE=baileys
 DATABASE_TYPE=sqlite
+# SERVE_DASHBOARD=true   # para ver el dashboard en http://localhost:2785 (ver B.6)
 ```
 
 - `PORT=2785`: en qué "puerta" (puerto) va a atender OpenWA. Lo usaremos luego.
@@ -201,6 +202,12 @@ API Key (newly created): owa_k1_XXXXXXXXXXXX...
 
 > **Copiá esa API key y guardala.** La vas a pegar en el backend. Es tu "llave" de
 > OpenWA.
+
+> **¿No la copiaste?** No pasa nada: OpenWA la deja guardada en un archivo dentro de su carpeta,
+> en la subcarpeta `data`, con el nombre `.api-key` (si tu carpeta de OpenWA es `C:\...\OpenWA`, el
+> archivo es `C:\...\OpenWA\data\.api-key`). Abrilo con el Bloc de notas y ahí está la key. El último
+> renglón del arranque también te dice dónde: termina con `(full key in <ruta>)`.
+> Tratala como una contraseña: es la llave que permite enviar mensajes.
 
 **Comprobá que responde** (abrí otra terminal, dejá la primera abierta):
 
@@ -231,7 +238,7 @@ curl http://localhost:2785/api/sessions/<SESSION_ID>/qr \
 ```
 
 Para ver el QR de forma cómoda: pegá el texto que empieza con `data:image/png;base64,`
-en un visor online de "base64 a imagen", o usá el dashboard de OpenWA si lo tenés.
+en un visor online de "base64 a imagen", o mirá el QR directo en el **dashboard** (ver **B.6**).
 
 **Escanear el QR (único paso manual de toda la guía):**
 En el celular que va a enviar los mensajes → WhatsApp → **Ajustes** →
@@ -253,6 +260,45 @@ nssm start OpenWA-Gateway
 En Linux, con **systemd**, se crea un archivo `.service` que ejecuta `npm start`.
 Si esto te resulta muy avanzado, saltealo: alcanza con abrir OpenWA a mano
 (`npm start`) mientras trabajás.
+
+### B.6 Mirar todo desde el dashboard (interfaz gráfica, opcional pero muy útil)
+
+Hasta acá creaste la sesión y pediste el QR con comandos. OpenWA también trae un **dashboard**:
+una **página web** que se abre en el navegador (Chrome, Edge o Firefox). Ahí ves las sesiones, el
+**QR en grande**, los chats y los logs, y podés hacer **Logout** con un click. Es ideal si preferís
+una pantalla antes que la terminal.
+
+**Primero, ¿cómo se "reinicia" OpenWA?** Depende de cómo lo tengas prendido:
+- **Como servicio** (lo de B.5): reinicialo con `nssm restart OpenWA-Gateway`, o abrí *Servicios*
+  de Windows y tocá **Reiniciar** sobre `OpenWA-Gateway`.
+- **A mano** (con `npm start`): en su terminal apretá **Ctrl+C** para frenarlo y volvé a escribir
+  `npm start`.
+
+**Ahora sí, las dos formas.** Elegí una:
+
+| Forma | Cómo se prende | Dirección a abrir |
+|---|---|---|
+| **A. La que viene adentro** | Agregá `SERVE_DASHBOARD=true` al `.env` y **reiniciá** OpenWA (ver arriba) | `http://localhost:2785` |
+| **B. La de desarrollo** | `npm run dev` dentro de `dashboard/` (o `openwa-dashboard.bat`) | `http://localhost:2886` |
+
+**Cómo llegás al dashboard (el paso que importa):** abrí el navegador y escribí esa dirección
+**exacta** en la **barra de direcciones** (la de arriba, donde escribís las páginas web como
+`google.com`), y apretá **Enter**. Si no abrís esa dirección ahí, no vas a ver el dashboard.
+Por ejemplo, para la forma B escribís: `http://localhost:2886` y Enter.
+
+> La **forma B** suele ser la más rápida para practicar: no toca el `.env` ni hace falta recompilar.
+
+**Cómo se entra:** te va a pedir la **API key** (la del primer arranque, B.3). La pegás y listo:
+no hay usuario ni contraseña. Si no la tenés a mano, está en `data\.api-key` (ver B.3).
+
+**Qué podés hacer ahí:**
+- **Sessions** → crear/iniciar/parar/borrar sesiones y ver el **QR** sin copiar base64 (adiós a B.4 paso 3).
+- **Chats** → ver las conversaciones y los mensajes que se enviaron.
+- **Logs** → ver qué pasó y qué falló (para depurar).
+- **Logout** (en la sesión) → **desvincula el número** en segundos: es el corte de emergencia de C.4.
+
+> **¿Pantalla en blanco?** El navegador intenta forzar `https` y el dashboard es `http`.
+> Agregá `CSP_UPGRADE_INSECURE_REQUESTS=false` al `.env` y **reiniciá** OpenWA (igual que arriba).
 
 ---
 
@@ -782,8 +828,8 @@ las tres primeras; el **proyecto real** suma las demás (ver `whatsapp-reminders
 | **Lotes grandes** | Más de 15 mensajes: reparte en tandas de 90 min o más | No (proyecto real) |
 | **Saludos variados** | Aleatoriza el saludo para que no sean idénticos | No (proyecto real) |
 
-> **Corte de emergencia:** si algo sale mal, en el dashboard de OpenWA hacé **Logout** de la sesión
-> (desvincula el número) o poné `RECORDATORIOS_ACTIVOS = false`.
+> **Corte de emergencia:** si algo sale mal, en el dashboard de OpenWA (ver B.6) hacé **Logout** de
+> la sesión (desvincula el número) o poné `RECORDATORIOS_ACTIVOS = false`.
 
 > **Regla de oro:** *solo se advierte, nunca se bloquea.* Si un mensaje falla, se anota
 > en el log y queda pendiente. Nunca se pierde ni se rompe nada.
@@ -1582,6 +1628,8 @@ Seguí este orden. Es a prueba de balas:
 | La app da error de "cleartext" | HTTP sin candado | Agregá `usesCleartextTraffic="true"` (solo dev) |
 | Windows tira el cartel "no se encontró php.exe" y no envía | `PHP_BINARY` apunta a `httpd.exe` y `PHP_BINDIR` a una carpeta sin `php.exe` | Poné la ruta real en `PHP_CLI_PATH` de `openwa_config.php`; si el log no crece, ese es el motivo |
 | WhatsApp puede bloquear el número | Envío masivo muy rápido | Aumentá la franja de la pausa (*jitter*) en `send_reminders.php` (ver C.4) y no mandes todo junto |
+| Perdí / no copié la API key | No la guardaste del arranque | Está en `data\.api-key` dentro de la carpeta de OpenWA (ver B.3); si la revocaste, generá otra en el dashboard → API Keys |
+| El dashboard se ve en blanco | El navegador fuerza `https` sobre `http` | Poné `CSP_UPGRADE_INSECURE_REQUESTS=false` en el `.env` y reiniciá OpenWA (ver B.6) |
 
 > **Recorte de emergencia:** si algo sale mal con los envíos masivos, abrí OpenWA y
 > hacé **Logout** de la sesión (desvincula el número), o poné
