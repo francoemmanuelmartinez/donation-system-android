@@ -34,6 +34,9 @@ raíz del repo según la tabla.
   `-MysqlBin`. Guarda: no toca `donation_system_test` sin `-Force` (ver `TESTING.md`).
 - `scripts\start-xampp-mysql.ps1` — libera el puerto 3306 (detiene MySQL97) y arranca MariaDB de
   XAMPP. `-Restore` lo revierte. Requiere administrador (UAC).
+- `scripts\check-encoding.ps1` — verificación (solo lectura) de codificación: BOM UTF-8, `U+FFFD`,
+  mojibake (bytes `C3 83`, `E2 82 AC`, etc.) y la corrupción histórica `í→á` (patrones `á`+`a`,
+  `á`+`os`, etc.). Sale con código ≠ 0 si hay hallazgos. Params `-Path`, `-IncludeUntracked`, `-Quiet`.
 
 ## OpenWA (recordatorios automáticos por WhatsApp)
 Gateway open-source (Node + Baileys, **sin Chromium**) en `C:\Users\games\openwa`; corre como
@@ -100,6 +103,19 @@ servicio Windows **`OpenWA-Gateway`** (NSSM, auto-start/restart). Sirve API + da
 - **Prevención:** `innodb_log_file_size=128M` en `my.ini` (era `5M`); apagar por el panel /
   `mysqladmin -u root shutdown`; **no** usar `mysql_stop.bat` ni `taskkill /F /IM mysqld.exe`;
   cuidar cortes de energía.
+
+## Convenciones de archivos (encoding y saltos de línea)
+- **UTF-8 sin BOM** en todo archivo de texto. Un BOM (`EF BB BF`) antes de `<?php` rompe el JSON o
+  el navegador (ya nos pasó). Verificá con `scripts\check-encoding.ps1`.
+- **No reescribir archivos completos** para "arreglar" acentos o mojibake: hacé **ediciones
+  puntuales** sobre frases exactas, nunca volcar el archivo entero (así se re-copió la corrupción).
+- **Una sola guía por tema.** No generar variantes (`*_v2.md`, `*_fix.md`, etc.). La guía de OpenWA es
+  `GUIA-OPENWA-INTEGRACION.md`; la demo vive en `openwa-demo/`.
+- **Ojo con `í`:** hubo una corrupción histórica que reemplazó `í` por `á` (patrones `á`+`a`, `á`+`os`,
+  `á`+`as`, `á`+`o`). Si aparecen donde debería ir `ía`/`íos`/`ías`/`ío`, revisá con el script antes
+  de commitear.
+- **No commitear ruido de fin de línea:** el repo mezcla CRLF/LF por `core.autocrlf=true`; commiteá
+  solo lo que tenga cambio real (`git diff --stat`).
 
 ## Notas
 - Directorio de trabajo en español; textos UI con tildes permitidas.
