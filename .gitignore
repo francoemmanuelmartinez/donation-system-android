@@ -16,3 +16,7 @@ local.properties
 backend/config_override.db.php
 backend/config_reminders_override.php
 backend/logs/
+
+# Demo OpenWA: config con secretos locales + logs (ver openwa-demo/README.md)
+openwa-demo/backend/openwa_config.php
+openwa-demo/backend/logs/

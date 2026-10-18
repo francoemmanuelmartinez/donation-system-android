@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- openwa-demo/android/activity_recordatorios.xml
+     Copiar a: res/layout/activity_recordatorios.xml -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Registrar recordatorio (demo)"
+            android:textStyle="bold"
+            android:textSize="18sp" />
+
+        <EditText
+            android:id="@+id/editNombre"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Nombre"
+            android:layout_marginTop="8dp"
+            android:inputType="textPersonName" />
+
+        <EditText
+            android:id="@+id/editTelefono"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Teléfono (ej. 54911...)"
+            android:layout_marginTop="8dp"
+            android:inputType="phone" />
+
+        <EditText
+            android:id="@+id/editMensaje"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Mensaje"
+            android:layout_marginTop="8dp"
+            android:inputType="textMultiLine"
+            android:minLines="2" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Enviar en (minutos)"
+            android:layout_marginTop="12dp" />
+
+        <Spinner
+            android:id="@+id/spinnerMinutos"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp" />
+
+        <Button
+            android:id="@+id/botonCrear"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="② Crear recordatorio en la BD" />
+
+        <Button
+            android:id="@+id/botonWaMeForm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="③ Abrir WhatsApp con lo del formulario (wa.me directo)" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#DDDDDD"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Acciones con BD (recordatorios pendientes)"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textoPendientes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pendientes: ..."
+            android:textSize="16sp"
+            android:layout_marginTop="4dp" />
+
+        <Button
+            android:id="@+id/botonPendientes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="① Enviar pendientes ahora (servidor/OpenWA)" />
+
+        <Button
+            android:id="@+id/botonWaMe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="④ Abrir WhatsApp del 1er pendiente de la BD (wa.me)" />
+
+        <Button
+            android:id="@+id/botonResetGate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="⑤ Reiniciar gate del lazy sweep (solo demo)" />
+
+    </LinearLayout>
+</ScrollView>
