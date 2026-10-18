@@ -48,7 +48,7 @@ $enviados = 0;
 $fallidos = 0;
 $total    = count($pendientes);
 
-foreach ($pendientes as $posición => $r) {
+foreach ($pendientes as $posicion => $r) {
     $resultado = enviarWhatsApp($r['telefono'], $r['mensaje']);
 
     if ($resultado['ok']) {
@@ -62,7 +62,7 @@ foreach ($pendientes as $posición => $r) {
     }
 
     // Pausa entre mensajes (menos "robótico" = menos riesgo de bloqueo)
-    if ($posición < $total - 1) {
+    if ($posicion < $total - 1) {
         sleep(rand(20, 60));
     }
 }

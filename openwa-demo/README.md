@@ -15,6 +15,9 @@ Cubre estas **funcionalidades**:
 | 5 | wa.me directo (sin BD) | Botón "③ Abrir WhatsApp con lo del formulario (wa.me directo)" |
 | 6 | Reiniciar gate lazy sweep | Botón "⑤ Reiniciar gate del lazy sweep (solo demo)" |
 
+> **Pausa entre mensajes:** al enviar varios, la demo espera 20-60 s **al azar** entre uno y otro
+> (*jitter*) para no parecer un robot y bajar el riesgo de que WhatsApp bloquee el número.
+
 ---
 
 ## Backend (PHP)

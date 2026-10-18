@@ -53,6 +53,12 @@ flowchart LR
     C -->|Envía el mensaje| D[WhatsApp del donante]
 ```
 
+**¿Y cómo hace OpenWA para "hablar" con WhatsApp?** Por dentro usa **Baileys**, una librería
+(una "caja de herramientas" de código) que se conecta a WhatsApp como si fuera **WhatsApp Web**:
+un dispositivo vinculado, **sin** abrir un navegador. Por eso no hace falta que ningún celular
+esté prendido todo el tiempo. Baileys usa la API **no oficial** de WhatsApp, así que el número
+debe cuidarse (ver "Anti-baneo" en C.4).
+
 **Lo más importante de todo:** la "llave" para usar OpenWA (se llama **API key**)
 **vive en el servidor**, nunca en la app. Es como la llave de tu casa: no se la
 repartís a todo el mundo. La app le pide al backend, y el backend es el único que
@@ -82,6 +88,7 @@ En esta guía vas a ver **los tres**, porque juntos cubren todo.
 | **API key** | Una contraseña larga que identifica que vos tenés permiso de usar la API. Es secreta. |
 | **OpenWA** | Un programa hecho en **Node.js** que maneja un WhatsApp y permite enviar mensajes por internet. Es gratis y no oficial. |
 | **Node.js** | El "motor" que necesita OpenWA para funcionar. Sin Node.js, OpenWA no arranca. |
+| **Baileys** | La librería de Node.js que OpenWA usa **por dentro** para hablar con WhatsApp. Se conecta como si fuera **WhatsApp Web** (un "dispositivo vinculado"), **sin** navegador ni Chromium: por eso **no** hace falta el celular encendido todo el tiempo. Usa la API **no oficial** de WhatsApp. |
 | **Sesión** | La "cuenta de WhatsApp" que vinculaste escaneando un código QR. OpenWA le guarda un nombre/código para reconocerla. |
 | **QR** | El código cuadradito que se escanea con el celular para vincular WhatsApp (como "Dispositivos vinculados"). |
 | **cron** | Un "despertador" del servidor que ejecuta algo todos los días a una hora fija. |
@@ -173,8 +180,10 @@ DATABASE_TYPE=sqlite
 ```
 
 - `PORT=2785`: en qué "puerta" (puerto) va a atender OpenWA. Lo usaremos luego.
-- `ENGINE_TYPE=baileys`: usa la tecnología que **no necesita** el celular prendido
-  todo el tiempo.
+- `ENGINE_TYPE=baileys`: elige el "motor" de OpenWA. **Baileys** es una librería de Node.js que
+  maneja WhatsApp como si fuera **WhatsApp Web** (un dispositivo vinculado), **sin** navegador ni
+  Chromium; por eso **no** hace falta el celular prendido todo el tiempo. Usa la API **no
+  oficial**, así que cuidá el número (ver "Anti-baneo" en C.4).
 - `DATABASE_TYPE=sqlite`: guarda sus datos en un archivito local.
 
 ### B.3 Encender OpenWA por primera vez
@@ -730,6 +739,51 @@ foreach ($pendientes as $posicion => $r) {
 escribirLog("Resumen: enviados=$enviados, fallidos=$fallidos");
 exit(0);
 ```
+
+#### ¿Por qué hay una pausa entre mensajes? (el "jitter")
+
+Después de cada mensaje, el script espera un rato **al azar** antes de mandar el siguiente:
+
+```php
+// Pausa entre mensajes (menos "robótico" = menos riesgo de que WhatsApp bloquee)
+if ($posicion < $total - 1) {
+    sleep(rand(20, 60)); // entre 20 y 60 segundos
+}
+```
+
+- **Qué es el *jitter*:** es la **variación aleatoria** en el tiempo entre mensajes. Acá el
+  `rand(20, 60)` sortea un valor distinto cada vez (20 a 60 segundos). Ese "desorden a propósito"
+  es lo que se llama *jitter*.
+- **Para qué sirve:** WhatsApp (vía Baileys, API no oficial) puede **bloquear el número** si nota
+  un patrón de robot, como mensajes siempre separados por el mismo intervalo. Variar el tiempo
+  hace que el ritmo se parezca al de una persona.
+- **Solo entre mensajes:** el `if ($posicion < $total - 1)` evita esperar después del último. Un
+  lote de `N` mensajes tarda, más o menos, `(N - 1) x 20-60 s`; por eso el `dispatch` responde al
+  instante y el envío sigue en **segundo plano** (ver C.5).
+- **Está fijo en el código (demo):** no hay constante de configuración; si querés otra franja,
+  cambiá los números de `rand(20, 60)` en `send_reminders.php`.
+- **Para volúmenes grandes:** la demo no lo hace, pero el proyecto real reparte el lote dentro de
+  una **ventana horaria** (con *jitter*) y lo parte en **lotes de 90 min o más** cuando hay más de
+  15 mensajes. Ver `whatsapp-reminders-guide.md` §7.1 ("Estrategia anti-baneo").
+
+#### Anti-baneo: cómo cuidar el número
+
+OpenWA usa la API **no oficial** de WhatsApp (Baileys, vía WhatsApp Web). Si el número se comporta
+como un robot, WhatsApp puede **bloquearlo**. Estas son las precauciones: la **demo** implementa
+las tres primeras; el **proyecto real** suma las demás (ver `whatsapp-reminders-guide.md` §7.1).
+
+| Precaución | Qué hace | ¿En la demo? |
+|---|---|---|
+| **Pausa / jitter** | Espera 20-60 s **al azar** entre mensajes (ver arriba) | Sí |
+| **Kill-switch** | `RECORDATORIOS_ACTIVOS = false` corta todo al instante | Sí |
+| **Enviar lo que corresponde** | Un recordatorio a quien lo espera (no spam) | Sí (a mano) |
+| **Ventana horaria** | Enviar solo en horario "humano" (p. ej. 08-13) | No (proyecto real) |
+| **Tope diario y warm-up** | Máximo por día; un número nuevo arranca con pocos | No (proyecto real) |
+| **Lotes grandes** | Más de 15 mensajes: reparte en tandas de 90 min o más | No (proyecto real) |
+| **Saludos variados** | Aleatoriza el saludo para que no sean idénticos | No (proyecto real) |
+
+> **Corte de emergencia:** si algo sale mal, en el dashboard de OpenWA hacé **Logout** de la sesión
+> (desvincula el número) o poné `RECORDATORIOS_ACTIVOS = false`.
 
 > **Regla de oro:** *solo se advierte, nunca se bloquea.* Si un mensaje falla, se anota
 > en el log y queda pendiente. Nunca se pierde ni se rompe nada.
@@ -1527,7 +1581,7 @@ Seguí este orden. Es a prueba de balas:
 | La app no conecta | URL/red | Revisá `BASE` en `RecordatoriosApi` y el permiso `INTERNET` |
 | La app da error de "cleartext" | HTTP sin candado | Agregá `usesCleartextTraffic="true"` (solo dev) |
 | Windows tira el cartel "no se encontró php.exe" y no envía | `PHP_BINARY` apunta a `httpd.exe` y `PHP_BINDIR` a una carpeta sin `php.exe` | Poné la ruta real en `PHP_CLI_PATH` de `openwa_config.php`; si el log no crece, ese es el motivo |
-| WhatsApp puede bloquear el número | Envío masivo muy rápido | Aumentá las pausas entre mensajes y no mandes todo junto |
+| WhatsApp puede bloquear el número | Envío masivo muy rápido | Aumentá la franja de la pausa (*jitter*) en `send_reminders.php` (ver C.4) y no mandes todo junto |
 
 > **Recorte de emergencia:** si algo sale mal con los envíos masivos, abrí OpenWA y
 > hacé **Logout** de la sesión (desvincula el número), o poné
