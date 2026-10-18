@@ -271,8 +271,11 @@ una pantalla antes que la terminal.
 **Primero, ¿cómo se "reinicia" OpenWA?** Depende de cómo lo tengas prendido:
 - **Como servicio** (lo de B.5): reinicialo con `nssm restart OpenWA-Gateway`, o abrí *Servicios*
   de Windows y tocá **Reiniciar** sobre `OpenWA-Gateway`.
-- **A mano** (con `npm start`): en su terminal apretá **Ctrl+C** para frenarlo y volvé a escribir
-  `npm start`.
+- **A mano** (con `npm start`): apretá **Ctrl+C** en esa terminal. Ojo: OpenWA **no** trae un
+  comando `npm stop` (no lo define en su `package.json`), así que si lo levantaste en segundo plano
+  o `Ctrl+C` no responde, cerralo desde **otra** terminal buscando quién usa el puerto `2785`:
+  - **Windows (PowerShell):** `Get-NetTCPConnection -LocalPort 2785 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }`
+  - **Windows (CMD):** `netstat -ano | findstr :2785` → anotá el **PID** (última columna) → `taskkill /PID <PID> /F`
 
 **Ahora sí, las dos formas.** Elegí una:
 
@@ -1630,6 +1633,7 @@ Seguí este orden. Es a prueba de balas:
 | WhatsApp puede bloquear el número | Envío masivo muy rápido | Aumentá la franja de la pausa (*jitter*) en `send_reminders.php` (ver C.4) y no mandes todo junto |
 | Perdí / no copié la API key | No la guardaste del arranque | Está en `data\.api-key` dentro de la carpeta de OpenWA (ver B.3); si la revocaste, generá otra en el dashboard → API Keys |
 | El dashboard se ve en blanco | El navegador fuerza `https` sobre `http` | Poné `CSP_UPGRADE_INSECURE_REQUESTS=false` en el `.env` y reiniciá OpenWA (ver B.6) |
+| Ctrl+C no frena OpenWA | Quedó en segundo plano o no hay ventana | Matalo por el puerto 2785 (ver B.6) |
 
 > **Recorte de emergencia:** si algo sale mal con los envíos masivos, abrí OpenWA y
 > hacé **Logout** de la sesión (desvincula el número), o poné
