@@ -62,3 +62,4 @@ To support development across multiple devices (e.g., PC and Notebook):
 - Implementation of **Medical Record Tracking** (Blood Pressure, Volume). Donation types (PLASMA / PLATELETS / BLOOD) are already implemented.
 - Integration of **Room Database** for offline-first capabilities.
 - Development of a **C++ Desktop Application** sharing the same central PHP/MySQL backend.
+- **Superadmin + perfil de usuario + "atendido por" + multi-centro**: plan aprobado en `plan-superadmin-perfil-centros.md` (pendiente de implementación). Incluye nuevo rol SUPERADMIN, eliminación de NONE, pantalla de perfil, registro de staff por donación, y soporte multi-centro (single-DB con `center_id` recomendado).
