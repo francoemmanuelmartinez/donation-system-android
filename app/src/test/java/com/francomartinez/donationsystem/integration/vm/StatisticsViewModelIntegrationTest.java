@@ -22,7 +22,7 @@ public class StatisticsViewModelIntegrationTest extends BaseApiTest {
 
     @Test
     public void loadWeekStatisticsSucceeds() throws Exception {
-        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", "APTO", null);
+        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", null);
         TestDatabase.insertDonation(donorId, "PLASMA", null);
         TestDatabase.insertDonation(donorId, "PLASMA", null);
         TestDatabase.insertDonation(donorId, "PLATELETS", null);

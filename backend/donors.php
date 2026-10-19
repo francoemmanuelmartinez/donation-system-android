@@ -11,10 +11,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     try {
         if ($id > 0) {
-            $stmt = $conn->prepare("SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, address, blood_type AS bloodType, phenotype, weight, height, status, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE id = :id LIMIT 1");
+            $stmt = $conn->prepare("SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, address, blood_type AS bloodType, phenotype, weight, height, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE id = :id LIMIT 1");
             $stmt->execute(['id' => $id]);
         } else {
-            $stmt = $conn->prepare("SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, address, blood_type AS bloodType, phenotype, weight, height, status, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE dni = :dni LIMIT 1");
+            $stmt = $conn->prepare("SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, address, blood_type AS bloodType, phenotype, weight, height, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE dni = :dni LIMIT 1");
             $stmt->execute(['dni' => $dni]);
         }
         $donor = $stmt->fetch();
@@ -126,7 +126,7 @@ $bloodType = trim($data->bloodType ?? $data->blood_type ?? '');
                 'id' => $donorId
             ]);
         } else {
-            $insertStmt = $conn->prepare("INSERT INTO donors (dni, first_name, last_name, gender, birth_date, city, address, blood_type, phenotype, weight, height, status) VALUES (:dni, :firstName, :lastName, :gender, :birthDate, :city, :address, :bloodType, :phenotype, :weight, :height, 'APTO')");
+            $insertStmt = $conn->prepare("INSERT INTO donors (dni, first_name, last_name, gender, birth_date, city, address, blood_type, phenotype, weight, height) VALUES (:dni, :firstName, :lastName, :gender, :birthDate, :city, :address, :bloodType, :phenotype, :weight, :height)");
             $insertStmt->execute([
                 'dni' => $dni,
                 'firstName' => $firstName,

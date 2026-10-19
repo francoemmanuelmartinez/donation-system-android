@@ -23,9 +23,9 @@ public class SearchViewModelIntegrationTest extends BaseApiTest {
 
     @Test
     public void searchByTextReturnsMatchingDonors() throws Exception {
-        int aptoId = TestDatabase.insertDonor("55555555", "Juan", "Sosa", "O+", "APTO", null);
+        int aptoId = TestDatabase.insertDonor("55555555", "Juan", "Sosa", "O+", null);
         TestDatabase.insertDonorPhone(aptoId, "3515555555", true);
-        TestDatabase.insertDonor("66666666", "Pedro", "Rios", "O+", "APTO", null);
+        TestDatabase.insertDonor("66666666", "Pedro", "Rios", "O+", null);
 
         SearchViewModel vm = new SearchViewModel();
         vm.search("Sosa", "", "");
@@ -39,7 +39,7 @@ public class SearchViewModelIntegrationTest extends BaseApiTest {
 
     @Test
     public void searchReturnsDonorsInVeda() throws Exception {
-        int vedaId = TestDatabase.insertDonor("66666666", "Pedro", "Rios", "O+", "APTO", null);
+        int vedaId = TestDatabase.insertDonor("66666666", "Pedro", "Rios", "O+", null);
         // Veda por recuperación post-donación: next_eligible_date futuro (el estado se calcula en SQL).
         TestDatabase.execute("UPDATE donors SET next_eligible_date = DATE_ADD(CURDATE(), INTERVAL 30 DAY) "
                 + "WHERE id = " + vedaId);
@@ -55,8 +55,8 @@ public class SearchViewModelIntegrationTest extends BaseApiTest {
 
     @Test
     public void searchEmptyQueryReturnsAllDonors() throws Exception {
-        TestDatabase.insertDonor("55555555", "Juan", "Sosa", "O+", "APTO", null);
-        TestDatabase.insertDonor("66666666", "Pedro", "Rios", "O+", "APTO", null);
+        TestDatabase.insertDonor("55555555", "Juan", "Sosa", "O+", null);
+        TestDatabase.insertDonor("66666666", "Pedro", "Rios", "O+", null);
 
         SearchViewModel vm = new SearchViewModel();
         vm.search("", "", "");

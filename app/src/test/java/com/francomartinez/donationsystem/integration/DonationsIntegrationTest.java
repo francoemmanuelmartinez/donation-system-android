@@ -18,7 +18,7 @@ public class DonationsIntegrationTest extends BaseApiTest {
 
     @Test
     public void saveDonationPersistsVitalsProceduresAndLastDonationDate() throws Exception {
-        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", "APTO", null);
+        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", null);
 
         Donation donation = new Donation(donorId, 70.0, 1.75, 42.0, 180000, 1, Arrays.asList("PLASMA", "PLATELETS"));
         ApiResponse<Map<String, Object>> response = ApiTestClient.call(ApiTestClient.api().saveDonation(donation));
@@ -36,7 +36,7 @@ public class DonationsIntegrationTest extends BaseApiTest {
 
     @Test
     public void saveDonationWithoutRequiredDataReturns400() throws Exception {
-        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", "APTO", null);
+        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", null);
 
         Donation invalid = new Donation(donorId, 0, 1.75, 0, 0, 1, Arrays.asList("PLASMA"));
         assertEquals(400, ApiTestClient.status(ApiTestClient.api().saveDonation(invalid)));
@@ -44,7 +44,7 @@ public class DonationsIntegrationTest extends BaseApiTest {
 
     @Test
     public void invalidProcedureTypesAreIgnored() throws Exception {
-        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", "APTO", null);
+        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", null);
 
         Donation donation = new Donation(donorId, 70.0, 1.75, 42.0, 180000, 1, Arrays.asList("PLASMA", "NOT_A_PROC"));
         ApiResponse<Map<String, Object>> response = ApiTestClient.call(ApiTestClient.api().saveDonation(donation));

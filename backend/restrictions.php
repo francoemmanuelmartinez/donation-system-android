@@ -11,8 +11,8 @@ function restrictIsActiveSql($alias = 'dr') {
     return "($alias.is_permanent = 1 OR $alias.eligible_workday_return_date >= CURRENT_DATE())";
 }
 
-/** Recalcula donors.status a partir de las restricciones activas y la recuperación. */
-function recomputeDonorStatus($conn, $donorId) {
+/** Deriva donors status a partir de las restricciones activas y la recuperación (sin mutar). */
+function deriveDonorStatus($conn, $donorId) {
     $activeStmt = $conn->prepare("SELECT 1 FROM donor_restrictions WHERE donor_id = :donorId AND " . restrictIsActiveSql('donor_restrictions') . " LIMIT 1");
     $activeStmt->execute(['donorId' => $donorId]);
     $hasActiveRestriction = (bool)$activeStmt->fetch();
@@ -22,10 +22,7 @@ function recomputeDonorStatus($conn, $donorId) {
     $nextEligible = $nextStmt->fetchColumn();
     $inRecovery = $nextEligible !== null && $nextEligible !== false && $nextEligible > date('Y-m-d');
 
-    $status = ($hasActiveRestriction || $inRecovery) ? 'EN_VEDA' : 'APTO';
-    $conn->prepare("UPDATE donors SET status = :status WHERE id = :id")
-         ->execute(['status' => $status, 'id' => $donorId]);
-    return $status;
+    return ($hasActiveRestriction || $inRecovery) ? 'EN_VEDA' : 'APTO';
 }
 
 /** Normaliza un elemento de la lista de restricciones del request. */
@@ -261,8 +258,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 $assigned[] = insertRestriction($conn, $donorId, $entry, $createdByUserId);
             }
 
-            recomputeDonorStatus($conn, $donorId);
-
             $appointmentInfo = [];
             if ($reschedule) {
                 $rescheduleResult = handleReschedule($conn, $donorId, $reschedule);
@@ -345,7 +340,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                      ]);
             }
 
-            $status = recomputeDonorStatus($conn, $donorId);
+            $status = deriveDonorStatus($conn, $donorId);
 
             $appointmentInfo = [];
             if ($reschedule) {
@@ -408,7 +403,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                      ->execute(['donorId' => $donorId]);
             }
 
-            $status = recomputeDonorStatus($conn, $donorId);
+            $status = deriveDonorStatus($conn, $donorId);
 
             $conn->commit();
 

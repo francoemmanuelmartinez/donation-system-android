@@ -97,11 +97,11 @@ public final class TestDatabase {
         return userIdByDni(dni);
     }
 
-    public static int insertDonor(String dni, String firstName, String lastName, String bloodType, String status,
-                                  String createdAt) throws Exception {
-        execute("INSERT INTO donors (dni, first_name, last_name, gender, birth_date, city, address, blood_type, phenotype, status, last_donation_date, created_at) VALUES ('"
+public static int insertDonor(String dni, String firstName, String lastName, String bloodType,
+                                   String createdAt) throws Exception {
+        execute("INSERT INTO donors (dni, first_name, last_name, gender, birth_date, city, address, blood_type, phenotype, last_donation_date, created_at) VALUES ('"
                 + esc(dni) + "', '" + esc(firstName) + "', '" + esc(lastName) + "', 'Otro', '1990-01-01', 'Cordoba', 'Av Siempre 123', '"
-                + esc(bloodType) + "', '', '" + status + "', NULL, " + sqlDatetime(createdAt) + ")");
+                + esc(bloodType) + "', '', NULL, " + sqlDatetime(createdAt) + ")");
         return queryInt("SELECT id FROM donors WHERE dni = '" + esc(dni) + "'");
     }
 

@@ -95,7 +95,7 @@ INSERT INTO `tmp_seed` (`idx`, `dni`, `first_name`, `last_name`, `gender`, `birt
 -- ------------------------------------------------------------
 INSERT INTO `donors`
   (`dni`, `first_name`, `last_name`, `gender`, `birth_date`, `city`,
-   `address`, `blood_type`, `phenotype`, `weight`, `height`, `status`)
+   `address`, `blood_type`, `phenotype`, `weight`, `height`)
 SELECT
   s.`dni`, s.`first_name`, s.`last_name`, s.`gender`, s.`birth_date`,
   'Mar del Plata',
@@ -103,8 +103,7 @@ SELECT
   s.`blood_type`,
   IF(s.`idx` % 7 = 0, 'Kell-', NULL),
   IF(s.`gender` = 'Femenino', 56 + (s.`idx` % 8) * 2, 72 + (s.`idx` % 10) * 2),
-  IF(s.`gender` = 'Femenino', 158 + (s.`idx` % 6) * 2, 172 + (s.`idx` % 6) * 2),
-  'APTO'
+  IF(s.`gender` = 'Femenino', 158 + (s.`idx` % 6) * 2, 172 + (s.`idx` % 6) * 2)
 FROM `tmp_seed` s;
 
 -- ------------------------------------------------------------

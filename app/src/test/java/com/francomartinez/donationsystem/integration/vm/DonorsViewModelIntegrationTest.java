@@ -27,7 +27,7 @@ public class DonorsViewModelIntegrationTest extends BaseApiTest {
 
     @Test
     public void getDonorByDniFound() throws Exception {
-        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", "APTO", null);
+        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", null);
         TestDatabase.insertDonorPhone(donorId, "3514444444", true);
 
         DonorsViewModel vm = new DonorsViewModel();
@@ -80,7 +80,7 @@ public class DonorsViewModelIntegrationTest extends BaseApiTest {
 
     @Test
     public void assignRestrictionsMarksDonorEnVeda() throws Exception {
-        int donorId = TestDatabase.insertDonor("88888888", "Ana", "Suarez", "B+", "APTO", null);
+        int donorId = TestDatabase.insertDonor("88888888", "Ana", "Suarez", "B+", null);
         int restrictionId = TestDatabase.queryInt("SELECT id FROM restrictions WHERE name = 'Tatuaje Reciente'");
 
         DonorsViewModel vm = new DonorsViewModel();
@@ -89,6 +89,5 @@ public class DonorsViewModelIntegrationTest extends BaseApiTest {
 
         Resource<Map<String, Object>> result = VmTestUtils.await(vm.getAssignResult(), 5000);
         assertEquals(Resource.Status.SUCCESS, result.status);
-        assertEquals("EN_VEDA", TestDatabase.queryString("SELECT status FROM donors WHERE id = " + donorId));
     }
 }

@@ -16,19 +16,19 @@ public class StatisticsIntegrationTest extends BaseApiTest {
 
     private void seedData() throws Exception {
         // Donor created today with 3 donations today.
-        int donorToday = TestDatabase.insertDonor("11111111", "Ana", "Perez", "O+", "APTO", null);
+        int donorToday = TestDatabase.insertDonor("11111111", "Ana", "Perez", "O+", null);
         TestDatabase.insertDonorPhone(donorToday, "3511111111", true);
         TestDatabase.insertDonation(donorToday, "PLASMA", null);
         TestDatabase.insertDonation(donorToday, "PLASMA", null);
         TestDatabase.insertDonation(donorToday, "PLATELETS", null);
 
         // Older donor + donation (two months ago) -> counted only in year range.
-        int donorOld = TestDatabase.insertDonor("22222222", "Luis", "Gomez", "B-", "APTO",
+        int donorOld = TestDatabase.insertDonor("22222222", "Luis", "Gomez", "B-",
                 "DATE_SUB(NOW(), INTERVAL 2 MONTH)");
         TestDatabase.insertDonation(donorOld, "PLASMA", "DATE_SUB(NOW(), INTERVAL 2 MONTH)");
 
         // One active veda (eligible_workday_return_date >= today).
-        int donorVeda = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "A+", "APTO", null);
+        int donorVeda = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "A+", null);
         TestDatabase.execute("INSERT INTO donor_restrictions (donor_id, restriction_id, start_date, veda_days, calculated_end_date, eligible_workday_return_date, notes) VALUES ("
                 + donorVeda + ", 1, CURDATE(), 365, DATE_ADD(CURDATE(), INTERVAL 365 DAY), DATE_ADD(CURDATE(), INTERVAL 400 DAY), 'nota')");
     }

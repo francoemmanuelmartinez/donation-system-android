@@ -49,7 +49,7 @@ public class RestrictionsIntegrationTest extends BaseApiTest {
 
     @Test
     public void assignComputesEligibleWorkdayReturnDate() throws Exception {
-        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", "APTO", null);
+        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", null);
         int restrictionId = TestDatabase.queryInt("SELECT id FROM restrictions WHERE name = 'Tatuaje Reciente'");
 
         // 2 days from today can never land on Saturday/Sunday if today is not Saturday/Sunday... use a large veda
@@ -62,7 +62,6 @@ public class RestrictionsIntegrationTest extends BaseApiTest {
         String eligible = TestDatabase.queryString(
                 "SELECT eligible_workday_return_date FROM donor_restrictions WHERE donor_id = " + donorId);
         assertTrue("expected a business day, got " + eligible, isBusinessDay(eligible));
-        assertEquals("EN_VEDA", TestDatabase.queryString("SELECT status FROM donors WHERE id = " + donorId));
     }
 
     @Test

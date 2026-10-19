@@ -85,12 +85,12 @@ public class DonorsIntegrationTest extends BaseApiTest {
 
     @Test
     public void searchByTextAndGroupReturnsMatchingDonors() throws Exception {
-        int aptoId = TestDatabase.insertDonor("55555555", "Juan", "Sosa", "O+", "APTO", null);
+        int aptoId = TestDatabase.insertDonor("55555555", "Juan", "Sosa", "O+", null);
         TestDatabase.insertDonorPhone(aptoId, "3515555555", true);
-        int vedaId = TestDatabase.insertDonor("66666666", "Pedro", "Rios", "O+", "APTO", null);
+        int vedaId = TestDatabase.insertDonor("66666666", "Pedro", "Rios", "O+", null);
         TestDatabase.insertDonorPhone(vedaId, "3516666666", true);
         // Distinto grupo: no debe aparecer al filtrar por "O".
-        TestDatabase.insertDonor("77777777", "Luis", "Toro", "A-", "APTO", null);
+        TestDatabase.insertDonor("77777777", "Luis", "Toro", "A-", null);
 
         // Marca a Pedro en veda por recuperación (estado calculado en SQL a partir de next_eligible_date).
         TestDatabase.execute("UPDATE donors SET next_eligible_date = DATE_ADD(CURDATE(), INTERVAL 30 DAY) "
@@ -112,14 +112,13 @@ public class DonorsIntegrationTest extends BaseApiTest {
 
     @Test
     public void assignRestrictionMarksDonorEnVeda() throws Exception {
-        int donorId = TestDatabase.insertDonor("88888888", "Ana", "Suarez", "B+", "APTO", null);
+        int donorId = TestDatabase.insertDonor("88888888", "Ana", "Suarez", "B+", null);
         int restrictionId = TestDatabase.queryInt("SELECT id FROM restrictions WHERE name = 'Tatuaje Reciente'");
 
         ApiResponse<Map<String, Object>> assigned = ApiTestClient.call(ApiTestClient.api().assignDonorRestriction(
                 new AssignRestrictionRequest(donorId, restrictionId, 60, "Tatuaje", null)));
         assertTrue(assigned.isSuccess());
 
-        assertEquals("EN_VEDA", TestDatabase.queryString("SELECT status FROM donors WHERE id = " + donorId));
         assertEquals(1, TestDatabase.queryInt("SELECT COUNT(*) FROM donor_restrictions WHERE donor_id = " + donorId));
 
         ApiResponse<Donor> fetched = ApiTestClient.call(ApiTestClient.api().getDonorByDni("88888888"));

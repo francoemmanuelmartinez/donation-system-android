@@ -21,7 +21,7 @@ public class AppointmentsIntegrationTest extends BaseApiTest {
 
     @Test
     public void listReturnsSeededAppointmentsWithDonorAndPhone() throws Exception {
-        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", "APTO", null);
+        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", null);
         TestDatabase.insertDonorPhone(donorId, "3514444444", true);
         String today = LocalDate.now().toString();
         TestDatabase.insertAppointment(donorId, today, "10:30:00");
@@ -40,7 +40,7 @@ public class AppointmentsIntegrationTest extends BaseApiTest {
 
     @Test
     public void sendReminderPersistsFlagsAndUserId() throws Exception {
-        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", "APTO", null);
+        int donorId = TestDatabase.insertDonor("33333333", "Maria", "Lopez", "O+", null);
         int appointmentId = TestDatabase.insertAppointment(donorId, LocalDate.now().toString(), "10:30:00");
 
         ApiResponse<Map<String, Object>> response = ApiTestClient.call(ApiTestClient.api().sendWhatsAppReminder(

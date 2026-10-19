@@ -77,7 +77,6 @@ CREATE TABLE `donors` (
   `phenotype` VARCHAR(100) NULL,
   `weight` DECIMAL(5,2) NULL,
   `height` DECIMAL(5,2) NULL,
-  `status` ENUM('APTO', 'EN_VEDA') NOT NULL DEFAULT 'APTO',
   `last_donation_date` DATE NULL,
   `next_eligible_date` DATE NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
