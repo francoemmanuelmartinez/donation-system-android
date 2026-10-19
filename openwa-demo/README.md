@@ -1,6 +1,6 @@
 # openwa-demo — archivos listos para copiar
 
-Los mismos archivos que explican la [guía](../GUIA-OPENWA-INTEGRACION.md), pero **acá
+Los mismos archivos que explican la [guía](GUIA-OPENWA-INTEGRACION.md), pero **acá
 están completos y listos para pegar en tu proyecto**. Sin fragmentos ni "armá esto
 vos".
 
@@ -139,7 +139,7 @@ Cubre estas **funcionalidades**:
 
 ## Si algo no anda
 
-Mirá el orden de troubleshooting de la [guía, sección 8 y 9](../GUIA-OPENWA-INTEGRACION.md#como-probar-sin-romper-nada).
+Mirá el orden de troubleshooting de la [guía, sección 8 y 9](GUIA-OPENWA-INTEGRACION.md#como-probar-sin-romper-nada).
 El log del backend queda en `backend/logs/recordatorios.log` — ahí está escrito todo lo
 que pasó.
 

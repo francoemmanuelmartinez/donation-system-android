@@ -109,8 +109,9 @@ servicio Windows **`OpenWA-Gateway`** (NSSM, auto-start/restart). Sirve API + da
   el navegador (ya nos pasó). Verificá con `scripts\check-encoding.ps1`.
 - **No reescribir archivos completos** para "arreglar" acentos o mojibake: hacé **ediciones
   puntuales** sobre frases exactas, nunca volcar el archivo entero (así se re-copió la corrupción).
-- **Una sola guía por tema.** No generar variantes (`*_v2.md`, `*_fix.md`, etc.). La guía de OpenWA es
-  `GUIA-OPENWA-INTEGRACION.md`; la demo vive en `openwa-demo/`.
+- **Una sola guía por tema.** No generar variantes (`*_v2.md`, `*_fix.md`, etc.). La guía de los
+  recordatorios del proyecto es `whatsapp-reminders-guide.md`; la **demo** (archivos genéricos
+  copiables) vive en `openwa-demo/`, con su tutorial `openwa-demo/GUIA-OPENWA-INTEGRACION.md`.
 - **Ojo con `í`:** hubo una corrupción histórica que reemplazó `í` por `á` (patrones `á`+`a`, `á`+`os`,
   `á`+`as`, `á`+`o`). Si aparecen donde debería ir `ía`/`íos`/`ías`/`ío`, revisá con el script antes
   de commitear.

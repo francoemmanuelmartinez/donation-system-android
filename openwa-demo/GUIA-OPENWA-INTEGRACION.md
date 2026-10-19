@@ -1,5 +1,9 @@
 # Guía: Recordatorios por WhatsApp con OpenWA
 
+> **¿Esta guía es del proyecto?** No. Es el tutorial de la **demo `openwa-demo/`** (archivos
+> genéricos para copiar y aprender). La guía de los **recordatorios del proyecto real** es
+> [`whatsapp-reminders-guide.md`](../whatsapp-reminders-guide.md).
+
 Una guía paso a paso para **instalar OpenWA** y **agregar recordatorios de WhatsApp**
 a una app Android sencilla (Java + pantallas XML, sin librerías raras).
 
@@ -12,7 +16,7 @@ que sepas todo de antemano: la idea es que puedas copiar, entender y adaptar.
 > operador tenga que abrir WhatsApp en su celular. Y que además puedas disparar los
 > envíos con **un botón** cuando quieras.
 
-> **¿No querés leer todo?** En la carpeta [`openwa-demo/`](openwa-demo/) están los
+> **¿No querés leer todo?** En esta misma carpeta ([`openwa-demo/`](./)) están los
 > mismos archivos **completos y listos para copiar** a tu proyecto (backend + Android),
 > con un README corto. Esta guía explica *por qué* funcionan; la carpeta es el
 > atajo.
@@ -813,13 +817,15 @@ if ($posicion < $total - 1) {
   cambiá los números de `rand(20, 60)` en `send_reminders.php`.
 - **Para volúmenes grandes:** la demo no lo hace, pero el proyecto real reparte el lote dentro de
   una **ventana horaria** (con *jitter*) y lo parte en **lotes de 90 min o más** cuando hay más de
-  15 mensajes. Ver `whatsapp-reminders-guide.md` §7.1 ("Estrategia anti-baneo").
+  15 mensajes. Ver [`whatsapp-reminders-guide.md`](../whatsapp-reminders-guide.md) §7.1
+  ("Estrategia anti-baneo").
 
 #### Anti-baneo: cómo cuidar el número
 
 OpenWA usa la API **no oficial** de WhatsApp (Baileys, vía WhatsApp Web). Si el número se comporta
 como un robot, WhatsApp puede **bloquearlo**. Estas son las precauciones: la **demo** implementa
-las tres primeras; el **proyecto real** suma las demás (ver `whatsapp-reminders-guide.md` §7.1).
+las tres primeras; el **proyecto real** suma las demás (ver
+[`whatsapp-reminders-guide.md`](../whatsapp-reminders-guide.md) §7.1).
 
 | Precaución | Qué hace | ¿En la demo? |
 |---|---|---|
@@ -1102,7 +1108,7 @@ En XAMPP el backend tiene que quedar **dentro de `htdocs`**: es la carpeta que
 Apache sirve en la web (`DocumentRoot` en `httpd.conf`). Si lo dejás en otro lado,
 no existe URL que lo alcance.
 
-Copiaste los archivos de `openwa-demo/backend/` a `htdocs/tu-backend/`, y se vería
+Copiaste los archivos de `backend/` (esta carpeta) a `htdocs/tu-backend/`, y se vería
 así:
 
 ```text
@@ -1515,7 +1521,7 @@ api.obtenerPendientes((lista, error) -> {
 | ④ | Abrir WhatsApp del 1er pendiente de la BD (wa.me) | Celular | BD |
 | ⑤ | Reiniciar gate del lazy sweep (solo demo) | — (borra sello) | — |
 
-El código completo está en openwa-demo/android/ (RecordatoriosActivity.java, ctivity_recordatorios.xml).
+El código completo está en android/ (esta carpeta: RecordatoriosActivity.java, activity_recordatorios.xml).
 En onResume() se pide ?action=pending (no se dispara dispatch()), lo que demuestra el **lazy sweep** 1 vez por día.
 
 ---
@@ -1567,10 +1573,10 @@ flowchart LR
 ### 7.2 Automático (cron + lazy sweep)
 
 ```mermaid
-flowchart TD
+flowchart LR
     A[cron 08:00 todos los días] --> C[send_reminders.php]
     B[App pide pendientes: lazy sweep] --> C
-    C --> D{Toca enviar?<br/>programado_para &lt;= NOW()<br/>o fecha_envio &lt;= CURDATE()}
+    C --> D{Toca enviar?}
     D -->|No| E[No hace nada]
     D -->|Sí| F[Por cada uno: enviarWhatsApp]
     F -->|ok| G[marcar enviado = 1]
