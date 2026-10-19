@@ -50,7 +50,8 @@ servicio Windows **`OpenWA-Gateway`** (NSSM, auto-start/restart). Sirve API + da
 - **Scheduler:** tarea `RecordatoriosDonacion`, diaria 08:00 (`backend/install_scheduler.php`).
   *(En la notebook fue **eliminada** y el lazy sweep quedó **desactivado**; el único disparo es el
   botón de la Agenda — ver "Nota (recordatorios)" más abajo.)*
-- **Scripts:** `openwa\openwa-dashboard.bat` / `openwa\start-openwa.bat` / `openwa\stop-openwa.bat`.
+- **Scripts:** `openwa\openwa-dashboard.bat` / `openwa\start-openwa.bat` *(obsoleto para el
+  gateway)* / `openwa\stop-openwa.bat` *(solo emergencias)*.
 - **Estado:** `Get-Service OpenWA-Gateway` · `curl http://localhost:2785/api/health`.
 - Guía completa: `whatsapp-reminders-guide.md` §7.
 

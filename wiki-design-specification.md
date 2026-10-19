@@ -111,6 +111,11 @@ Captures daily clinical measurements linked to an active, validated donor.
 ### 3. Screen: Weekly Schedule Agenda (`AppointmentsFragment` / `fragment_appointments.xml`)
 Monitors upcoming and active patient reservations on a **business-week calendar (Monday through Friday)**.
 
+Beyond viewing, the screen offers three actions:
+- **Tap on an appointment card** (body of `item_appointment.xml`, not the reminder icons) opens the clinical donation entry (`DonationsFragment` via `MainActivity.openClinicalForm()`) with the appointment's donor preloaded and the appointment's procedure (Sangre/Plasma/Plaquetas) pre-selected (`SharedDonorViewModel`).
+- **`@+id/buttonScheduleDonor`** ("Agendar donante") opens the appointment scheduler (`ScheduleAppointmentFragment`): search donor by DNI → pick a business-day date (today disabled) and time → pick procedure → confirm (`appointments.php` `create_appointment`).
+- **`@+id/buttonDispatchReminders`** triggers the mass reminder dispatcher (`appointments.php` `dispatch_reminders` with `manual=true`), which runs sequentially with anti-burst pacing (see `whatsapp-reminders-guide.md` §7).
+
 #### XML Layout Structure (`fragment_appointments.xml`):
 - **Agenda Header:** A header row combining a calendar icon button (`@+id/buttonOpenCalendar`, drawable `ic_calendar`) and a date label (`@+id/textViewSelectedDateLabel`). The label uses `date_label_format` and shows `"Hoy"` / `"Mañana"` for the immediate weekdays, otherwise the formatted date (e.g., `"Lunes 13"`). When the selected day falls outside the Mon–Fri window, the header shows the plain formatted date.
 - **Calendar Navigation (`AppointmentCalendarDialogFragment` / `dialog_appointment_calendar.xml`):** Tapping `buttonOpenCalendar` opens a month dialog with prev/next chevrons (`@+id/buttonPrevMonth` / `@+id/buttonNextMonth`), a month title and a day grid (`MonthCalendarAdapter`, `item_month_day.xml`) marking days that already have scheduled appointments. Selecting a day closes the dialog, switches the agenda to that date and refreshes the list. **Selecting today is disabled** (no same-day appointments).
@@ -118,7 +123,7 @@ Monitors upcoming and active patient reservations on a **business-week calendar 
 - **Appointments Feed:** A vertical `RecyclerView` (`@+id/recyclerViewAppointmentsList`) rendering an individual card item file (`item_appointment.xml`) for each targeted donor.
 
 #### REMINDER CHANNELS (WHATSAPP & EMAIL) RULES
-- **Two independent channels per row:** `@+id/buttonSendReminderWhatsApp` and `@+id/buttonSendReminderEmail`, each with its own success check asset (`@+id/imageViewReminderChecked` / `@+id/imageViewEmailReminderChecked`, hidden by default).
+- **Two independent channels per row:** `@+id/buttonSendWhatsApp` and `@+id/buttonSendEmail`, each with its own success check asset (`@+id/imageViewReminderWhatsAppChecked` / `@+id/imageViewReminderEmailChecked`, hidden by default).
 - **WhatsApp Intent:** `wa.me` deep link normalized with the donor's last phone under country prefix `54`; message built from `whatsapp_reminder_format` (donor name, procedure, date, time).
 - **Email Intent:** `ACTION_SEND` composed from `email_reminder_subject` and `email_reminder_format`.
 - **Anti double-tap:** each channel button ignores repeated taps while its request is in flight.
@@ -146,13 +151,14 @@ Single, scalable search module (replaces the former `DonorSearchFragment` / crit
 ### 👑 DIRECTOR ROLE & ADMINISTRATIVE MODULES
 
 #### 1. Screen: Director Core Dashboard (`DirectorDashboardActivity` / `activity_director_dashboard.xml`)
-Central routing hub displayed exclusively for users authenticated with the "DIRECTOR" role string.
+Central routing hub displayed exclusively for users authenticated with the `DIRECTORA` / `DIRECTOR` role strings.
 - **Top Welcome Header:** Static colored banner featuring user credentials and title status.
-- **Navigation Grid Layout (2x2 Grid using LinearLayouts/GridLayout):**
-  - Card 1 ➔ `@+id/cardMenuDonations` (Triggers navigation to the standard 4-item core workflow).
+- **Navigation Grid Layout (5 cards):**
+  - Card 1 ➔ `@+id/cardMenuDonations` (Triggers navigation to the standard 3-tab main workflow).
   - Card 2 ➔ `@+id/cardMenuStatistics` (Navigates to data analytics charts view).
   - Card 3 ➔ `@+id/cardMenuRestrictions` (Navigates to medical restrictions CRUD view).
-  - Card 4 ➔ `@+id/cardMenuUsers` (Navigates to staff users CRUD panel).
+  - Card 4 ➔ `@+id/cardMenuRecoveryPolicies` (Navigates to the recovery policies CRUD panel).
+  - Card 5 ➔ `@+id/cardMenuUsers` (Navigates to staff users CRUD panel).
 
 #### 2. Screen: Metrics & Analytics View (`StatisticsFragment` / `fragment_statistics.xml`)
 Provides data visualization tools separated into time bounds.
@@ -172,6 +178,12 @@ System employee database controller enforcing security isolation and two-step si
   - **Tab 1: Pending Requests (`@+id/tabPendingUsers`):** Displays a vertical `RecyclerView` for unapproved staff. Each row item card must feature an outlined `TextInputLayout` with an inner `AutoCompleteTextView` role selector dropdown (`@+id/spinnerAssignRole`, options: "Administrativa", "Directora") paired with a high-visibility activation filled button: `@+id/buttonApproveUser` (Displays: "APROBAR").
   - **Tab 2: Active Staff (`@+id/tabActiveUsers`):** Tracks currently authorized system operators. Allows role updates and account revocations via the inline context delete vector action asset (`@+id/buttonDeleteUser`).
 - **CRITICAL SECURITY MUTEX ENFORCEMENT:** The delete action component (`@+id/buttonDeleteUser`) must query the local database context before execution. If `targetUser.role == "DIRECTOR"`, the deletion thread must count total alternative active accounts with matching director role tags. If total alternate directory counts equal zero (`directorCount <= 1`), the delete routine must freeze execution, skip database transactions, and pop an active error alert interface blocking the action to prevent absolute system lockout.
+
+#### 5. Screen: Recovery Policies Panel (`RecoveryPoliciesFragment` / `fragment_recovery_policies.xml`)
+CRUD utility to manage per-procedure recovery rules (deferral days between donations and annual caps). Seeded from `donation_system.sql` with an INCUCAI/SAS-inspired baseline (one policy per procedure: PLASMA / PLATELETS / BLOOD).
+- **Top Form Panel:** procedure selector (`@+id/spinnerRecoveryProcedure`, AutoCompleteTextView with the 3 procedure codes), deferral days per gender (`@+id/editTextRecoveryDays` / `@+id/editTextRecoveryDaysFemale`) and annual caps per gender (`@+id/editTextMaxPerYear` / `@+id/editTextMaxPerYearFemale`). Save/cancel triggers: `@+id/buttonSavePolicy` / `@+id/buttonCancelEditPolicy` (cancel only visible while editing; editing keeps the row in place via `@+id/textViewRecoveryPolicyFormTitle` state).
+- **Bottom Database Feed:** a vertical `RecyclerView` (`@+id/recyclerViewRecoveryPolicies`) listing existing policies with inline edit and delete actions.
+- **Consumers of these policies:** `DonationsFragment` shows **non-blocking** warnings when the donor's `next_eligible_date` is still in the future or the annual donation count has reached/exceeded the policy cap (operator may continue anyway); the annual caps also feed the donor's `annualCounts` context. Backend: `recovery_policies.php`.
 
 ---
 

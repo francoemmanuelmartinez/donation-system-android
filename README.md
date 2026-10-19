@@ -42,8 +42,13 @@ This system is designed to streamline the donation process for medical facilitie
 - **SQL Injection Prevention:** Backend utilizes PDO with prepared statements.
 - **Network Security Config:** Secure handling of cleartext traffic for local development.
 
+## ⚠️ Known Limitations (current state)
+- **The API has no authentication/authorization:** no endpoint validates a session or role; access control is enforced only in the Android client (`LoginFragment.routeByRole`). Suitable for a trusted LAN only — do not expose the backend publicly.
+- **No logout / session restore:** the app always starts at the login screen; a persisted session is only used to attribute actions (`created_by`).
+- **Network logging:** Retrofit logs full request/response bodies (`Level.BODY`) in **all** builds, including release.
+
 ## 📂 Project Structure
 - `/app`: Android source code.
 - `/backend`: PHP API scripts.
-- `/sql`: Database snapshots.
-- `logbook.txt`: Detailed development history.
+- `/sql`: Database snapshots (`donation_system.sql` is the self-contained dump; the `migration_*.sql` files are historical steps already baked into it — no need to run them on a fresh install).
+- `logbook.txt`: Detailed development history (frozen as of 2026-09-23; the live history is `git log`).

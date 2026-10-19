@@ -13,7 +13,7 @@
 
 | Aspecto | Hoy (OpenWA) | Con Cloud API de Meta |
 |---|---|---|
-| Servicios locales | OpenWA (node, puerto 2785) + dashboard (2886) | Ninguno (se apagan; XAMPP/PHP sigue igual) |
+| Servicios locales | OpenWA (node, puerto 2785: API + dashboard bundled) | Ninguno (se apagan; XAMPP/PHP sigue igual) |
 | Envío | Texto libre + saludos random | Plantilla UTILITY aprobada con variables {{1}}..{{4}} |
 | Riesgo de baneo | Alto (WhatsApp Web no oficial) | Cero (oficial) |
 | Costo | $0 | ~US$1,37/mes (50 msgs utility AR ≈ $2.700 ARS a dólar tarjeta) |
@@ -73,7 +73,7 @@ El proyecto mantiene **ambos proveedores implementados en paralelo**. El cambio 
 
 ### Reglas de convivencia de números
 - **Meta** → número dedicado del banco (producción).
-- **OpenWA** → chip dedicado 5492233556122 (sesión `test-recordatorios`, id `52906cda-d122-425f-abf0-58530793e3d7`; cambio 12-oct-2026).
+- **OpenWA** → chip dedicado 5492233556122 (sesión `donacion`, id `52906cda-d122-425f-abf0-58530793e3d7`; cambio 12-oct-2026).
 - No hay conflicto: son números distintos. El fallback de OpenWA queda operativo aunque Meta sea el primario.
 - No registrar el mismo número en ambos (números iguales = conflicto de cuenta).
 

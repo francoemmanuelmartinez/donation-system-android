@@ -16,7 +16,7 @@ The project follows a "Clean Architecture" approach using Android MVVM:
 
 ### Backend (PHP API)
 - **Monorepo Strategy:** The API source code is stored within the same Git repository as the Android code, ensuring version consistency across the entire stack.
-- **Stateless REST-like API:** Communication is handled via JSON over HTTP POST requests.
+- **Stateless REST-like API:** Communication is handled via JSON over HTTP (GET and POST endpoints).
 
 ---
 
@@ -26,19 +26,19 @@ The monorepo architecture organizes frontend, backend, and database components a
 
 ### Root Directory Overview
 - **`/app`**: Native Android application source code, resources, and Gradle build configuration.
-- **`/backend`**: PHP 8.x REST API scripts served locally via XAMPP using an OS symbolic link (`htdocs`).
+- **`/backend`**: PHP 8.x REST API scripts served locally via XAMPP using a Windows directory junction (`mklink /J`, `htdocs`).
 - **`/sql`**: Database schema dumps (`donation_system.sql`) for MySQL / phpMyAdmin database setup.
 - **`/gradle`**: Gradle Wrapper executables ensuring consistent Gradle version builds.
 - **`/.idea`**: Android Studio project metadata and workspace settings.
 
 ### Android Package Structure (`app/src/main/java/com/francomartinez/donationsystem`)
-- **`views/`**: Activity UI screens (`LoginActivity`, `RegisterActivity`, `MainActivity`) that observe ViewModel state.
+- **`views/`**: Activity/Fragment UI screens (`AuthActivity` with `LoginFragment`/`SignUpFragment`, `MainActivity`, `DirectorDashboardActivity`) that observe ViewModel state.
 - **`viewmodels/`**: Jetpack ViewModels (`LoginViewModel`, `RegisterViewModel`) handling UI business logic and state.
 - **`repositories/`**: Repository layer (`UserRepository`) abstracting network and local data sources.
 - **`models/`**: Data transfer objects and domain models (`User`, `LoginResponse`, `Donor`).
 - **`api/`**: Networking configuration (`ApiService`, `RetrofitClient`).
 - **`utils/`**: Utilities and state wrappers like `Resource<T>` (`LOADING`, `SUCCESS`, `ERROR`).
-- **`database/`**: Room DAO interfaces and database classes (`PlaceholderDao`) for local storage.
+- **`database/`**: Placeholder package reserved for a future Room integration (`PlaceholderDao`). **Not active today** — Room is not a dependency; the app is online-only against the PHP API.
 
 ---
 

@@ -1,8 +1,7 @@
 # Plan — Tap en card de agenda → carga de donación
 
 **Fecha:** 2026-10-12
-**Estado:** plan aprobado, pendiente de implementación (~2h)
-**Alcance:** solo este cambio. Sigue pendiente (separado) el QA visual de cards.
+**Estado:** ✅ implementado (2026-10-12). Queda pendiente (separado) el QA visual de cards.
 
 ## Objetivo
 Al hacer tap en la card de un turno en la pantalla **Agenda** (`AppointmentsFragment`), abrir la pantalla **"cargar una donación"** (`DonationsFragment` / `openClinicalForm`) con:

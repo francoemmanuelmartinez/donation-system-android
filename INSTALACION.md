@@ -38,6 +38,8 @@ git clone <URL-del-repo> C:\Users\<usuario>\AndroidStudioProjects\DonationSystem
 
 Todos los comandos siguientes asumen que el repo quedó en
 `C:\Users\<usuario>\AndroidStudioProjects\DonationSystem`; ajustá si es otra ruta.
+*(En la notebook la ruta canónica es `C:\Users\games\StudioProjects\donation-system-android` —
+ver tabla de dispositivos en `AGENTS.md`.)*
 
 ---
 
@@ -78,6 +80,9 @@ cmd /c '"C:\xampp\mysql\bin\mysql.exe" -u root donation_system < "C:\Users\<usua
 
 > PowerShell no soporta el redirect `<`; por eso se usa `cmd /c "..."` con comillas simples.
 > Alternativa: `Get-Content ...\donation_system.sql | & "C:\xampp\mysql\bin\mysql.exe" -u root donation_system`.
+>
+> Los archivos `sql/migration_*.sql` son **pasos históricos** ya aplicados dentro del dump;
+> en una instalación nueva **no** hace falta correrlos.
 
 ### 4.3 Datos de demo (opcional)
 

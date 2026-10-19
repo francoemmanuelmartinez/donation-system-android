@@ -77,21 +77,44 @@ Checklist para probar la app a mano contra el backend real (XAMPP). Ejecutar en 
 - [ ] Se guarda `last_donation_date` = día de la donación.
 - [ ] Procedimientos inválidos se ignoran (solo PLASMA / PLATELETS / BLOOD).
 - [ ] Parámetros clínicos faltantes → 400.
+- [ ] Donante con días de recuperación pendientes (`next_eligible_date` futura) → **advertencia no
+      bloqueante**: el diálogo solo avisa y permite continuar igual.
+- [ ] Donante que alcanza/supera el tope anual de su política → **advertencia no bloqueante**
+      (mismo comportamiento: avisa, no impide guardar).
 
-## 7. Turnos (appointments)
+## 7. Turnos y agenda
 
 - [ ] La lista carga turnos con donante y teléfono.
-- [ ] Enviar recordatorio → persiste bandera + usuario + fecha de envío.
+- [ ] Enviar recordatorio (WhatsApp o email) → persiste su bandera independiente +
+      usuario + fecha de envío (una no invalida a la otra).
 - [ ] Turno inexistente → 400/404.
+- [ ] **Agendar turno nuevo:** botón "Agendar donante" → buscar por DNI → elegir fecha
+      hábil (hoy deshabilitado) y hora → procedimiento → confirmar → el turno aparece en la Agenda.
+- [ ] **Tap en la card de un turno** (cuerpo, no los iconos) → abre la carga de donación con el
+      donante del turno precargado y su procedimiento preseleccionado.
+- [ ] **Envío masivo:** botón de dispatch (`dispatch_reminders`, `manual=true`) → procesa
+      secuencialmente, respeta la ventana horaria 08:00–13:00 y marca los flags por canal
+      (ver `whatsapp-reminders-guide.md` §7).
 
-## 8. Estadísticas
+## 8. Políticas de recuperación (panel Directora)
+
+- [ ] Abrir "Políticas de recuperación" desde el dashboard de la Directora → lista las
+      políticas baseline (una por procedimiento: PLASMA / PLATELETS / BLOOD).
+- [ ] Editar una política (días de recuperación / tope anual, hombre y mujer) → guarda y
+      refresca la lista.
+- [ ] Crear política nueva para otro procedimiento → aparece en la lista y en el dropdown.
+- [ ] Eliminar política → desaparece de la lista.
+- [ ] Los cambios se reflejan en las advertencias del formulario clínico (§6): al bajar los
+      días de recuperación, un donante que estaba en advertencia deja de advertir (y viceversa).
+
+## 9. Estadísticas
 
 - [ ] Rangos day / week / month / year renderizan tarjetas y serie.
 - [ ] Con donaciones de hoy → counts correctos por procedimiento.
 - [ ] Donaciones de hace meses solo entran en rango `year`.
 - [ ] Rango inválido → 400 (no crashea la app).
 
-## 9. Automatizado (opcional, al final)
+## 10. Automatizado (opcional, al final)
 
 - [ ] `.\gradlew.bat testDebugUnitTest` → 58/58 en verde (requiere XAMPP levantado).
 - [ ] `.\gradlew.bat assembleDebug` → BUILD SUCCESSFUL.
