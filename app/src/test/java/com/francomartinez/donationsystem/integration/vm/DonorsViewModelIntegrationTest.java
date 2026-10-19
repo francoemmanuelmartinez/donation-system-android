@@ -57,9 +57,7 @@ public class DonorsViewModelIntegrationTest extends BaseApiTest {
         donor.setGender("Masculino");
         donor.setBirthDate("1990-01-01");
         donor.setCity("Cordoba");
-        donor.setZipCode("5000");
         donor.setAddress("Calle 1");
-        donor.setNeighborhood("Centro");
         donor.setBloodType("O+");
         donor.setPhenotype("");
 

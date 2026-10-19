@@ -13,11 +13,11 @@ WHERE `appointment_date` = '2026-10-13' AND `is_reminder_sent` = 0;
 
 -- Donantes de prueba (DNI ficticios únicos)
 INSERT INTO `donors`
-  (`dni`, `first_name`, `last_name`, `gender`, `birth_date`, `city`, `zip_code`,
-   `address`, `neighborhood`, `blood_type`, `weight`, `height`, `status`)
+  (`dni`, `first_name`, `last_name`, `gender`, `birth_date`, `city`,
+   `address`, `blood_type`, `weight`, `height`, `status`)
 VALUES
-  ('99990001', 'Testeo', 'Uno',  'Masculino', '1990-01-10', 'Mar del Plata', '7600', 'Calle Testeo 1', 'Centro', 'O+', 75.00, 175.00, 'APTO'),
-  ('99990002', 'Testeo', 'Dos',  'Femenino',  '1992-02-20', 'Mar del Plata', '7600', 'Calle Testeo 2', 'Centro', 'A+', 60.00, 165.00, 'APTO');
+  ('99990001', 'Testeo', 'Uno',  'Masculino', '1990-01-10', 'Mar del Plata', 'Calle Testeo 1', 'O+', 75.00, 175.00, 'APTO'),
+  ('99990002', 'Testeo', 'Dos',  'Femenino',  '1992-02-20', 'Mar del Plata', 'Calle Testeo 2', 'A+', 60.00, 165.00, 'APTO');
 
 -- Teléfono real de prueba (1 primario por donante)
 INSERT INTO `donor_phones` (`donor_id`, `phone_number`, `phone_type`, `is_primary`)

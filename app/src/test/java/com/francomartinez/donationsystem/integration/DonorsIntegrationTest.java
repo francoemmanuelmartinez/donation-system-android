@@ -31,9 +31,7 @@ public class DonorsIntegrationTest extends BaseApiTest {
         donor.setGender("Femenino");
         donor.setBirthDate("1985-05-20");
         donor.setCity("Cordoba");
-        donor.setZipCode("5000");
         donor.setAddress("Calle Falsa 123");
-        donor.setNeighborhood("Nueva Cordoba");
         donor.setBloodType("O+");
         donor.setPhenotype("CCD.ee");
         donor.setPhones(Collections.singletonList(new ContactPhone("3514444444", "Mobile", true)));

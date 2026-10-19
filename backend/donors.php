@@ -11,10 +11,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     try {
         if ($id > 0) {
-            $stmt = $conn->prepare("SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, zip_code AS zipCode, address, neighborhood, blood_type AS bloodType, phenotype, weight, height, status, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE id = :id LIMIT 1");
+            $stmt = $conn->prepare("SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, address, blood_type AS bloodType, phenotype, weight, height, status, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE id = :id LIMIT 1");
             $stmt->execute(['id' => $id]);
         } else {
-            $stmt = $conn->prepare("SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, zip_code AS zipCode, address, neighborhood, blood_type AS bloodType, phenotype, weight, height, status, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE dni = :dni LIMIT 1");
+            $stmt = $conn->prepare("SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, address, blood_type AS bloodType, phenotype, weight, height, status, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE dni = :dni LIMIT 1");
             $stmt->execute(['dni' => $dni]);
         }
         $donor = $stmt->fetch();
@@ -88,11 +88,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $lastName = trim($data->lastName ?? $data->last_name ?? '');
     $gender = trim($data->gender ?? 'Otro');
     $birthDate = trim($data->birthDate ?? $data->birth_date ?? '1990-01-01');
-    $city = trim($data->city ?? '');
-    $zipCode = trim($data->zipCode ?? $data->zip_code ?? '');
-    $address = trim($data->address ?? '');
-    $neighborhood = trim($data->neighborhood ?? '');
-    $bloodType = trim($data->bloodType ?? $data->blood_type ?? '');
+$city = trim($data->city ?? '');
+$address = trim($data->address ?? '');
+$bloodType = trim($data->bloodType ?? $data->blood_type ?? '');
     $phenotype = trim($data->phenotype ?? '');
     $weight = isset($data->weight) ? (float)$data->weight : null;
     $height = isset($data->height) ? (float)$data->height : null;
@@ -113,16 +111,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
         if ($existing) {
             $donorId = (int)$existing['id'];
-            $updateStmt = $conn->prepare("UPDATE donors SET first_name = :firstName, last_name = :lastName, gender = :gender, birth_date = :birthDate, city = :city, zip_code = :zipCode, address = :address, neighborhood = :neighborhood, blood_type = :bloodType, phenotype = :phenotype, weight = :weight, height = :height WHERE id = :id");
+            $updateStmt = $conn->prepare("UPDATE donors SET first_name = :firstName, last_name = :lastName, gender = :gender, birth_date = :birthDate, city = :city, address = :address, blood_type = :bloodType, phenotype = :phenotype, weight = :weight, height = :height WHERE id = :id");
             $updateStmt->execute([
                 'firstName' => $firstName,
                 'lastName' => $lastName,
                 'gender' => $gender,
                 'birthDate' => $birthDate,
                 'city' => $city,
-                'zipCode' => $zipCode,
                 'address' => $address,
-                'neighborhood' => $neighborhood,
                 'bloodType' => $bloodType,
                 'phenotype' => $phenotype,
                 'weight' => $weightValue,
@@ -130,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'id' => $donorId
             ]);
         } else {
-            $insertStmt = $conn->prepare("INSERT INTO donors (dni, first_name, last_name, gender, birth_date, city, zip_code, address, neighborhood, blood_type, phenotype, weight, height, status) VALUES (:dni, :firstName, :lastName, :gender, :birthDate, :city, :zipCode, :address, :neighborhood, :bloodType, :phenotype, :weight, :height, 'APTO')");
+            $insertStmt = $conn->prepare("INSERT INTO donors (dni, first_name, last_name, gender, birth_date, city, address, blood_type, phenotype, weight, height, status) VALUES (:dni, :firstName, :lastName, :gender, :birthDate, :city, :address, :bloodType, :phenotype, :weight, :height, 'APTO')");
             $insertStmt->execute([
                 'dni' => $dni,
                 'firstName' => $firstName,
@@ -138,9 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 'gender' => $gender,
                 'birthDate' => $birthDate,
                 'city' => $city,
-                'zipCode' => $zipCode,
                 'address' => $address,
-                'neighborhood' => $neighborhood,
                 'bloodType' => $bloodType,
                 'phenotype' => $phenotype,
                 'weight' => $weightValue,

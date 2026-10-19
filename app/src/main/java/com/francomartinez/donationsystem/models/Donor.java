@@ -26,14 +26,8 @@ public class Donor {
     @SerializedName("city")
     private String city;
 
-    @SerializedName("zipCode")
-    private String zipCode;
-
     @SerializedName("address")
     private String address;
-
-    @SerializedName("neighborhood")
-    private String neighborhood;
 
     @SerializedName("bloodType")
     private String bloodType;
@@ -127,28 +121,12 @@ public class Donor {
         this.city = city;
     }
 
-    public String getZipCode() {
-        return zipCode;
-    }
-
-    public void setZipCode(String zipCode) {
-        this.zipCode = zipCode;
-    }
-
     public String getAddress() {
         return address;
     }
 
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public String getNeighborhood() {
-        return neighborhood;
-    }
-
-    public void setNeighborhood(String neighborhood) {
-        this.neighborhood = neighborhood;
     }
 
     public String getBloodType() {

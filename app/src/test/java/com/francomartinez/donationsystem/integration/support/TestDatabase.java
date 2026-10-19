@@ -99,8 +99,8 @@ public final class TestDatabase {
 
     public static int insertDonor(String dni, String firstName, String lastName, String bloodType, String status,
                                   String createdAt) throws Exception {
-        execute("INSERT INTO donors (dni, first_name, last_name, gender, birth_date, city, zip_code, address, neighborhood, blood_type, phenotype, status, last_donation_date, created_at) VALUES ('"
-                + esc(dni) + "', '" + esc(firstName) + "', '" + esc(lastName) + "', 'Otro', '1990-01-01', 'Cordoba', '5000', 'Av Siempre 123', 'Centro', '"
+        execute("INSERT INTO donors (dni, first_name, last_name, gender, birth_date, city, address, blood_type, phenotype, status, last_donation_date, created_at) VALUES ('"
+                + esc(dni) + "', '" + esc(firstName) + "', '" + esc(lastName) + "', 'Otro', '1990-01-01', 'Cordoba', 'Av Siempre 123', '"
                 + esc(bloodType) + "', '', '" + status + "', NULL, " + sqlDatetime(createdAt) + ")");
         return queryInt("SELECT id FROM donors WHERE dni = '" + esc(dni) + "'");
     }
