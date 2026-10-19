@@ -165,10 +165,6 @@ public class Donor {
         return status;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
     public String getLastDonationDate() {
         return lastDonationDate;
     }
