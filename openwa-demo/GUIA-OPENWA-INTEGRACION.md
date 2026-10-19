@@ -288,6 +288,8 @@ una pantalla antes que la terminal.
 | **A. La que viene adentro** | Agregá `SERVE_DASHBOARD=true` al `.env` y **reiniciá** OpenWA (ver arriba) | `http://localhost:2785` |
 | **B. La de desarrollo** | `npm run dev` dentro de `dashboard/` (o `openwa-dashboard.bat`) | `http://localhost:2886` |
 
+> **Nota:** el proyecto real usa la **forma A** (`SERVE_DASHBOARD=true`, dashboard bundled en `:2785`); la forma B es solo para desarrollo del dashboard.
+
 **Cómo llegás al dashboard (el paso que importa):** abrí el navegador y escribí esa dirección
 **exacta** en la **barra de direcciones** (la de arriba, donde escribís las páginas web como
 `google.com`), y apretá **Enter**. Si no abrís esa dirección ahí, no vas a ver el dashboard.
@@ -335,7 +337,8 @@ CREATE TABLE recordatorios (
 
 -- Un par de filas de prueba (poné TU número para probar de verdad)
 INSERT INTO recordatorios (destinatario_nombre, telefono, mensaje, fecha_envio) VALUES
-('Juan Pérez', '5491100000000', 'Hola Juan, te esperamos mañana para tu turno.', CURDATE());
+('Juan Pérez', '5491100000000', 'Hola Juan, te esperamos mañana para tu turno.', CURDATE()),
+('María López', '5491100000001', 'Hola María, te esperamos mañana para tu turno.', CURDATE());
 ```
 
 > **Cómo adaptarlo a tu tabla real:** en tus archivos va a haber una consulta SQL

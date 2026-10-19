@@ -16,8 +16,7 @@ flowchart LR
     G --> H[ApiService<br/>POST appointments.php?action=send_reminder]
     H --> I[backend/appointments.php<br/>UPDATE is_reminder_sent = 1]
 
-    E -.->|"marca local isReminderSent=true"| J[ApplyDayFilter<br/>check verde en la tarjeta]
-    I -.->|"success"| J
+    I -.->|"success: marca isReminderSent=true"| J[ApplyDayFilter<br/>check verde en la tarjeta]
 
     style C fill:#e3f2fd,stroke:#1565c0
     style E fill:#fff3e0,stroke:#ef6c00
@@ -63,7 +62,7 @@ ALTER TABLE appointments
 
 ### 3.2 Endpoint `backend/appointments.php`
 
-Acción recibida con `POST` y `action=send_reminder`. El código relevante reside en `backend/appointments.php`:
+Acción recibida con `POST` (también acepta `GET`) y `action=send_reminder`. El código relevante reside en `backend/appointments.php`:
 
 ```php
 // POST con body JSON: { "appointmentId": 12, "userId": 1, "channel": "whatsapp" }
@@ -592,7 +591,7 @@ php send_reminders.php manual dryrun   # el dryrun no envía; 'manual' no cambia
 ```
 
 **Qué hace**:
-1. Toma la fecha `HOY + REMINDER_DAY_OFFSET` y busca turnos `SCHEDULED` con `is_reminder_sent = 0` que tengan teléfono primario.
+1. Toma la fecha `HOY + REMINDER_DAY_OFFSET` y busca turnos `SCHEDULED` con `is_reminder_sent = 0` (no filtra por teléfono en el SELECT; los que no tienen teléfono se omiten al enviar, sin marcarlos como enviados).
 2. Aplica warm-up / tope diario.
 3. Calcula los delays (ventana + jitter, o compacto en modo manual).
 4. Envía cada mensaje vía `sendWhatsappText()`, con anti-ráfaga y reintento único.
@@ -604,8 +603,8 @@ Formato del log:
 
 ```
 [2026-10-11 08:35:26] [DRYRUN] Objetivo: 2026-10-13 | Candidatos: 3
-[2026-10-11 08:36:01] [CRON] Enviado -> donor_id 3 (542235100017)
-[2026-10-11 08:36:41] [CRON] Resumen: 3 enviados, 0 fallidos, 3 total
+[2026-10-11 08:36:01] [CRON] Turno #12 -> ENVIADO a 542235100017
+[2026-10-11 08:36:41] [CRON] Resumen: enviados=3, fallidos=0, procesados=3
 ```
 
 ### 7.4 Adaptador de envío — `backend/whatsapp_sender.php`
@@ -765,7 +764,7 @@ INSERT IGNORE INTO reminder_dispatch_control (id) VALUES (1);
    Debe listar los candidatos de HOY+2 con saludo, nombre, procedimiento, fecha y teléfono normalizado.
 3. **OpenWA arriba** y sesión escaneada.
 4. **Turno HOY+2**: asegurar un turno para dentro de 2 días con teléfono real y `is_reminder_sent = 0`.
-5. **Envío manual desde la app**: Agenda → botón enviar → toast «Dispatch lanzado». En segundos, `logs/reminders.log` muestra `[MANUAL]` y los envíos.
+5. **Envío manual desde la app**: Agenda → botón enviar → toast «Envío de recordatorios iniciado». En segundos, `logs/reminders.log` muestra `[MANUAL]` y los envíos.
 6. **Verificación**:
    - El mensaje llega al WhatsApp del donante.
    - `SELECT is_reminder_sent, reminder_sent_at FROM appointments WHERE id = <id>;` → `1`.

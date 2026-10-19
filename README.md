@@ -50,5 +50,5 @@ This system is designed to streamline the donation process for medical facilitie
 ## 📂 Project Structure
 - `/app`: Android source code.
 - `/backend`: PHP API scripts.
-- `/sql`: Database snapshots (`donation_system.sql` is the self-contained dump; the `migration_*.sql` files are historical steps already baked into it — no need to run them on a fresh install).
+- `/sql`: Database snapshots (`donation_system.sql` is the self-contained dump; the `migration_*.sql` files are historical steps already baked into it — no need to run them on a fresh install; `test_reminders_*.sql` / `undo_test_reminders_*.sql` are one-off test fixtures).
 - `logbook.txt`: Detailed development history (frozen as of 2026-09-23; the live history is `git log`).

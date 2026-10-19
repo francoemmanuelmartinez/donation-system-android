@@ -94,7 +94,7 @@ cmd /c '"C:\xampp\mysql\bin\mysql.exe" -u root donation_system < "C:\Users\<usua
 ```
 
 > Es de **un solo uso**: los DNI son `UNIQUE`. Si lo reimportás, fallará por duplicados.
-> No borra datos: crea donantes nuevos (ids 3..42).
+> No borra datos: crea donantes nuevos (ids 1..40 en una instalación fresca, por AUTO_INCREMENT).
 
 ### 4.4 Verificar
 

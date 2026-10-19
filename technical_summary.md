@@ -32,13 +32,13 @@ The monorepo architecture organizes frontend, backend, and database components a
 - **`/.idea`**: Android Studio project metadata and workspace settings.
 
 ### Android Package Structure (`app/src/main/java/com/francomartinez/donationsystem`)
-- **`views/`**: Activity/Fragment UI screens (`AuthActivity` with `LoginFragment`/`SignUpFragment`, `MainActivity`, `DirectorDashboardActivity`) that observe ViewModel state.
-- **`viewmodels/`**: Jetpack ViewModels (`LoginViewModel`, `RegisterViewModel`) handling UI business logic and state.
-- **`repositories/`**: Repository layer (`UserRepository`) abstracting network and local data sources.
-- **`models/`**: Data transfer objects and domain models (`User`, `LoginResponse`, `Donor`).
-- **`api/`**: Networking configuration (`ApiService`, `RetrofitClient`).
-- **`utils/`**: Utilities and state wrappers like `Resource<T>` (`LOADING`, `SUCCESS`, `ERROR`).
-- **`database/`**: Placeholder package reserved for a future Room integration (`PlaceholderDao`). **Not active today** — Room is not a dependency; the app is online-only against the PHP API.
+- **`views/`**: `AuthActivity` (with `LoginFragment` / `SignUpFragment`), `MainActivity`, `DirectorDashboardActivity`, and the per-module activities `StatisticsActivity`, `RestrictionsActivity`, `RecoveryPoliciesActivity`, `UsersActivity` (each hosting its fragment), plus the feature fragments under `views/fragments/`.
+- **`viewmodels/`**: Jetpack ViewModels (`LoginViewModel`, `RegisterViewModel`, `DonorsViewModel`, `DonationsViewModel`, `AppointmentsViewModel`, `SearchViewModel`, `SharedDonorViewModel`, `RestrictionsManagementViewModel`, `RecoveryPoliciesViewModel`, `StatisticsViewModel`, `UsersManagementViewModel`).
+- **`repositories/`**: Repository layer (`UserRepository`, `UserAdminRepository`, `DonorRepository`, `DonationRepository`, `AppointmentRepository`, `SearchRepository`, `StatisticsRepository`, `RestrictionsRepository`, `RecoveryPoliciesRepository`).
+- **`models/`**: domain models (`Donor`, `User`, `Donation`, `Appointment`, `MedicalRestriction`, `RecoveryPolicy`, `SearchResultItem`, `SearchPage`, `Statistics`, `AnnualCount`, `ContactPhone`, `ContactEmail`) plus the API envelope `ApiResponse<T>` and the `models/requests/` DTOs.
+- **`api/`**: networking configuration (`ApiService`, `RetrofitClient`, `ApiResponse<T>`).
+- **`utils/`**: utilities and state wrappers like `Resource<T>` (`LOADING`, `SUCCESS`, `ERROR`), `SessionManager`, `RoleMapper`, `KeyboardUtils`, `ApiErrorHandler`.
+- **`database/`**: placeholder package (`dao/PlaceholderDao`) reserved for a future Room integration. **Not active today** — Room is not a dependency; the app is online-only against the PHP API.
 
 ---
 
@@ -47,7 +47,7 @@ Security was prioritized from Day 1 to meet medical data standards:
 
 - **Password Security:** We do not store plain-text passwords. The backend uses `password_hash()` with `PASSWORD_DEFAULT` (BCRYPT), ensuring that even a database breach does not compromise user credentials.
 - **Database Access:** The PHP layer uses **PDO (PHP Data Objects)**. We strictly use **Prepared Statements** to eliminate the risk of SQL Injection attacks.
-- **Android Network Security:** A custom `network_security_config.xml` is implemented to securely whitelist the local development environment (`10.0.2.2`) while maintaining high security for production domains.
+- **Android Network Security:** A custom `network_security_config.xml` whitelists cleartext HTTP for the emulator alias (`10.0.2.2`) and the LAN hosts used during development (`192.168.0.202`, `192.168.0.130`).
 
 ---
 
@@ -59,6 +59,6 @@ To support development across multiple devices (e.g., PC and Notebook):
 ---
 
 ## 5. Future Roadmap
-- Implementation of **Medical Record Tracking** (Donation types, Blood Pressure, Volume).
+- Implementation of **Medical Record Tracking** (Blood Pressure, Volume). Donation types (PLASMA / PLATELETS / BLOOD) are already implemented.
 - Integration of **Room Database** for offline-first capabilities.
 - Development of a **C++ Desktop Application** sharing the same central PHP/MySQL backend.

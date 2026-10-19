@@ -13,16 +13,17 @@ Checklist para probar la app a mano contra el backend real (XAMPP). Ejecutar en 
       (override hacia `donation_system_test`) está documentado más abajo en
       "Reactivar el test automatizado".
 
-### Acceso seed (solo en `donation_system_test`)
-- La cuenta `director@test.local` / `password` y las 4 restricciones iniciales existen únicamente
-  en la base de test. En `donation_system` (datos reales) creá una Directora desde la pantalla de
-  registro o insertándola directo en MySQL (hash BCrypt).
+### Acceso seed
+- En `donation_system` (datos reales) creá una Directora desde la pantalla de registro o
+  insertándola directo en MySQL (hash BCrypt). Las 4 restricciones iniciales del diccionario están
+  sembradas en la BD real.
+- La cuenta `director@test.local` / `password` existe **solo** en `donation_system_test`.
 
 ## 1. Autenticación
 
 - [ ] Login correcto de una Directora aprobada (seed) → entra al Home con su rol.
 - [ ] Login con credenciales inválidas → mensaje de error (401).
-- [ ] Login de un usuario pendiente de aprobacion → mensaje *"Cuenta pendiente de aprobacion"* (403).
+- [ ] Login de un usuario pendiente de aprobación → mensaje *"Cuenta pendiente de aprobación por la Dirección."* (403).
 - [ ] Campos vacíos → validación local (sin llamada de red).
 - [ ] Registro de cuenta nueva (con teléfono opcional) → queda NONE / pendiente.
 - [ ] DNI o email repetido en registro → 409 con mensaje claro.
@@ -34,9 +35,9 @@ Checklist para probar la app a mano contra el backend real (XAMPP). Ejecutar en 
 - [ ] Aprobar usuario con rol ADMINISTRATIVA o DIRECTORA → aparece en la lista activa.
 - [ ] Aprobar con rol inválido → rechazado con mensaje.
 - [ ] Cambiar rol de una Directora cuando hay 2 o más → permitido.
-- [ ] Degradar a la única Directora → 403 con *"No se puede degradar al único usuario..."*
+- [ ] Degradar a la única Directora → 403 con *"Operación denegada. No se puede degradar al único usuario con rol de Directora en el sistema."*
       (validar que el mensaje real del backend llegue a la UI).
-- [ ] Eliminar a la única Directora → 403 con *"No se puede eliminar al único usuario..."*.
+- [ ] Eliminar a la única Directora → 403 con *"Operación denegada. No se puede eliminar al único usuario con rol de Directora en el sistema."*.
 - [ ] Eliminar a un usuario normal → se elimina y refresca la lista.
 
 ## 3. Donantes
@@ -54,7 +55,7 @@ Checklist para probar la app a mano contra el backend real (XAMPP). Ejecutar en 
 - [ ] Checkbox **"Aplicar restricciones (No apto)"**: oculta la carga de donación y cambia el botón a *"GUARDAR RESTRICCIONES"*.
 - [ ] Asignar restricción con veda (días) → el donante pasa a EN_VEDA y se calcula la fecha de retorno laborable (salta fines de semana).
 - [ ] Asignar **veda permanente** → donante EN_VEDA sin fecha de retorno.
-- [ ] Restricciones activas listadas en la card: **Editar** (in-place, conserva la fecha de inicio) e **Incluir ahora** (`revoke` → APTO si no quedan otras).
+- [ ] Restricciones activas listadas en la card: **EDITAR** (in-place, conserva la fecha de inicio) y **QUITAR** (`revoke` → APTO si no quedan otras; el diálogo de confirmación pregunta «¿Incluir ahora…?»).
 - [ ] Con turno en la Agenda, al guardar se ofrece **reagendar**: cancela el turno actual y crea uno nuevo en la fecha de retorno.
 - [ ] Crear restricción nueva en el diccionario (panel Directora) → aparece en el dropdown.
 - [ ] Crear sin nombre → 400.
@@ -63,7 +64,7 @@ Checklist para probar la app a mano contra el backend real (XAMPP). Ejecutar en 
 ## 5. Búsqueda
 
 - [ ] Búsqueda por texto (DNI, nombre o apellido) → devuelve coincidencias (prefijo).
-- [ ] Filtros por grupo/factor → acotan por tipo sanguíneo (OR implícito entre grupo y factor).
+- [ ] Filtros por grupo/factor → acotan por tipo sanguíneo (se combinan con **AND**: el donante debe coincidir con grupo **y** factor).
 - [ ] **Se devuelven todos los donantes, incluidos los que están en veda** (el estado APTO/EN_VEDA se muestra en la tarjeta, no se filtra).
 - [ ] Sin coincidencias → lista vacía (SUCCESS, no error).
 - [ ] Búsqueda vacía (sin criterios) → devuelve todos los donantes, aptos primero, paginado.
@@ -87,9 +88,9 @@ Checklist para probar la app a mano contra el backend real (XAMPP). Ejecutar en 
 - [ ] La lista carga turnos con donante y teléfono.
 - [ ] Enviar recordatorio (WhatsApp o email) → persiste su bandera independiente +
       usuario + fecha de envío (una no invalida a la otra).
-- [ ] Turno inexistente → 400/404.
-- [ ] **Agendar turno nuevo:** botón "Agendar donante" → buscar por DNI → elegir fecha
-      hábil (hoy deshabilitado) y hora → procedimiento → confirmar → el turno aparece en la Agenda.
+- [ ] `appointmentId` inválido (`<= 0`) → 400. Un id inexistente (`> 0`) no da error: el UPDATE afecta 0 filas y responde success.
+- [ ] **Agendar turno nuevo:** botón "AGENDAR UN DONANTE" → buscar por DNI → elegir fecha
+      hábil (hoy deshabilitado en el selector de fecha) y hora → procedimiento → confirmar → el turno aparece en la Agenda.
 - [ ] **Tap en la card de un turno** (cuerpo, no los iconos) → abre la carga de donación con el
       donante del turno precargado y su procedimiento preseleccionado.
 - [ ] **Envío masivo:** botón de dispatch (`dispatch_reminders`, `manual=true`) → procesa
@@ -133,6 +134,5 @@ $db_name = "donation_system_test";
 Advertencias:
 - Mientras exista ese archivo, la app del emulador también usa `donation_system_test`.
 - `testDebugUnitTest` crea y resetea esa base en cada corrida (drop + recreate del esquema).
-- **Nunca** correr la suite sin el override: el helper de test aplica drop al esquema en la base sobre
-  la que el API esté apuntando en ese momento.
+- **Nunca** correr la suite sin el override: el helper de test aplica drop+recreate **siempre** sobre `donation_system_test` (nombre fijo), independientemente de la base a la que apunte el API.
 - `scripts\sync-db.ps1` **no** toca `donation_system_test` sin `-Force` (guarda contra pisarla por error).

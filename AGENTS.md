@@ -23,9 +23,9 @@ raíz del repo según la tabla.
 - **Backend:** PHP 8.x servido por Apache; `db_config.php` conecta a `localhost:3306`, DB
   `donation_system`, usuario `root` **sin** contraseña, `PDO::ATTR_TIMEOUT => 5`.
 - **Base URL del emulador (ambas):** `http://10.0.2.2/donation-system-api/`.
-- **IP hardcodeada:** `RetrofitClient.java` (`DEFAULT_BASE_URL`) y `res/xml/network_security_config.xml`
-  (host en cleartext) traen la IP de una máquina. Al cambiar de dispositivo hay que actualizar **ambos**
-  con la IP de la máquina que sirve el backend.
+- **IP hardcodeada:** `RetrofitClient.java` (`DEFAULT_BASE_URL`, hoy `10.0.2.2` = alias del emulador) y
+  `res/xml/network_security_config.xml` (cleartext para `10.0.2.2`, `192.168.0.202` y `192.168.0.130`). Al cambiar
+  de dispositivo hay que actualizar **ambos**.
 
 ## Scripts
 - `scripts\sync-db.ps1` — sincroniza la BD real de XAMPP con los SQL del repo:
@@ -50,8 +50,8 @@ servicio Windows **`OpenWA-Gateway`** (NSSM, auto-start/restart). Sirve API + da
 - **Scheduler:** tarea `RecordatoriosDonacion`, diaria 08:00 (`backend/install_scheduler.php`).
   *(En la notebook fue **eliminada** y el lazy sweep quedó **desactivado**; el único disparo es el
   botón de la Agenda — ver "Nota (recordatorios)" más abajo.)*
-- **Scripts:** `openwa\openwa-dashboard.bat` / `openwa\start-openwa.bat` *(obsoleto para el
-  gateway)* / `openwa\stop-openwa.bat` *(solo emergencias)*.
+- **Scripts (fuera del repo, en `C:\Users\games\openwa`):** `openwa-dashboard.bat` / `start-openwa.bat` *(obsoleto para el
+  gateway)* / `stop-openwa.bat` *(solo emergencias)*.
 - **Estado:** `Get-Service OpenWA-Gateway` · `curl http://localhost:2785/api/health`.
 - Guía completa: `whatsapp-reminders-guide.md` §7.
 

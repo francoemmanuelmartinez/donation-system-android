@@ -54,7 +54,7 @@ Flujo a replicar (patrón ya existente en `SearchFragment`):
   - `donorViewModel.getDonorById(appointment.getDonorId());`
 - Observar `donorViewModel.getDonorResult()`:
   - SUCCESS && data != null → `sharedDonorViewModel.setSelectedDonor(data)`; `sharedDonorViewModel.setSelectedProcedure(pendingAppointmentProcedure)`; `((MainActivity) getActivity()).openClinicalForm();`
-  - ERROR → `Toast` (mensaje del recurso o `msg_donor_search_empty`), mismo patrón que `SearchFragment.onDonorResult`.
+  - ERROR → `Toast` con `resource.message` (sin fallback), mismo patrón que `SearchFragment.onDonorResult` (que usa `msg_search_no_results`).
 
 ### 5. App — pre-selección del procedimiento
 - `viewmodels/SharedDonorViewModel.java`:
@@ -69,7 +69,7 @@ Flujo a replicar (patrón ya existente en `SearchFragment`):
 ## Comportamiento final
 - Tap en el cuerpo de la card del turno → carga de donación con donante del turno precargado y tipo del turno seleccionado.
 - Tap en iconos WhatsApp/email: sigue enviando el recordatorio (sin mezclarse).
-- Back desde el formulario → pestaña Donaciones (flujo actual desde búsqueda; no devuelve a Agenda).
+- Back desde el formulario → vuelve al **alta de donante vacía** (raíz de la pestaña Donaciones; no devuelve a Agenda).
 - `DonationsFragment` restante intacto (ya reacciona al `SharedDonorViewModel`).
 
 ## Fuera de alcance
