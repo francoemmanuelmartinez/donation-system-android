@@ -9,7 +9,8 @@
 -- Incluye además: teléfonos/emails, donaciones previas (con
 -- last_donation_date y next_eligible_date calculado según la
 -- política de recuperación y día hábil), y 5 restricciones médicas
--- para generar estados mixtos (EN VEDA) en la Agenda.
+-- para generar estados mixtos (EN VEDA) en búsqueda y donación.
+-- Los turnos se crean solo para donantes aptos en la fecha del turno.
 --
 -- IMPORTANTE:
 --   * NO borra datos existentes (van donantes nuevos ids 3..42).
@@ -122,17 +123,8 @@ FROM `donors` d JOIN `tmp_seed` s ON d.`dni` = s.`dni`
 WHERE s.`idx` % 5 <> 0;
 
 -- ------------------------------------------------------------
--- 4) Turnos en la Agenda (40)
--- ------------------------------------------------------------
-INSERT INTO `appointments`
-  (`donor_id`, `appointment_date`, `appointment_time`, `target_procedure`, `status`)
-SELECT d.id, s.`appt_date`, s.`appt_time`, s.`proc`, 'SCHEDULED'
-FROM `donors` d JOIN `tmp_seed` s ON d.`dni` = s.`dni`;
-
--- ------------------------------------------------------------
 -- 5) Donaciones históricas (1 por donante, ids 1001..1040)
 --    Carga Estadísticas + last_donation_date.
--- ------------------------------------------------------------
 INSERT INTO `donations`
   (`id`, `donor_id`, `weight`, `height`, `hto`, `platelets_count`, `annual_limit_override`, `staff_user_id`, `created_at`)
 SELECT
@@ -185,5 +177,22 @@ FROM (
 ) t
 JOIN `donors` d ON d.`dni` = t.`dni`
 JOIN `restrictions` r ON r.`name` = t.`name`;
+
+-- ------------------------------------------------------------
+-- 8) Turnos en la Agenda (solo donantes aptos en la fecha del turno)
+--    Excluye donantes en veda de recuperación (next_eligible_date > appt_date)
+--    y donantes con restricción médica activa en esa fecha.
+-- ------------------------------------------------------------
+INSERT INTO `appointments`
+  (`donor_id`, `appointment_date`, `appointment_time`, `target_procedure`, `status`)
+SELECT d.id, s.`appt_date`, s.`appt_time`, s.`proc`, 'SCHEDULED'
+FROM `donors` d
+JOIN `tmp_seed` s ON d.`dni` = s.`dni`
+WHERE (d.`next_eligible_date` IS NULL OR d.`next_eligible_date` <= s.`appt_date`)
+  AND NOT EXISTS (
+        SELECT 1 FROM `donor_restrictions` dr
+        WHERE dr.`donor_id` = d.id
+          AND (dr.`is_permanent` = 1 OR dr.`eligible_workday_return_date` >= s.`appt_date`)
+  );
 
 DROP TEMPORARY TABLE IF EXISTS `tmp_seed`;
