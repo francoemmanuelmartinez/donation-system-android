@@ -103,7 +103,7 @@ Checklist para probar la app a mano contra el backend real (XAMPP). Ejecutar en 
       políticas baseline (una por procedimiento: PLASMA / PLATELETS / BLOOD).
 - [ ] Editar una política (días de recuperación / tope anual, hombre y mujer) → guarda y
       refresca la lista.
-- [ ] Crear política nueva para otro procedimiento → aparece en la lista y en el dropdown.
+- [ ] Crear política nueva para uno de los 3 procedimientos (PLASMA / PLATELETS / BLOOD) → aparece en la lista y en el dropdown.
 - [ ] Eliminar política → desaparece de la lista.
 - [ ] Los cambios se reflejan en las advertencias del formulario clínico (§6): al bajar los
       días de recuperación, un donante que estaba en advertencia deja de advertir (y viceversa).
