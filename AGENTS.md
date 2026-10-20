@@ -22,6 +22,9 @@ raíz del repo según la tabla.
 
 - **Backend:** PHP 8.x servido por Apache; `db_config.php` conecta a `localhost:3306`, DB
   `donation_system`, usuario `root` **sin** contraseña, `PDO::ATTR_TIMEOUT => 5`.
+- **Esquema (Fase 0+):** tabla `centers` (id=1 "Centro Principal" por defecto), columna `center_id` en
+  `users`, `donors`, `donations`, `appointments`, `donor_restrictions`. Roles: `ADMINISTRATIVA`,
+  `DIRECTORA`, `SUPERADMIN` (se eliminó `NONE`). Migración: `sql/migration_add_centers.sql`.
 - **Base URL del emulador (ambas):** `http://10.0.2.2/donation-system-api/`.
 - **IP hardcodeada:** `RetrofitClient.java` (`DEFAULT_BASE_URL`, hoy `10.0.2.2` = alias del emulador) y
   `res/xml/network_security_config.xml` (cleartext para `10.0.2.2`, `192.168.0.202` y `192.168.0.130`). Al cambiar

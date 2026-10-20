@@ -8,6 +8,7 @@ This document serves as the official technical specification and design guide fo
 
 - **Visual Style:** Clean, clinical, and corporate interface. Color palette based on medical light-blue tones, clinic dark-blues, and light-gray background surfaces (`@color/surface_light`).
 - **Language Convention:** **CRITICAL RULE.** All internal code, class names, file names, variables, backend logic, and XML element IDs must be written strictly in **English** using CamelCase. All user-facing labels, hints, titles, tooltips, and dialogs must be displayed in **Spanish** utilizing externalized string resources.
+- **Roles:** `ADMINISTRATIVA`, `DIRECTORA`, `SUPERADMIN`. `SUPERADMIN` is above `DIRECTORA` and manages centers and global users. There is no `NONE` role (new registrations default to `ADMINISTRATIVA` pending approval).
 - **Navigation:** Root layout structured around a `CoordinatorLayout` or `ConstraintLayout` hosting a fixed **`BottomNavigationView`** at the bottom of the screen.
 - **Data Input:** Use `TextInputLayout` with `style="@style/Widget.Material3.TextInputLayout.OutlinedBox"` to implement space-saving floating labels.
 - **Keyboard Optimization:** Always specify `android:inputType="number"` or `"numberDecimal"` on numerical input fields (ID, Weight, Height, HTO, Platelets) and `android:inputType="phone"` on phone fields, to trigger the correct software keyboard.
@@ -148,17 +149,27 @@ Single, scalable search module (replaces the former `DonorSearchFragment` / crit
 - **Database Architecture:** A pre-populated `restrictions` table stores canonical medical deferral codes (Spanish seed: "Tatuaje Reciente", "Cirugía Reciente", "Bloqueo por Medicación", "Viaje a Zona Endémica"); `donor_restrictions` stores each deferral with `veda_days`, `is_permanent`, `calculated_end_date` and `eligible_workday_return_date`.
 - **Restriction Flow (moved to `DonationsFragment`):** the donor form no longer captures aptitude/exclusions (it always saves `APTO`). Deferrals are applied from the clinical/donations screen through the **"Aplicar restricciones (No apto)"** checkbox: `POST restrictions.php` `assign`/`update` with a temporal veda (`veda_days` → return date that skips weekends) or a **permanent** veda. Active deferrals are listed in the restrictions card and can be edited in place or removed with **Incluir ahora** (`revoke`). If a scheduled appointment exists, the operator may **reagendar** (the backend cancels the current appointment and creates a new one on the return date in a single transaction). Aptitude/status is **fully derived** (never persisted): a donor with active restrictions or a future `next_eligible_date` is "No apto" / `EN_VEDA`; otherwise `APTO`. The backend (`donors.php`) computes it on every read; `restrictions.php` no longer mutates a `donors.status` column (removed). The Android model `Donor.status` is read-only (getter only, no setter): the value comes exclusively from the API response.
 
+### 6. Screen: User Profile (`ProfileFragment` / `fragment_profile.xml`, hosted in `ProfileActivity`)
+Self-service profile editor for the logged-in user. Accessible from the dashboard ("Mi Perfil" button) or from the main screen.
+- **Form:** First name (`@+id/editTextProfileFirstName`), Last name (`@+id/editTextProfileLastName`), Email (`@+id/editTextProfileEmail`, `inputType="textEmailAddress"`), Phone (`@+id/editTextProfilePhone`, `inputType="phone"`).
+- **Read-only fields:** Role (`@+id/textViewProfileRole`) and Center (`@+id/textViewProfileCenter`).
+- **Action:** `@+id/buttonSaveProfile` ("GUARDAR") → `POST profile.php`.
+- **Backend:** `backend/profile.php` (GET/POST). Role and center are read-only; only name, last name, email, phone are editable.
+
+---
+
 ### 👑 DIRECTOR ROLE & ADMINISTRATIVE MODULES
 
 #### 1. Screen: Director Core Dashboard (`DirectorDashboardActivity` / `activity_director_dashboard.xml`)
-Central routing hub displayed exclusively for users authenticated with the `DIRECTORA` / `DIRECTOR` role strings.
-- **Top Welcome Header:** Static colored banner featuring user credentials and title status.
+Central routing hub displayed for users authenticated with `DIRECTORA` or `SUPERADMIN` role strings.
+- **Top Welcome Header:** Static colored banner featuring user credentials and title status. Includes a "Mi Perfil" button (`@+id/buttonProfile`) that opens `ProfileActivity`.
 - **Navigation Grid Layout (5 cards):**
   - Card 1 ➔ `@+id/cardMenuDonations` (Triggers navigation to the standard 3-tab main workflow).
   - Card 2 ➔ `@+id/cardMenuStatistics` (Navigates to data analytics charts view).
   - Card 3 ➔ `@+id/cardMenuRestrictions` (Navigates to medical restrictions CRUD view).
   - Card 4 ➔ `@+id/cardMenuRecoveryPolicies` (Navigates to the recovery policies CRUD panel).
   - Card 5 ➔ `@+id/cardMenuUsers` (Navigates to staff users CRUD panel).
+- **Superadmin only:** A center selector dialog (via `users_admin.php?action=centers`) allows switching between centers. The selected center is stored in `SessionManager` and sent as `centerId` query param in all requests.
 
 #### 2. Screen: Metrics & Analytics View (`StatisticsFragment` / `fragment_statistics.xml`, hosted in `StatisticsActivity`)
 Provides data visualization tools separated into time bounds.
@@ -184,6 +195,12 @@ CRUD utility to manage per-procedure recovery rules (deferral days between donat
 - **Top Form Panel:** procedure selector (`@+id/spinnerRecoveryProcedure`, AutoCompleteTextView with the 3 procedure codes), deferral days per gender (`@+id/editTextRecoveryDays` / `@+id/editTextRecoveryDaysFemale`) and annual caps per gender (`@+id/editTextMaxPerYear` / `@+id/editTextMaxPerYearFemale`). Save/cancel triggers: `@+id/buttonSavePolicy` / `@+id/buttonCancelEditPolicy` (cancel only visible while editing; editing keeps the row in place via `@+id/textViewRecoveryPolicyFormTitle` state).
 - **Bottom Database Feed:** a vertical `RecyclerView` (`@+id/recyclerViewRecoveryPolicies`) listing existing policies with inline edit and delete actions.
 - **Consumers of these policies:** `DonationsFragment` shows **non-blocking** warnings when the donor's `next_eligible_date` is still in the future or the annual donation count has reached/exceeded the policy cap (operator may continue anyway); the annual caps also feed the donor's `annualCounts` context. Backend: `recovery_policies.php`.
+
+### 5. Multi-center (Enfoque A — single DB + `center_id`)
+- **`centers` table:** `id`, `name`, `address`, `is_active`, `created_at`. Seed: one default center (id=1, "Centro Principal").
+- **`center_id` column** (INT NULL, FK → centers) added to: `users`, `donors`, `donations`, `appointments`, `donor_restrictions`.
+- **Isolation:** staff users see only their center's data (filtered by `center_id` in all backend queries). SUPERADMIN sees all centers or can filter by selected center.
+- **App:** `RetrofitClient` interceptor sends `centerId` as query param in all requests. `SessionManager` persists the selected center.
 
 ---
 
