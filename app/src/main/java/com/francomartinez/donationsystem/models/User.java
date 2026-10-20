@@ -21,10 +21,13 @@ public class User {
     private String email;
 
     @SerializedName("role")
-    private String role; // "NONE", "ADMINISTRATIVA", "DIRECTORA"
+    private String role; // "ADMINISTRATIVA", "DIRECTORA", "SUPERADMIN"
 
     @SerializedName("isApproved")
     private boolean isApproved;
+
+    @SerializedName("centerId")
+    private Integer centerId;
 
     @SerializedName("createdAt")
     private String createdAt;
@@ -102,6 +105,14 @@ public class User {
 
     public void setApproved(boolean approved) {
         isApproved = approved;
+    }
+
+    public Integer getCenterId() {
+        return centerId;
+    }
+
+    public void setCenterId(Integer centerId) {
+        this.centerId = centerId;
     }
 
     public String getCreatedAt() {

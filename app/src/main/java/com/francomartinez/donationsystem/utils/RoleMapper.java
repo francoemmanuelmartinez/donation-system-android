@@ -4,6 +4,7 @@ public final class RoleMapper {
 
     public static final String ROLE_ADMINISTRATIVA = "ADMINISTRATIVA";
     public static final String ROLE_DIRECTORA = "DIRECTORA";
+    public static final String ROLE_SUPERADMIN = "SUPERADMIN";
 
     private RoleMapper() {
     }
@@ -13,6 +14,8 @@ public final class RoleMapper {
             return "";
         }
         switch (role) {
+            case ROLE_SUPERADMIN:
+                return "Superadmin";
             case ROLE_DIRECTORA:
                 return "Directora";
             case ROLE_ADMINISTRATIVA:

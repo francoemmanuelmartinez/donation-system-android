@@ -89,7 +89,7 @@ public class LoginFragment extends Fragment {
 
         String role = user.getRole();
         Intent intent;
-        if (role != null && (role.equalsIgnoreCase("DIRECTORA") || role.equalsIgnoreCase("DIRECTOR"))) {
+        if (role != null && (role.equalsIgnoreCase("DIRECTORA") || role.equalsIgnoreCase("DIRECTOR") || role.equalsIgnoreCase("SUPERADMIN"))) {
             intent = new Intent(requireContext(), DirectorDashboardActivity.class);
         } else {
             intent = new Intent(requireContext(), MainActivity.class);

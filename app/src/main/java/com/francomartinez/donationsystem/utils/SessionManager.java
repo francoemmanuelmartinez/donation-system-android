@@ -13,6 +13,7 @@ public class SessionManager {
     private static final String KEY_FIRST_NAME = "firstName";
     private static final String KEY_LAST_NAME = "lastName";
     private static final String KEY_EMAIL = "email";
+    private static final String KEY_CENTER_ID = "centerId";
 
     private static SessionManager instance;
 
@@ -38,6 +39,11 @@ public class SessionManager {
                 .putString(KEY_LAST_NAME, user.getLastName())
                 .putString(KEY_EMAIL, user.getEmail())
                 .apply();
+        if (user.getCenterId() != null) {
+            prefs.edit().putInt(KEY_CENTER_ID, user.getCenterId()).apply();
+        } else {
+            prefs.edit().remove(KEY_CENTER_ID).apply();
+        }
     }
 
     public void clear() {
@@ -71,5 +77,10 @@ public class SessionManager {
 
     public String getEmail() {
         return prefs.getString(KEY_EMAIL, "");
+    }
+
+    public Integer getCenterId() {
+        if (!prefs.contains(KEY_CENTER_ID)) return null;
+        return prefs.getInt(KEY_CENTER_ID, -1);
     }
 }

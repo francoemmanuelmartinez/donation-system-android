@@ -57,6 +57,7 @@ try {
         "email" => $user['email'],
         "role" => $user['role'],
         "isApproved" => (bool)$user['is_approved'],
+        "centerId" => isset($user['center_id']) ? (int)$user['center_id'] : null,
         "phones" => $phones,
         "emails" => $emails
     ];

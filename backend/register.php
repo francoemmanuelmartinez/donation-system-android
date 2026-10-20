@@ -31,7 +31,7 @@ $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 try {
     $conn->beginTransaction();
 
-    $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, dni, email, password_hash, role, is_approved) VALUES (:firstName, :lastName, :dni, :email, :passwordHash, 'NONE', 0)");
+    $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, dni, email, password_hash, role, is_approved) VALUES (:firstName, :lastName, :dni, :email, :passwordHash, 'ADMINISTRATIVA', 0)");
     $stmt->execute([
         'firstName' => $firstName,
         'lastName' => $lastName,
