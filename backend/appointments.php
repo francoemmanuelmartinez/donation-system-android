@@ -63,6 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     $weekDate = trim($_GET['week_date'] ?? $_GET['date'] ?? date('Y-m-d'));
     $month = trim($_GET['month'] ?? '');
+    $centerId = (int)($_GET['centerId'] ?? $_GET['center_id'] ?? 0);
 
     $baseSelect = "SELECT a.id, a.donor_id AS donorId, CONCAT(d.first_name, ' ', d.last_name) AS donorName, dp.phone_number AS donorPhone, dem.email_address AS donorEmail, a.appointment_date AS appointmentDate, DATE_FORMAT(a.appointment_time, '%H:%i') AS appointmentTime, a.target_procedure AS targetProcedure, a.status, a.is_reminder_sent AS isReminderSent, a.is_email_reminder_sent AS isEmailReminderSent, a.reminder_sent_at AS reminderSentAt FROM appointments a JOIN donors d ON a.donor_id = d.id LEFT JOIN donor_phones dp ON dp.donor_id = d.id AND dp.is_primary = 1 LEFT JOIN donor_emails dem ON dem.donor_id = d.id AND dem.is_primary = 1";
 
@@ -70,11 +71,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         if ($month !== '' && preg_match('/^\d{4}-\d{2}$/', $month)) {
             $startDate = $month . '-01';
             $endDate = date('Y-m-t', strtotime($startDate));
-            $stmt = $conn->prepare($baseSelect . " WHERE a.appointment_date BETWEEN :startDate AND :endDate ORDER BY a.appointment_date ASC, a.appointment_time ASC");
-            $stmt->execute(['startDate' => $startDate, 'endDate' => $endDate]);
+            $sql = $baseSelect . " WHERE a.appointment_date BETWEEN :startDate AND :endDate";
+            $params = ['startDate' => $startDate, 'endDate' => $endDate];
+            if ($centerId > 0) {
+                $sql .= " AND a.center_id = :centerId";
+                $params['centerId'] = $centerId;
+            }
+            $sql .= " ORDER BY a.appointment_date ASC, a.appointment_time ASC";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute($params);
         } else {
-            $stmt = $conn->prepare($baseSelect . " WHERE a.appointment_date >= :weekDate ORDER BY a.appointment_date ASC, a.appointment_time ASC");
-            $stmt->execute(['weekDate' => $weekDate]);
+            $sql = $baseSelect . " WHERE a.appointment_date >= :weekDate";
+            $params = ['weekDate' => $weekDate];
+            if ($centerId > 0) {
+                $sql .= " AND a.center_id = :centerId";
+                $params['centerId'] = $centerId;
+            }
+            $sql .= " ORDER BY a.appointment_date ASC, a.appointment_time ASC";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute($params);
         }
         $appointments = $stmt->fetchAll();
 
@@ -175,11 +190,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
 
         try {
-            $stmt = $conn->prepare("SELECT id FROM donors WHERE id = :id");
+            $stmt = $conn->prepare("SELECT id, center_id FROM donors WHERE id = :id");
             $stmt->execute(['id' => $donorId]);
-            if (!$stmt->fetch()) {
+            $donorRow = $stmt->fetch();
+            if (!$donorRow) {
                 sendJsonResponse("error", "No se encontró el donante seleccionado", null, 404);
             }
+            $centerId = (int)($donorRow['center_id'] ?? 0);
+            if ($centerId <= 0) { $centerId = 1; }
 
             $stmt = $conn->prepare("SELECT id FROM appointments WHERE donor_id = :donorId AND appointment_date = :date AND status <> 'CANCELLED'");
             $stmt->execute(['donorId' => $donorId, 'date' => $appointmentDate]);
@@ -187,12 +205,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 sendJsonResponse("error", "El donante ya tiene un turno agendado para ese día", null, 409);
             }
 
-            $stmt = $conn->prepare("INSERT INTO appointments (donor_id, appointment_date, appointment_time, target_procedure, status) VALUES (:donorId, :date, :time, :procedure, 'SCHEDULED')");
+            $stmt = $conn->prepare("INSERT INTO appointments (donor_id, appointment_date, appointment_time, target_procedure, status, center_id) VALUES (:donorId, :date, :time, :procedure, 'SCHEDULED', :centerId)");
             $stmt->execute([
                 'donorId' => $donorId,
                 'date' => $appointmentDate,
                 'time' => $appointmentTime,
-                'procedure' => $targetProcedure
+                'procedure' => $targetProcedure,
+                'centerId' => $centerId
             ]);
 
             sendJsonResponse("success", "Turno agendado correctamente", [

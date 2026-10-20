@@ -80,6 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $hto = (float)($data->hto ?? 0);
     $plateletsCount = (int)($data->plateletsCount ?? $data->platelets_count ?? 0);
     $staffUserId = isset($data->staffUserId) ? (int)$data->staffUserId : null;
+    $centerId = (int)($data->centerId ?? $data->center_id ?? $_GET['centerId'] ?? $_GET['center_id'] ?? 0);
+    if ($centerId <= 0) { $centerId = 1; }
     $procedures = $data->procedures ?? $data->procedureTypes ?? [];
 
     if ($donorId <= 0 || $hto <= 0 || $plateletsCount <= 0 || empty($procedures)) {
@@ -119,14 +121,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
         $procedures = $validProcedures;
 
-        $stmt = $conn->prepare("INSERT INTO donations (donor_id, weight, height, hto, platelets_count, annual_limit_override, staff_user_id) VALUES (:donorId, :weight, :height, :hto, :plateletsCount, 0, :staffUserId)");
+        $stmt = $conn->prepare("INSERT INTO donations (donor_id, weight, height, hto, platelets_count, annual_limit_override, staff_user_id, center_id) VALUES (:donorId, :weight, :height, :hto, :plateletsCount, 0, :staffUserId, :centerId)");
         $stmt->execute([
             'donorId' => $donorId,
             'weight' => $weight,
             'height' => $height,
             'hto' => $hto,
             'plateletsCount' => $plateletsCount,
-            'staffUserId' => $staffUserId
+            'staffUserId' => $staffUserId,
+            'centerId' => $centerId
         ]);
 
         $donationId = (int)$conn->lastInsertId();

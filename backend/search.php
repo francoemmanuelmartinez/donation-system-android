@@ -8,9 +8,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $lastName = trim($_GET['last_name'] ?? '');
     $group    = strtoupper(trim($_GET['group']  ?? ''));
     $factor   = strtoupper(trim($_GET['factor'] ?? ''));
-    $bloodType = strtoupper(trim($_GET['blood_type'] ?? $_GET['bloodType'] ?? ''));
+$bloodType = strtoupper(trim($_GET['blood_type'] ?? $_GET['bloodType'] ?? ''));
+$centerId  = (int)($_GET['centerId'] ?? $_GET['center_id'] ?? 0);
 
-    $limit  = (int)($_GET['limit'] ?? 20);
+$limit  = (int)($_GET['limit'] ?? 20);
     $offset = (int)($_GET['offset'] ?? 0);
     if ($limit < 1)  { $limit = 20; }
     if ($limit > 100) { $limit = 100; }
@@ -38,6 +39,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         } else if ($group !== '' || $factor !== '') {
             $where[] = 'd.blood_type LIKE :bloodPattern';
             $params['bloodPattern'] = ($group !== '' ? $group : '%') . ($factor !== '' ? $factor : '%');
+        }
+
+        if ($centerId > 0) {
+            $where[] = 'd.center_id = :centerId';
+            $params['centerId'] = $centerId;
         }
 
         $whereSql = empty($where) ? '' : (' WHERE ' . implode(' AND ', $where));

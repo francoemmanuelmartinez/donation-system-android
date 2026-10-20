@@ -38,17 +38,18 @@ function normalizeRestrictionEntry($raw) {
 }
 
 /** Inserta una asignación de restricción y devuelve la fila calculada. */
-function insertRestriction($conn, $donorId, $entry, $createdByUserId) {
+function insertRestriction($conn, $donorId, $entry, $createdByUserId, $centerId = 1) {
     $startDate = $entry['startDate'] !== '' ? $entry['startDate'] : date('Y-m-d');
 
     if ($entry['isPermanent']) {
-        $stmt = $conn->prepare("INSERT INTO donor_restrictions (donor_id, restriction_id, start_date, veda_days, is_permanent, calculated_end_date, eligible_workday_return_date, notes, created_by_user_id) VALUES (:donorId, :restrictionId, :startDate, NULL, 1, NULL, NULL, :notes, :createdUserId)");
+        $stmt = $conn->prepare("INSERT INTO donor_restrictions (donor_id, restriction_id, start_date, veda_days, is_permanent, calculated_end_date, eligible_workday_return_date, notes, created_by_user_id, center_id) VALUES (:donorId, :restrictionId, :startDate, NULL, 1, NULL, NULL, :notes, :createdUserId, :centerId)");
         $stmt->execute([
             'donorId'       => $donorId,
             'restrictionId' => $entry['restrictionId'],
             'startDate'     => $startDate,
             'notes'         => $entry['notes'],
             'createdUserId' => $createdByUserId,
+            'centerId'      => $centerId,
         ]);
 
         return [
@@ -67,7 +68,7 @@ function insertRestriction($conn, $donorId, $entry, $createdByUserId) {
     $calculatedEndDate = (new DateTime($startDate))->modify('+' . $entry['vedaDays'] . ' days')->format('Y-m-d');
     $eligibleWorkday = calculateEligibleWorkdayReturnDate($startDate, $entry['vedaDays']);
 
-    $stmt = $conn->prepare("INSERT INTO donor_restrictions (donor_id, restriction_id, start_date, veda_days, is_permanent, calculated_end_date, eligible_workday_return_date, notes, created_by_user_id) VALUES (:donorId, :restrictionId, :startDate, :vedaDays, 0, :calculatedEndDate, :eligibleWorkday, :notes, :createdUserId)");
+    $stmt = $conn->prepare("INSERT INTO donor_restrictions (donor_id, restriction_id, start_date, veda_days, is_permanent, calculated_end_date, eligible_workday_return_date, notes, created_by_user_id, center_id) VALUES (:donorId, :restrictionId, :startDate, :vedaDays, 0, :calculatedEndDate, :eligibleWorkday, :notes, :createdUserId, :centerId)");
     $stmt->execute([
         'donorId'            => $donorId,
         'restrictionId'      => $entry['restrictionId'],
@@ -77,6 +78,7 @@ function insertRestriction($conn, $donorId, $entry, $createdByUserId) {
         'eligibleWorkday'    => $eligibleWorkday,
         'notes'              => $entry['notes'],
         'createdUserId'      => $createdByUserId,
+        'centerId'           => $centerId,
     ]);
 
     return [
@@ -245,17 +247,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
 
         try {
-            $existsStmt = $conn->prepare("SELECT id FROM donors WHERE id = :id");
+            $existsStmt = $conn->prepare("SELECT id, center_id FROM donors WHERE id = :id");
             $existsStmt->execute(['id' => $donorId]);
-            if (!$existsStmt->fetch()) {
+            $donorRow = $existsStmt->fetch();
+            if (!$donorRow) {
                 sendJsonResponse("error", "No se encontró el donante seleccionado", null, 404);
             }
+            $centerId = (int)($donorRow['center_id'] ?? 0);
+            if ($centerId <= 0) { $centerId = 1; }
 
             $conn->beginTransaction();
 
             $assigned = [];
             foreach ($entries as $entry) {
-                $assigned[] = insertRestriction($conn, $donorId, $entry, $createdByUserId);
+                $assigned[] = insertRestriction($conn, $donorId, $entry, $createdByUserId, $centerId);
             }
 
             $appointmentInfo = [];

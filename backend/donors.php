@@ -4,6 +4,7 @@ require_once 'db_config.php';
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $dni = trim($_GET['dni'] ?? '');
     $id = (int)($_GET['id'] ?? 0);
+    $centerId = (int)($_GET['centerId'] ?? $_GET['center_id'] ?? 0);
 
     if ($id <= 0 && empty($dni)) {
         sendJsonResponse("error", "DNI or ID parameter is required", null, 400);
@@ -11,12 +12,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     try {
         if ($id > 0) {
-            $stmt = $conn->prepare("SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, address, blood_type AS bloodType, phenotype, weight, height, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE id = :id LIMIT 1");
-            $stmt->execute(['id' => $id]);
+            $sql = "SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, address, blood_type AS bloodType, phenotype, weight, height, center_id AS centerId, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE id = :id";
+            $params = ['id' => $id];
         } else {
-            $stmt = $conn->prepare("SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, address, blood_type AS bloodType, phenotype, weight, height, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE dni = :dni LIMIT 1");
-            $stmt->execute(['dni' => $dni]);
+            $sql = "SELECT id, dni, first_name AS firstName, last_name AS lastName, gender, birth_date AS birthDate, city, address, blood_type AS bloodType, phenotype, weight, height, center_id AS centerId, last_donation_date AS lastDonationDate, next_eligible_date AS nextEligibleDate FROM donors WHERE dni = :dni";
+            $params = ['dni' => $dni];
         }
+        if ($centerId > 0) {
+            $sql .= " AND center_id = :centerId";
+            $params['centerId'] = $centerId;
+        }
+        $sql .= " LIMIT 1";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute($params);
         $donor = $stmt->fetch();
 
         if (!$donor) {
@@ -94,8 +102,10 @@ $bloodType = trim($data->bloodType ?? $data->blood_type ?? '');
     $phenotype = trim($data->phenotype ?? '');
     $weight = isset($data->weight) ? (float)$data->weight : null;
     $height = isset($data->height) ? (float)$data->height : null;
-    $weightValue = ($weight !== null && $weight > 0) ? $weight : null;
-    $heightValue = ($height !== null && $height > 0) ? $height : null;
+    $centerId = (int)($data->centerId ?? $data->center_id ?? $_GET['centerId'] ?? $_GET['center_id'] ?? 0);
+    if ($centerId <= 0) {
+        $centerId = 1; // default center
+    }
 
     if (empty($dni) || empty($firstName) || empty($lastName) || empty($bloodType)) {
         sendJsonResponse("error", "Por favor complete los campos obligatorios (DNI, Nombre, Apellido, Grupo/Factor)", null, 400);
@@ -111,7 +121,7 @@ $bloodType = trim($data->bloodType ?? $data->blood_type ?? '');
 
         if ($existing) {
             $donorId = (int)$existing['id'];
-            $updateStmt = $conn->prepare("UPDATE donors SET first_name = :firstName, last_name = :lastName, gender = :gender, birth_date = :birthDate, city = :city, address = :address, blood_type = :bloodType, phenotype = :phenotype, weight = :weight, height = :height WHERE id = :id");
+            $updateStmt = $conn->prepare("UPDATE donors SET first_name = :firstName, last_name = :lastName, gender = :gender, birth_date = :birthDate, city = :city, address = :address, blood_type = :bloodType, phenotype = :phenotype, weight = :weight, height = :height, center_id = :centerId WHERE id = :id");
             $updateStmt->execute([
                 'firstName' => $firstName,
                 'lastName' => $lastName,
@@ -123,10 +133,11 @@ $bloodType = trim($data->bloodType ?? $data->blood_type ?? '');
                 'phenotype' => $phenotype,
                 'weight' => $weightValue,
                 'height' => $heightValue,
+                'centerId' => $centerId,
                 'id' => $donorId
             ]);
         } else {
-            $insertStmt = $conn->prepare("INSERT INTO donors (dni, first_name, last_name, gender, birth_date, city, address, blood_type, phenotype, weight, height) VALUES (:dni, :firstName, :lastName, :gender, :birthDate, :city, :address, :bloodType, :phenotype, :weight, :height)");
+            $insertStmt = $conn->prepare("INSERT INTO donors (dni, first_name, last_name, gender, birth_date, city, address, blood_type, phenotype, weight, height, center_id) VALUES (:dni, :firstName, :lastName, :gender, :birthDate, :city, :address, :bloodType, :phenotype, :weight, :height, :centerId)");
             $insertStmt->execute([
                 'dni' => $dni,
                 'firstName' => $firstName,
@@ -138,7 +149,8 @@ $bloodType = trim($data->bloodType ?? $data->blood_type ?? '');
                 'bloodType' => $bloodType,
                 'phenotype' => $phenotype,
                 'weight' => $weightValue,
-                'height' => $heightValue
+                'height' => $heightValue,
+                'centerId' => $centerId
             ]);
             $donorId = (int)$conn->lastInsertId();
         }
