@@ -100,7 +100,47 @@ Cada centro tiene sus propios donantes, staff y datos, pero todo vive en una sol
 - **Migración de esquema** con datos existentes: requiere backfill (`center_id = 1` para todo lo existente).
 - **Scheduler/lazy sweep** por centro: si se va a multi-tenant (enfoque B), el dispatcher debe iterar centros. Con enfoque A, un solo dispatcher alcanza.
 
-## Notas de diseño
+## Pendiente: ampliación de la suite de integración
+
+La suite actual (58 tests) no cubre los cambios de Fases 1-4. Falta agregar:
+
+### Roles y usuarios
+- Login con rol SUPERADMIN → enruta a DirectorDashboardActivity.
+- Registro crea usuario con rol ADMINISTRATIVA (no NONE) + is_approved=0.
+- approve con rol SUPERADMIN (solo superadmin puede asignarlo).
+- update_role degradando al último DIRECTORA → 403.
+- update_role degradando al último SUPERADMIN → 403.
+- delete del último DIRECTORA → 403.
+- delete del último SUPERADMIN → 403.
+
+### Perfil
+- GET profile.php?userId=X → devuelve perfil completo.
+- PUT profile.php → actualiza nombre, apellido, email, teléfono.
+- PUT con email duplicado → 409.
+- PUT sin campos obligatorios → 400.
+
+### Centros (ABM)
+- centers action=list (solo superadmin) → devuelve lista.
+- centers action=create (solo superadmin) → crea centro.
+- centers action=create sin nombre → 400.
+- centers action=update → actualiza centro.
+- centers action=* con requesterRole != SUPERADMIN → 403.
+
+### Multi-centro (aislamiento)
+- Donor creado en centro A no aparece en búsqueda del centro B.
+- Donación registrada en centro A no aparece en estadísticas del centro B.
+- Turnos de centro A no aparecen en agenda del centro B.
+- Superadmin (centerId=0 o no enviado) ve datos de todos los centros.
+- Staff de centro A no puede ver datos de centro B (filtro aplicado).
+
+### Atendido por
+- POST donations con staffUserId → se guarda correctamente.
+- GET donations?staffUserId=X → devuelve solo donaciones de ese staff.
+- statistics?staffUserId=X → byStaff y totales filtrados.
+- statistics?centerId=X → totales filtrados por centro.
+
+### Nota
+Los tests de integración requieren XAMPP levantado y la BD `donation_system_test`. El fixture SQL (`donation_system_test.sql`) ya incluye la tabla `centers` y `center_id` en todas las tablas.
 - Hoy no hay histórico de donaciones (solo alta), por lo que "atendido por" se usa únicamente al registrar; para reportes por staff habría que agregar consulta/listado.
 - El mutex de "último director" está duplicado en `update_role` y `delete`; con superadmin conviene centralizar reglas (mínimo un superadmin, etc.).
 - No hay tests de roles más allá de integración de login/usuarios; conviene ampliar.
