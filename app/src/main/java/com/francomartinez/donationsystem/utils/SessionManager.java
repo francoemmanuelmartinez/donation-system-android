@@ -85,4 +85,9 @@ public class SessionManager {
         if (!prefs.contains(KEY_CENTER_ID)) return null;
         return prefs.getInt(KEY_CENTER_ID, -1);
     }
+
+    public void setCenterId(int centerId) {
+        prefs.edit().putInt(KEY_CENTER_ID, centerId).apply();
+        com.francomartinez.donationsystem.api.RetrofitClient.setCenterId(centerId);
+    }
 }

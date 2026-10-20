@@ -53,6 +53,9 @@ public interface ApiService {
     @POST("users_admin.php?action=update_role")
     Call<ApiResponse<Map<String, Object>>> updateUserRole(@Body ApproveUserRequest request);
 
+    @POST("users_admin.php?action=centers")
+    Call<ApiResponse<List<Map<String, Object>>>> getCenters(@Body Map<String, Object> body);
+
     // --- User Profile ---
     @GET("profile.php")
     Call<ApiResponse<User>> getProfile(@Query("userId") int userId);
