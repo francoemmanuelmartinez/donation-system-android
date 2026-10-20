@@ -7,7 +7,66 @@ function annualDonationCount($conn, $donorId, $procType) {
     return (int)$stmt->fetch()['c'];
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// GET: donation history (with "atendido por")
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $donorId = (int)($_GET['donorId'] ?? $_GET['donor_id'] ?? 0);
+    $staffUserId = (int)($_GET['staffUserId'] ?? $_GET['staff_user_id'] ?? 0);
+    $centerId = (int)($_GET['centerId'] ?? $_GET['center_id'] ?? 0);
+    $limit = (int)($_GET['limit'] ?? 50);
+
+    try {
+        $where = [];
+        $params = [];
+
+        if ($donorId > 0) {
+            $where[] = "d.donor_id = :donorId";
+            $params['donorId'] = $donorId;
+        }
+        if ($staffUserId > 0) {
+            $where[] = "d.staff_user_id = :staffUserId";
+            $params['staffUserId'] = $staffUserId;
+        }
+        if ($centerId > 0) {
+            $where[] = "d.center_id = :centerId";
+            $params['centerId'] = $centerId;
+        }
+
+        $sql = "SELECT d.id, d.donor_id AS donorId, CONCAT(dn.first_name, ' ', dn.last_name) AS donorName,
+                       d.weight, d.height, d.hto, d.platelets_count AS plateletsCount,
+                       d.annual_limit_override AS annualLimitOverride,
+                       d.staff_user_id AS staffUserId,
+                       CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) AS staffName,
+                       d.created_at AS createdAt,
+                       (SELECT GROUP_CONCAT(dp.procedure_type) FROM donation_procedures dp WHERE dp.donation_id = d.id) AS procedures
+                FROM donations d
+                JOIN donors dn ON dn.id = d.donor_id
+                LEFT JOIN users u ON u.id = d.staff_user_id";
+
+        if (!empty($where)) {
+            $sql .= " WHERE " . implode(" AND ", $where);
+        }
+        $sql .= " ORDER BY d.created_at DESC LIMIT :limit";
+
+        $stmt = $conn->prepare($sql);
+        foreach ($params as $k => $v) {
+            $stmt->bindValue(":$k", $v, PDO::PARAM_INT);
+        }
+        $stmt->bindValue(":limit", $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        $rows = $stmt->fetchAll();
+
+        $donations = array_map(function ($r) {
+            $r['staffName'] = trim($r['staffName']);
+            $r['procedures'] = $r['procedures'] ? explode(',', $r['procedures']) : [];
+            $r['staffUserId'] = $r['staffUserId'] !== null ? (int)$r['staffUserId'] : null;
+            return $r;
+        }, $rows);
+
+        sendJsonResponse("success", "Donaciones recuperadas", $donations);
+    } catch(PDOException $e) {
+        sendJsonResponse("error", "Database error: " . $e->getMessage(), null, 500);
+    }
+} else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $json = file_get_contents('php://input');
     $data = json_decode($json);
 

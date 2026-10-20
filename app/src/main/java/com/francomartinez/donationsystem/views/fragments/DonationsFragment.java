@@ -66,6 +66,7 @@ public class DonationsFragment extends Fragment {
     private TextView textViewDonorContextName;
     private TextView textViewDonorContextDni;
     private TextView textViewDonorContextBlood;
+    private TextView textViewDonorContextStaff;
     private Chip chipDonorContextStatus;
     private MaterialButton buttonSeeDonorData;
     private TextInputEditText editTextHto;
@@ -122,6 +123,7 @@ public class DonationsFragment extends Fragment {
         textViewDonorContextName = view.findViewById(R.id.textViewDonorContextName);
         textViewDonorContextDni = view.findViewById(R.id.textViewDonorContextDni);
         textViewDonorContextBlood = view.findViewById(R.id.textViewDonorContextBlood);
+        textViewDonorContextStaff = view.findViewById(R.id.textViewDonorContextStaff);
         chipDonorContextStatus = view.findViewById(R.id.chipDonorContextStatus);
         buttonSeeDonorData = view.findViewById(R.id.buttonSeeDonorData);
         editTextHto = view.findViewById(R.id.editTextHto);
@@ -399,6 +401,7 @@ public class DonationsFragment extends Fragment {
                 textViewDonorContextName.setText(R.string.hint_select_donor);
                 textViewDonorContextDni.setText("");
                 textViewDonorContextBlood.setText("");
+                textViewDonorContextStaff.setText("");
                 chipDonorContextStatus.setVisibility(View.GONE);
                 buttonSeeDonorData.setEnabled(false);
                 layoutActiveRestrictions.removeAllViews();
@@ -408,6 +411,7 @@ public class DonationsFragment extends Fragment {
                 textViewDonorContextName.setText(buildFullName(donor));
                 textViewDonorContextDni.setText(getString(R.string.hint_dni) + " " + safe(donor.getDni()));
                 textViewDonorContextBlood.setText(safe(donor.getBloodType()));
+                textViewDonorContextStaff.setText("Atendido por: " + SessionManager.getInstance(requireContext()).getFullName());
                 bindBadge(donor);
                 buttonSeeDonorData.setEnabled(true);
                 checkApplyRestrictions.setEnabled(true);
