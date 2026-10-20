@@ -53,6 +53,13 @@ public interface ApiService {
     @POST("users_admin.php?action=update_role")
     Call<ApiResponse<Map<String, Object>>> updateUserRole(@Body ApproveUserRequest request);
 
+    // --- User Profile ---
+    @GET("profile.php")
+    Call<ApiResponse<User>> getProfile(@Query("userId") int userId);
+
+    @POST("profile.php")
+    Call<ApiResponse<Map<String, Object>>> updateProfile(@Body Map<String, Object> body);
+
     // --- Donors ---
     @GET("donors.php")
     Call<ApiResponse<Donor>> getDonorByDni(@Query("dni") String dni);

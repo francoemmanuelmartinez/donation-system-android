@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.francomartinez.donationsystem.R;
 import com.francomartinez.donationsystem.utils.SessionManager;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 
 public class DirectorDashboardActivity extends AppCompatActivity {
@@ -33,9 +34,16 @@ public class DirectorDashboardActivity extends AppCompatActivity {
         cardMenuRecoveryPolicies.setOnClickListener(v -> openModule(RecoveryPoliciesActivity.class));
         MaterialCardView cardMenuUsers = findViewById(R.id.cardMenuUsers);
         cardMenuUsers.setOnClickListener(v -> openModule(UsersActivity.class));
+MaterialButton buttonProfile = findViewById(R.id.buttonProfile);
+        buttonProfile.setOnClickListener(v -> openProfile());
+
     }
 
     private void openModule(Class<?> activityClass) {
         startActivity(new Intent(this, activityClass));
+    }
+
+    private void openProfile() {
+        startActivity(new Intent(this, ProfileActivity.class));
     }
 }

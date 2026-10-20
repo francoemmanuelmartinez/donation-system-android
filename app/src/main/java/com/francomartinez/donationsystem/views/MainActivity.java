@@ -1,5 +1,6 @@
 package com.francomartinez.donationsystem.views;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -16,6 +17,7 @@ import com.francomartinez.donationsystem.views.fragments.DonationsFragment;
 import com.francomartinez.donationsystem.views.fragments.DonorFormFragment;
 import com.francomartinez.donationsystem.views.fragments.ScheduleAppointmentFragment;
 import com.francomartinez.donationsystem.views.fragments.SearchFragment;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity {
@@ -35,6 +37,9 @@ public class MainActivity extends AppCompatActivity {
         });
 
         bottomNavigationView = findViewById(R.id.bottomNavigationView);
+
+        MaterialButton buttonProfile = findViewById(R.id.buttonProfile);
+        buttonProfile.setOnClickListener(v -> openProfile());
 
         if (savedInstanceState == null) {
             showTab(DonorFormFragment.newRegisterInstance());
@@ -76,6 +81,10 @@ public class MainActivity extends AppCompatActivity {
 
     public void openScheduleAppointment() {
         push(new ScheduleAppointmentFragment());
+    }
+
+    public void openProfile() {
+        startActivity(new Intent(this, ProfileActivity.class));
     }
 
     public void openClinicalForm() {

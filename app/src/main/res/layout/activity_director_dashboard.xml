@@ -57,6 +57,15 @@
                     android:text="@string/dashboard_subtitle"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textColor="@color/clinical_dark_blue_light" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/buttonProfile"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Mi Perfil"
+                    android:textColor="@color/white" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
