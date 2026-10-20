@@ -8,7 +8,7 @@ This document serves as the official technical specification and design guide fo
 
 - **Visual Style:** Clean, clinical, and corporate interface. Color palette based on medical light-blue tones, clinic dark-blues, and light-gray background surfaces (`@color/surface_light`).
 - **Language Convention:** **CRITICAL RULE.** All internal code, class names, file names, variables, backend logic, and XML element IDs must be written strictly in **English** using CamelCase. All user-facing labels, hints, titles, tooltips, and dialogs must be displayed in **Spanish** utilizing externalized string resources.
-- **Roles:** `ADMINISTRATIVA`, `DIRECTORA`, `SUPERADMIN`. `SUPERADMIN` is above `DIRECTORA` and manages centers and global users. There is no `NONE` role (new registrations default to `ADMINISTRATIVA` pending approval).
+- **Roles:** `ADMINISTRATIVA`, `DIRECTORA`, `SUPERADMIN`. `SUPERADMIN` is above `DIRECTORA` and manages centers and global users. There is no `NONE` role (new registrations default to `ADMINISTRATIVA` pending approval). Center selection is available when approving users.
 - **Navigation:** Root layout structured around a `CoordinatorLayout` or `ConstraintLayout` hosting a fixed **`BottomNavigationView`** at the bottom of the screen.
 - **Data Input:** Use `TextInputLayout` with `style="@style/Widget.Material3.TextInputLayout.OutlinedBox"` to implement space-saving floating labels.
 - **Keyboard Optimization:** Always specify `android:inputType="number"` or `"numberDecimal"` on numerical input fields (ID, Weight, Height, HTO, Platelets) and `android:inputType="phone"` on phone fields, to trigger the correct software keyboard.

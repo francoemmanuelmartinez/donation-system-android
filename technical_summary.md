@@ -26,8 +26,8 @@ The monorepo architecture organizes frontend, backend, and database components a
 
 ### Root Directory Overview
 - **`/app`**: Native Android application source code, resources, and Gradle build configuration.
-- **`/backend`**: PHP 8.x REST API scripts served locally via XAMPP using a Windows directory junction (`mklink /J`, `htdocs`).
-- **`/sql`**: Database schema dumps (`donation_system.sql`) for MySQL / phpMyAdmin database setup.
+- **`/backend`**: PHP 8.x REST API scripts served locally via XAMPP using a Windows directory junction (`mklink /J`, `htdocs`). Endpoints: login, register, users_admin (with centers ABM), donors, search, donations, appointments, restrictions, statistics, recovery_policies, profile, send_reminders, whatsapp_sender.
+- **`/sql`**: Database schema dumps (`donation_system.sql`) for MySQL / phpMyAdmin database setup. Includes `centers` table and `center_id` columns (multi-center, Enfoque A). Migration: `migration_add_centers.sql`.
 - **`/gradle`**: Gradle Wrapper executables ensuring consistent Gradle version builds.
 - **`/.idea`**: Android Studio project metadata and workspace settings.
 
