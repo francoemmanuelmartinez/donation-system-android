@@ -37,6 +37,19 @@
 
 **Recomendación inicial:** Enfoque A (single DB + `center_id`) para una primera versión; si crece, migrar a B. Investigar costo de migración antes de decidir.
 
+## Decision tomada: Enfoque A (single DB + `center_id`) + reglas de acceso
+
+Cada centro tiene sus propios donantes, staff y datos, pero todo vive en una sola BD. El aislamiento se logra por filtro, no por infraestructura.
+
+### Reglas de aislamiento por centro
+
+- `users.center_id` = centro al que pertenece el usuario.
+- `donors.center_id`, `donations.center_id`, `appointments.center_id`, `donor_restrictions.center_id` = centro donde se registró.
+- **Staff regular** (ADMINISTRATIVA/DIRECTORA): todas las queries filtran `WHERE center_id = su center_id`. No ve datos de otros centros.
+- **SUPERADMIN**: sin filtro por defecto (ve todo) o puede seleccionar un centro para filtrar. Tiene ABM de centros.
+- La app envía `center_id` del usuario logueado en cada request; el backend aplica el filtro según el rol.
+- **Mitigación de cross-center leak:** revisar todas las queries en `backend/*.php` y agregar tests de aislamiento (Fase 5).
+
 ## Pasos (fases)
 
 ### Fase 0 — Diseño de datos (sin código)
