@@ -96,7 +96,7 @@ INSERT INTO `tmp_seed` (`idx`, `dni`, `first_name`, `last_name`, `gender`, `birt
 -- ------------------------------------------------------------
 INSERT INTO `donors`
   (`dni`, `first_name`, `last_name`, `gender`, `birth_date`, `city`,
-   `address`, `blood_type`, `phenotype`, `weight`, `height`)
+   `address`, `blood_type`, `phenotype`, `weight`, `height`, `center_id`)
 SELECT
   s.`dni`, s.`first_name`, s.`last_name`, s.`gender`, s.`birth_date`,
   'Mar del Plata',
@@ -104,7 +104,8 @@ SELECT
   s.`blood_type`,
   IF(s.`idx` % 7 = 0, 'Kell-', NULL),
   IF(s.`gender` = 'Femenino', 56 + (s.`idx` % 8) * 2, 72 + (s.`idx` % 10) * 2),
-  IF(s.`gender` = 'Femenino', 158 + (s.`idx` % 6) * 2, 172 + (s.`idx` % 6) * 2)
+  IF(s.`gender` = 'Femenino', 158 + (s.`idx` % 6) * 2, 172 + (s.`idx` % 6) * 2),
+  1
 FROM `tmp_seed` s;
 
 -- ------------------------------------------------------------
@@ -126,12 +127,12 @@ WHERE s.`idx` % 5 <> 0;
 -- 5) Donaciones históricas (1 por donante, ids 1001..1040)
 --    Carga Estadísticas + last_donation_date.
 INSERT INTO `donations`
-  (`id`, `donor_id`, `weight`, `height`, `hto`, `platelets_count`, `annual_limit_override`, `staff_user_id`, `created_at`)
+  (`id`, `donor_id`, `weight`, `height`, `hto`, `platelets_count`, `annual_limit_override`, `staff_user_id`, `center_id`, `created_at`)
 SELECT
   1000 + s.`idx`, d.id, d.`weight`, d.`height`,
   ELT(1 + (s.`idx` % 9), 35, 36, 37, 38, 39, 40, 41, 42, 43),
   ELT(1 + (s.`idx` % 7), 150000, 180000, 220000, 260000, 300000, 350000, 420000),
-  0, NULL, CONCAT(s.`don_date`, ' 10:30:00')
+  0, NULL, 1, CONCAT(s.`don_date`, ' 10:30:00')
 FROM `donors` d JOIN `tmp_seed` s ON d.`dni` = s.`dni`;
 
 INSERT INTO `donation_procedures` (`donation_id`, `procedure_type`)
@@ -159,7 +160,7 @@ SET d.`last_donation_date` = s.`don_date`,
 -- ------------------------------------------------------------
 INSERT INTO `donor_restrictions`
   (`donor_id`, `restriction_id`, `start_date`, `veda_days`,
-   `calculated_end_date`, `eligible_workday_return_date`, `notes`, `created_by_user_id`)
+   `calculated_end_date`, `eligible_workday_return_date`, `notes`, `created_by_user_id`, `center_id`)
 SELECT
   d.id, r.id, t.`start_date`, t.`veda_days`,
   DATE_ADD(t.`start_date`, INTERVAL t.`veda_days` DAY),
@@ -167,7 +168,7 @@ SELECT
      WHEN 7 THEN DATE_ADD(DATE_ADD(t.`start_date`, INTERVAL t.`veda_days` DAY), INTERVAL 2 DAY)
      WHEN 1 THEN DATE_ADD(DATE_ADD(t.`start_date`, INTERVAL t.`veda_days` DAY), INTERVAL 1 DAY)
      ELSE DATE_ADD(t.`start_date`, INTERVAL t.`veda_days` DAY) END),
-  t.`notes`, NULL
+   t.`notes`, NULL, 1
 FROM (
        SELECT '30111245' AS `dni`, 'Tatuaje Reciente'    AS `name`, '2026-08-15' AS `start_date`, 180 AS `veda_days`, 'Veda por cita reciente' AS `notes`
   UNION ALL SELECT '30111247', 'Viaje a Zona Endémica', '2026-10-01', 90, ''
@@ -184,8 +185,8 @@ JOIN `restrictions` r ON r.`name` = t.`name`;
 --    y donantes con restricción médica activa en esa fecha.
 -- ------------------------------------------------------------
 INSERT INTO `appointments`
-  (`donor_id`, `appointment_date`, `appointment_time`, `target_procedure`, `status`)
-SELECT d.id, s.`appt_date`, s.`appt_time`, s.`proc`, 'SCHEDULED'
+  (`donor_id`, `appointment_date`, `appointment_time`, `target_procedure`, `status`, `center_id`)
+SELECT d.id, s.`appt_date`, s.`appt_time`, s.`proc`, 'SCHEDULED', 1
 FROM `donors` d
 JOIN `tmp_seed` s ON d.`dni` = s.`dni`
 WHERE (d.`next_eligible_date` IS NULL OR d.`next_eligible_date` <= s.`appt_date`)

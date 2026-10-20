@@ -14,7 +14,18 @@ DROP TABLE IF EXISTS `donors`;
 DROP TABLE IF EXISTS `user_emails`;
 DROP TABLE IF EXISTS `user_phones`;
 DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS `centers`;
 SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE TABLE `centers` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(100) NOT NULL,
+  `address` VARCHAR(150) NULL,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `centers` (`id`, `name`, `address`) VALUES (1, 'Centro Principal', 'Mar del Plata');
 
 CREATE TABLE `users` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
@@ -23,11 +34,13 @@ CREATE TABLE `users` (
   `dni` VARCHAR(20) NOT NULL UNIQUE,
   `email` VARCHAR(150) NOT NULL UNIQUE,
   `password_hash` VARCHAR(255) NOT NULL,
-  `role` ENUM('NONE', 'ADMINISTRATIVA', 'DIRECTORA') NOT NULL DEFAULT 'NONE',
+  `role` ENUM('ADMINISTRATIVA', 'DIRECTORA', 'SUPERADMIN') NOT NULL DEFAULT 'ADMINISTRATIVA',
   `is_approved` TINYINT(1) NOT NULL DEFAULT 0,
   `approved_by_user_id` INT NULL,
+  `center_id` INT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`approved_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
+  FOREIGN KEY (`approved_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`center_id`) REFERENCES `centers`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `user_phones` (
@@ -63,9 +76,11 @@ CREATE TABLE `donors` (
   `phenotype` VARCHAR(100) NULL,
   `weight` DECIMAL(5,2) NULL,
   `height` DECIMAL(5,2) NULL,
+  `center_id` INT NULL,
   `last_donation_date` DATE NULL,
   `next_eligible_date` DATE NULL,
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`center_id`) REFERENCES `centers`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `donor_phones` (
@@ -112,10 +127,12 @@ CREATE TABLE `donor_restrictions` (
   `eligible_workday_return_date` DATE NULL,
   `notes` TEXT NULL,
   `created_by_user_id` INT NULL,
+  `center_id` INT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`donor_id`) REFERENCES `donors`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`restriction_id`) REFERENCES `restrictions`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`created_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
+  FOREIGN KEY (`created_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`center_id`) REFERENCES `centers`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `donation_recovery_policies` (
@@ -143,9 +160,11 @@ CREATE TABLE `donations` (
   `platelets_count` INT NOT NULL,
   `annual_limit_override` TINYINT(1) NOT NULL DEFAULT 0,
   `staff_user_id` INT NULL,
+  `center_id` INT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`donor_id`) REFERENCES `donors`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`staff_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
+  FOREIGN KEY (`staff_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`center_id`) REFERENCES `centers`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `donation_procedures` (
@@ -166,11 +185,15 @@ CREATE TABLE `appointments` (
   `is_email_reminder_sent` TINYINT(1) NOT NULL DEFAULT 0,
   `reminder_sent_at` DATETIME NULL,
   `reminder_sent_by_user_id` INT NULL,
+  `center_id` INT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`donor_id`) REFERENCES `donors`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`reminder_sent_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL
+  FOREIGN KEY (`reminder_sent_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`center_id`) REFERENCES `centers`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Default approved director. Password: "password" (well-known BCrypt test vector).
-INSERT INTO `users` (`id`, `first_name`, `last_name`, `dni`, `email`, `password_hash`, `role`, `is_approved`) VALUES
-(1, 'Directora', 'Test', '00000000', 'director@test.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'DIRECTORA', 1);
+INSERT INTO `centers` (`id`, `name`, `address`) VALUES (1, 'Centro Principal', 'Mar del Plata');
+
+INSERT INTO `users` (`id`, `first_name`, `last_name`, `dni`, `email`, `password_hash`, `role`, `is_approved`, `center_id`) VALUES
+(1, 'Directora', 'Test', '00000000', 'director@test.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'DIRECTORA', 1, 1);
