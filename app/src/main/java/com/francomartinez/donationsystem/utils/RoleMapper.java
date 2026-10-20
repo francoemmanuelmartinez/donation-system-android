@@ -29,6 +29,8 @@ public final class RoleMapper {
         if (label == null) {
             return ROLE_ADMINISTRATIVA;
         }
-        return label.equals("Directora") ? ROLE_DIRECTORA : ROLE_ADMINISTRATIVA;
+        if (label.equals("Directora")) return ROLE_DIRECTORA;
+        if (label.equals("Superadmin")) return ROLE_SUPERADMIN;
+        return ROLE_ADMINISTRATIVA;
     }
 }

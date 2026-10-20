@@ -43,6 +43,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $userId = (int)($data->userId ?? $data->user_id ?? 0);
         $role = trim($data->role ?? 'ADMINISTRATIVA');
         $approvedByUserId = isset($data->approvedByUserId) ? (int)$data->approvedByUserId : null;
+        $centerId = (int)($data->centerId ?? $data->center_id ?? 0);
+        if ($centerId <= 0 && $approvedByUserId !== null) {
+            // Default to the approver's center
+            $ctrStmt = $conn->prepare("SELECT center_id FROM users WHERE id = :id");
+            $ctrStmt->execute(['id' => $approvedByUserId]);
+            $ctrRow = $ctrStmt->fetch();
+            if ($ctrRow && $ctrRow['center_id'] !== null) {
+                $centerId = (int)$ctrRow['center_id'];
+            }
+        }
+        if ($centerId <= 0) {
+            $centerId = 1; // fallback to default center
+        }
 
         if ($userId <= 0) {
             sendJsonResponse("error", "Invalid user ID", null, 400);
@@ -53,10 +66,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
 
         try {
-            $stmt = $conn->prepare("UPDATE users SET is_approved = 1, role = :role, approved_by_user_id = :approvedBy WHERE id = :id");
+            // Set center_id if provided, otherwise keep existing
+            $stmt = $conn->prepare("UPDATE users SET is_approved = 1, role = :role, approved_by_user_id = :approvedBy, center_id = :centerId WHERE id = :id");
             $stmt->execute([
                 'role' => $role,
                 'approvedBy' => $approvedByUserId,
+                'centerId' => $centerId,
                 'id' => $userId
             ]);
 
@@ -77,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
 
         try {
-            $checkStmt = $conn->prepare("SELECT role, is_approved FROM users WHERE id = :id");
+            $checkStmt = $conn->prepare("SELECT role, is_approved, center_id FROM users WHERE id = :id");
             $checkStmt->execute(['id' => $userId]);
             $targetUser = $checkStmt->fetch();
 
@@ -107,8 +122,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 }
             }
 
-            $updateStmt = $conn->prepare("UPDATE users SET role = :role WHERE id = :id");
-            $updateStmt->execute(['role' => $role, 'id' => $userId]);
+            $centerId = (int)($data->centerId ?? $data->center_id ?? 0);
+            if ($centerId > 0) {
+                $updateStmt = $conn->prepare("UPDATE users SET role = :role, center_id = :centerId WHERE id = :id");
+                $updateStmt->execute(['role' => $role, 'centerId' => $centerId, 'id' => $userId]);
+            } else {
+                $updateStmt = $conn->prepare("UPDATE users SET role = :role WHERE id = :id");
+                $updateStmt->execute(['role' => $role, 'id' => $userId]);
+            }
 
             sendJsonResponse("success", "Rol actualizado exitosamente", ["userId" => $userId, "role" => $role]);
         } catch(PDOException $e) {

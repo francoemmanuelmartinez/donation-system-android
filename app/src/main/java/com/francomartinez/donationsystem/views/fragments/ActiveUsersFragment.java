@@ -68,9 +68,12 @@ public class ActiveUsersFragment extends Fragment {
     private void showRoleDialog(User user, UsersManagementViewModel viewModel) {
         String[] labels = new String[]{
                 getString(R.string.role_administrativa),
-                getString(R.string.role_directora)
+                getString(R.string.role_directora),
+                getString(R.string.role_superadmin)
         };
-        int checked = RoleMapper.ROLE_DIRECTORA.equals(user.getRole()) ? 1 : 0;
+        int checked = 0;
+        if (RoleMapper.ROLE_DIRECTORA.equals(user.getRole())) checked = 1;
+        else if (RoleMapper.ROLE_SUPERADMIN.equals(user.getRole())) checked = 2;
 
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.hint_select_role)
@@ -81,7 +84,7 @@ public class ActiveUsersFragment extends Fragment {
                     if (newRole.equals(user.getRole())) {
                         return;
                     }
-                    if (RoleMapper.ROLE_DIRECTORA.equals(user.getRole())) {
+                    if (RoleMapper.ROLE_DIRECTORA.equals(user.getRole()) || RoleMapper.ROLE_SUPERADMIN.equals(user.getRole())) {
                         showDemoteConfirm(user.getId(), newRole, viewModel);
                     } else {
                         viewModel.updateUserRole(user.getId(), newRole);

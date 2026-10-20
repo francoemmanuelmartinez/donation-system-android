@@ -14,6 +14,8 @@ $dni = trim($data->dni ?? '');
 $email = trim($data->email ?? '');
 $phone = trim($data->phone ?? '');
 $password = trim($data->password ?? '');
+$centerId = (int)($data->centerId ?? $data->center_id ?? 1);
+if ($centerId <= 0) { $centerId = 1; }
 
 if (empty($firstName) || empty($lastName) || empty($dni) || empty($email) || empty($password)) {
     sendJsonResponse("error", "Por favor complete todos los campos obligatorios", null, 400);
@@ -31,13 +33,14 @@ $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 try {
     $conn->beginTransaction();
 
-    $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, dni, email, password_hash, role, is_approved) VALUES (:firstName, :lastName, :dni, :email, :passwordHash, 'ADMINISTRATIVA', 0)");
+    $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, dni, email, password_hash, role, is_approved, center_id) VALUES (:firstName, :lastName, :dni, :email, :passwordHash, 'ADMINISTRATIVA', 0, :centerId)");
     $stmt->execute([
         'firstName' => $firstName,
         'lastName' => $lastName,
         'dni' => $dni,
         'email' => $email,
-        'passwordHash' => $passwordHash
+        'passwordHash' => $passwordHash,
+        'centerId' => $centerId
     ]);
 
     $userId = $conn->lastInsertId();

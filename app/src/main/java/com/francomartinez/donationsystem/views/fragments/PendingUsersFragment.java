@@ -72,9 +72,13 @@ public class PendingUsersFragment extends Fragment {
     private void showRoleDialog(User user) {
         String[] labels = new String[]{
                 getString(R.string.role_administrativa),
-                getString(R.string.role_directora)
+                getString(R.string.role_directora),
+                getString(R.string.role_superadmin)
         };
-        int checked = RoleMapper.ROLE_DIRECTORA.equals(adapter.getSelectedRole(user)) ? 1 : 0;
+        String selectedRole = adapter.getSelectedRole(user);
+        int checked = 0;
+        if (RoleMapper.ROLE_DIRECTORA.equals(selectedRole)) checked = 1;
+        else if (RoleMapper.ROLE_SUPERADMIN.equals(selectedRole)) checked = 2;
 
         new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.hint_select_role)

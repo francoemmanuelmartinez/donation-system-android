@@ -175,6 +175,7 @@
     <string name="label_created_at">Registrado:</string>
     <string name="hint_select_role">Seleccionar rol...</string>
     <string name="role_administrativa">Administrativa</string>
+    <string name="role_superadmin">Superadmin</string>
     <string name="msg_user_approved">Usuario aprobado correctamente</string>
     <string name="msg_user_approved_error">No se pudo aprobar al usuario</string>
     <string name="msg_role_updated">Rol actualizado correctamente</string>
