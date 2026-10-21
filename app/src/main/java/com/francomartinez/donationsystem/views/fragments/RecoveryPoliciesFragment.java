@@ -107,22 +107,39 @@ public class RecoveryPoliciesFragment extends Fragment {
     }
 
     private void bindProcedureOptions(List<RecoveryPolicy> existing) {
-        List<String> reserved = new ArrayList<>();
-        if (editing != null) {
-            reserved.add(editing.getProcedureType());
-        }
-        for (RecoveryPolicy policy : existing) {
-            reserved.add(policy.getProcedureType());
-        }
+        // Show ALL procedures so the user can load/edit any policy
         List<String> options = new ArrayList<>();
         for (String code : PROCEDURE_CODES) {
-            if (!reserved.contains(code)) {
-                options.add(procedureLabel(code));
-            }
+            options.add(procedureLabel(code));
         }
         ArrayAdapter<String> adapterOptions = new ArrayAdapter<>(requireContext(),
                 android.R.layout.simple_dropdown_item_1line, options);
         spinnerRecoveryProcedure.setAdapter(adapterOptions);
+
+        // When selecting a procedure, load existing policy if it exists
+        spinnerRecoveryProcedure.setOnItemClickListener((parent, view, position, id) -> {
+            String selectedLabel = (String) parent.getItemAtPosition(position);
+            String code = codeForLabel(selectedLabel);
+            RecoveryPolicy existingPolicy = findPolicyByCode(existing, code);
+            if (existingPolicy != null && (editing == null || editing.getId() != existingPolicy.getId())) {
+                // Load for editing (new or different procedure)
+                startEditing(existingPolicy);
+            } else if (existingPolicy == null && editing != null) {
+                // Switching to a new procedure: cancel editing mode
+                cancelEditing();
+                spinnerRecoveryProcedure.setText(selectedLabel, false);
+            }
+        });
+    }
+
+    private RecoveryPolicy findPolicyByCode(List<RecoveryPolicy> policies, String code) {
+        if (policies == null || code == null || code.isEmpty()) return null;
+        for (RecoveryPolicy p : policies) {
+            if (code.equalsIgnoreCase(p.getProcedureType())) {
+                return p;
+            }
+        }
+        return null;
     }
 
     private void startEditing(RecoveryPolicy policy) {
@@ -139,7 +156,7 @@ public class RecoveryPoliciesFragment extends Fragment {
                     Collections.singletonList(procedureLabel(policy.getProcedureType())));
             spinnerRecoveryProcedure.setAdapter(single);
         }
-        spinnerRecoveryProcedure.setEnabled(false);
+        // Keep spinner enabled so user can switch to another procedure
 
         editTextRecoveryDays.setText(String.valueOf(policy.getRecoveryDays()));
         editTextRecoveryDaysFemale.setText(String.valueOf(policy.getRecoveryDaysFemale()));
