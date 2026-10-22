@@ -1,6 +1,7 @@
 <?php
 require_once 'db_config.php';
 require_once 'config_reminders.php';
+require_once 'appointments_lib.php';
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
@@ -64,8 +65,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $weekDate = trim($_GET['week_date'] ?? $_GET['date'] ?? date('Y-m-d'));
     $month = trim($_GET['month'] ?? '');
     $centerId = (int)($_GET['centerId'] ?? $_GET['center_id'] ?? 0);
+    $statusFilter = strtolower(trim($_GET['status'] ?? 'SCHEDULED'));
+    $allowedStatuses = ['SCHEDULED', 'ATTENDED', 'CANCELLED', 'NO_SHOW'];
 
-    $baseSelect = "SELECT a.id, a.donor_id AS donorId, CONCAT(d.first_name, ' ', d.last_name) AS donorName, dp.phone_number AS donorPhone, dem.email_address AS donorEmail, a.appointment_date AS appointmentDate, DATE_FORMAT(a.appointment_time, '%H:%i') AS appointmentTime, a.target_procedure AS targetProcedure, a.status, a.is_reminder_sent AS isReminderSent, a.is_email_reminder_sent AS isEmailReminderSent, a.reminder_sent_at AS reminderSentAt FROM appointments a JOIN donors d ON a.donor_id = d.id LEFT JOIN donor_phones dp ON dp.donor_id = d.id AND dp.is_primary = 1 LEFT JOIN donor_emails dem ON dem.donor_id = d.id AND dem.is_primary = 1";
+    $baseSelect = "SELECT a.id, a.donor_id AS donorId, CONCAT(d.first_name, ' ', d.last_name) AS donorName, d.dni AS donorDni, dp.phone_number AS donorPhone, dem.email_address AS donorEmail, a.appointment_date AS appointmentDate, DATE_FORMAT(a.appointment_time, '%H:%i') AS appointmentTime, a.target_procedure AS targetProcedure, a.status, a.cancel_reason AS cancelReason, a.rescheduled_to_appointment_id AS rescheduledToAppointmentId, a.reschedule_requested_at AS rescheduleRequestedAt, a.center_id AS centerId, a.is_reminder_sent AS isReminderSent, a.is_email_reminder_sent AS isEmailReminderSent, a.reminder_sent_at AS reminderSentAt FROM appointments a JOIN donors d ON a.donor_id = d.id LEFT JOIN donor_phones dp ON dp.donor_id = d.id AND dp.is_primary = 1 LEFT JOIN donor_emails dem ON dem.donor_id = d.id AND dem.is_primary = 1";
+
+    // Filtro por estado: default solo SCHEDULED (D1). "all" trae el histórico
+    // (todos los estados). Cualquier otro valor válido filtra por ese estado.
+    $statusWhere = '';
+    $statusParams = [];
+    if ($statusFilter === 'all') {
+        $statusWhere = '';
+    } elseif (in_array(strtoupper($statusFilter), $allowedStatuses, true)) {
+        $statusWhere = " AND a.status = :status";
+        $statusParams['status'] = strtoupper($statusFilter);
+    } else {
+        $statusWhere = " AND a.status = 'SCHEDULED'";
+    }
 
     try {
         if ($month !== '' && preg_match('/^\d{4}-\d{2}$/', $month)) {
@@ -77,6 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 $sql .= " AND a.center_id = :centerId";
                 $params['centerId'] = $centerId;
             }
+            $sql .= $statusWhere;
+            $params = array_merge($params, $statusParams);
             $sql .= " ORDER BY a.appointment_date ASC, a.appointment_time ASC";
             $stmt = $conn->prepare($sql);
             $stmt->execute($params);
@@ -87,6 +105,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 $sql .= " AND a.center_id = :centerId";
                 $params['centerId'] = $centerId;
             }
+            $sql .= $statusWhere;
+            $params = array_merge($params, $statusParams);
             $sql .= " ORDER BY a.appointment_date ASC, a.appointment_time ASC";
             $stmt = $conn->prepare($sql);
             $stmt->execute($params);
@@ -96,6 +116,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         foreach ($appointments as &$app) {
             $app['isReminderSent'] = (bool)$app['isReminderSent'];
             $app['isEmailReminderSent'] = (bool)$app['isEmailReminderSent'];
+            $app['centerId'] = $app['centerId'] !== null ? (int)$app['centerId'] : null;
+            $app['rescheduledToAppointmentId'] = $app['rescheduledToAppointmentId'] !== null ? (int)$app['rescheduledToAppointmentId'] : null;
         }
 
         sendJsonResponse("success", "Agenda recuperada", $appointments);
@@ -180,6 +202,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             sendJsonResponse("error", "Fecha de turno inválida", null, 400);
         }
 
+        if ($dateTime->format('Y-m-d') < date('Y-m-d')) {
+            sendJsonResponse("error", "No se puede agendar en una fecha pasada", null, 400);
+        }
+
         if (!preg_match('/^\d{1,2}:\d{2}(:\d{2})?$/', $appointmentTime)) {
             sendJsonResponse("error", "Hora de turno inválida", null, 400);
         }
@@ -222,6 +248,212 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 "targetProcedure" => $targetProcedure
             ]);
         } catch(PDOException $e) {
+            sendJsonResponse("error", "Database error: " . $e->getMessage(), null, 500);
+        }
+    } elseif ($action === 'update_appointment') {
+        $appointmentId = (int)($data->appointmentId ?? $data->appointment_id ?? 0);
+        $donorId = (int)($data->donorId ?? $data->donor_id ?? 0);
+        $appointmentDate = trim($data->appointmentDate ?? $data->appointment_date ?? '');
+        $appointmentTime = trim($data->appointmentTime ?? $data->appointment_time ?? '');
+        $targetProcedure = strtoupper(trim($data->targetProcedure ?? $data->target_procedure ?? ''));
+
+        if ($appointmentId <= 0 || $donorId <= 0) {
+            sendJsonResponse("error", "Parámetros de turno inválidos", null, 400);
+        }
+
+        $validationError = validateAppointmentPayload($appointmentDate, $appointmentTime, $targetProcedure);
+        if ($validationError !== null) {
+            sendJsonResponse("error", $validationError, null, 400);
+        }
+
+        try {
+            $stmt = $conn->prepare("SELECT id, status FROM appointments WHERE id = :id AND donor_id = :donorId");
+            $stmt->execute(['id' => $appointmentId, 'donorId' => $donorId]);
+            $old = $stmt->fetch();
+            if (!$old) {
+                sendJsonResponse("error", "No se encontró el turno a editar", null, 404);
+            }
+            if ($old['status'] !== 'SCHEDULED') {
+                sendJsonResponse("error", "Solo se puede editar un turno agendado", null, 409);
+            }
+
+            $conn->beginTransaction();
+
+            $conflict = $conn->prepare("SELECT id FROM appointments WHERE donor_id = :donorId AND appointment_date = :date AND status <> 'CANCELLED' AND id <> :id");
+            $conflict->execute(['donorId' => $donorId, 'date' => $appointmentDate, 'id' => $appointmentId]);
+            if ($conflict->fetch()) {
+                $conn->rollBack();
+                sendJsonResponse("error", "El donante ya tiene un turno agendado para ese día", null, 409);
+            }
+
+            $conn->prepare("UPDATE appointments SET appointment_date = :date, appointment_time = :time, target_procedure = :procedure, reschedule_requested_at = NULL, updated_at = NOW() WHERE id = :id")
+                 ->execute([
+                     'date' => $appointmentDate,
+                     'time' => $appointmentTime,
+                     'procedure' => $targetProcedure,
+                     'id' => $appointmentId,
+                 ]);
+
+            $conn->commit();
+
+            sendJsonResponse("success", "Turno actualizado correctamente", [
+                "appointmentId" => $appointmentId,
+                "donorId" => $donorId,
+                "appointmentDate" => $appointmentDate,
+                "appointmentTime" => $appointmentTime,
+                "targetProcedure" => $targetProcedure
+            ]);
+        } catch(PDOException $e) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
+            sendJsonResponse("error", "Database error: " . $e->getMessage(), null, 500);
+        }
+    } elseif ($action === 'cancel_appointment') {
+        $appointmentId = (int)($data->appointmentId ?? $data->appointment_id ?? 0);
+        $donorId = (int)($data->donorId ?? $data->donor_id ?? 0);
+        $cancelReason = isset($data->cancelReason) ? trim((string)$data->cancelReason)
+            : (isset($data->cancel_reason) ? trim((string)$data->cancel_reason) : null);
+        $userId = isset($data->userId) ? (int)$data->userId
+            : (isset($data->user_id) ? (int)$data->user_id : null);
+
+        if ($appointmentId <= 0 || $donorId <= 0) {
+            sendJsonResponse("error", "Parámetros de cancelación inválidos", null, 400);
+        }
+        if ($cancelReason === '') { $cancelReason = null; }
+        if ($cancelReason !== null && mb_strlen($cancelReason) > 120) {
+            sendJsonResponse("error", "El motivo de cancelación es demasiado largo", null, 400);
+        }
+
+        try {
+            $error = cancelAppointment($conn, $appointmentId, $donorId, $cancelReason, $userId);
+            if ($error !== null) {
+                sendJsonResponse("error", $error, null, 409);
+            }
+            // Aviso WhatsApp post-operación (D17): best-effort, no revierte la cancelación.
+            if ($conn->inTransaction()) {
+                $conn->commit();
+            }
+            notifyDonorAppointmentChange($conn, $donorId, 'CANCELLED');
+            sendJsonResponse("success", "Turno cancelado correctamente", [
+                "appointmentId" => $appointmentId,
+                "cancelReason" => $cancelReason
+            ]);
+        } catch(PDOException $e) {
+            sendJsonResponse("error", "Database error: " . $e->getMessage(), null, 500);
+        }
+    } elseif ($action === 'mark_attendance') {
+        $appointmentId = (int)($data->appointmentId ?? $data->appointment_id ?? 0);
+        $donorId = (int)($data->donorId ?? $data->donor_id ?? 0);
+        $status = strtoupper(trim($data->status ?? ''));
+        $userId = isset($data->userId) ? (int)$data->userId
+            : (isset($data->user_id) ? (int)$data->user_id : null);
+
+        if ($appointmentId <= 0 || $donorId <= 0) {
+            sendJsonResponse("error", "Parámetros de asistencia inválidos", null, 400);
+        }
+        if (!in_array($status, ['ATTENDED', 'NO_SHOW'], true)) {
+            sendJsonResponse("error", "Estado de asistencia inválido", null, 400);
+        }
+
+        try {
+            $stmt = $conn->prepare("SELECT appointment_date FROM appointments WHERE id = :id AND donor_id = :donorId");
+            $stmt->execute(['id' => $appointmentId, 'donorId' => $donorId]);
+            $appt = $stmt->fetch();
+            if (!$appt) {
+                sendJsonResponse("error", "No se encontró el turno", null, 404);
+            }
+            if ($appt['appointment_date'] > date('Y-m-d')) {
+                sendJsonResponse("error", "No se puede marcar la asistencia de un turno futuro", null, 409);
+            }
+
+            $error = markAppointmentAttendance($conn, $appointmentId, $donorId, $status, $userId);
+            if ($error !== null) {
+                sendJsonResponse("error", $error, null, 409);
+            }
+            sendJsonResponse("success", "Asistencia registrada correctamente", [
+                "appointmentId" => $appointmentId,
+                "status" => $status
+            ]);
+        } catch(PDOException $e) {
+            sendJsonResponse("error", "Database error: " . $e->getMessage(), null, 500);
+        }
+    } elseif ($action === 'reschedule') {
+        $appointmentId = (int)($data->appointmentId ?? $data->appointment_id ?? 0);
+        $donorId = (int)($data->donorId ?? $data->donor_id ?? 0);
+        $appointmentDate = trim($data->appointmentDate ?? $data->appointment_date ?? '');
+        $appointmentTime = trim($data->appointmentTime ?? $data->appointment_time ?? '');
+        $targetProcedure = strtoupper(trim($data->targetProcedure ?? $data->target_procedure ?? ''));
+        $userId = isset($data->userId) ? (int)$data->userId
+            : (isset($data->user_id) ? (int)$data->user_id : null);
+
+        if ($appointmentId <= 0 || $donorId <= 0) {
+            sendJsonResponse("error", "Parámetros de reagendado inválidos", null, 400);
+        }
+
+        $validationError = validateAppointmentPayload($appointmentDate, $appointmentTime, $targetProcedure);
+        if ($validationError !== null) {
+            sendJsonResponse("error", $validationError, null, 400);
+        }
+
+        try {
+            $stmt = $conn->prepare("SELECT id, status, center_id FROM appointments WHERE id = :id AND donor_id = :donorId");
+            $stmt->execute(['id' => $appointmentId, 'donorId' => $donorId]);
+            $old = $stmt->fetch();
+            if (!$old) {
+                sendJsonResponse("error", "No se encontró el turno a reagendar", null, 404);
+            }
+            if ($old['status'] !== 'SCHEDULED') {
+                sendJsonResponse("error", "Solo se puede reagendar un turno agendado", null, 409);
+            }
+
+            $centerId = (int)($old['center_id'] ?? 0);
+            if ($centerId <= 0) {
+                $donorStmt = $conn->prepare("SELECT center_id FROM donors WHERE id = :id");
+                $donorStmt->execute(['id' => $donorId]);
+                $centerId = (int)($donorStmt->fetchColumn() ?? 0);
+            }
+            if ($centerId <= 0) { $centerId = 1; }
+
+            $conn->beginTransaction();
+
+            $cancelError = cancelAppointment($conn, $appointmentId, $donorId, 'RESCHEDULED', $userId);
+            if ($cancelError !== null) {
+                $conn->rollBack();
+                sendJsonResponse("error", $cancelError, null, 409);
+            }
+
+            $created = createAppointmentRow($conn, $donorId, $appointmentDate, $appointmentTime, $targetProcedure, $centerId, $appointmentId);
+            if (isset($created['error'])) {
+                $conn->rollBack();
+                sendJsonResponse("error", $created['error'], null, $created['status'] ?? 409);
+            }
+
+            $newId = $created['appointmentId'];
+            $conn->prepare("UPDATE appointments SET rescheduled_to_appointment_id = :newId WHERE id = :oldId")
+                 ->execute(['newId' => $newId, 'oldId' => $appointmentId]);
+
+            $conn->commit();
+
+            // Aviso WhatsApp post-COMMIT (D17): best-effort, no revierte el reagendado.
+            notifyDonorAppointmentChange($conn, $donorId, 'RESCHEDULED', [
+                'date'      => $appointmentDate,
+                'time'      => $appointmentTime,
+                'procedure' => $targetProcedure,
+            ]);
+
+            sendJsonResponse("success", "Turno reagendado correctamente", [
+                "cancelledAppointmentId" => $appointmentId,
+                "appointmentId" => $newId,
+                "donorId" => $donorId,
+                "appointmentDate" => $appointmentDate,
+                "appointmentTime" => $appointmentTime,
+                "targetProcedure" => $targetProcedure
+            ]);
+        } catch(PDOException $e) {
+            if ($conn->inTransaction()) {
+                $conn->rollBack();
+            }
             sendJsonResponse("error", "Database error: " . $e->getMessage(), null, 500);
         }
     } else {

@@ -63,6 +63,14 @@ try {
     }
     $whereClause = implode(" AND ", $conditions);
 
+    // Qualified variant for queries that JOIN other tables also owning created_at/center_id.
+    $conditionsD = array_map(function ($cond) { return str_replace(
+        ['created_at', 'center_id', 'staff_user_id'],
+        ['d.created_at', 'd.center_id', 'd.staff_user_id'],
+        $cond
+    ); }, $conditions);
+    $whereClauseD = implode(" AND ", $conditionsD);
+
     $stmt = $conn->prepare("SELECT COUNT(*) AS total FROM donations WHERE $whereClause");
     $stmt->execute($params);
     $donationsTotal = (int)($stmt->fetch()['total'] ?? 0);
@@ -113,7 +121,7 @@ try {
     $byStaffSql = "SELECT d.staff_user_id AS staffUserId, CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')) AS staffName, COUNT(*) AS count
                    FROM donations d
                    LEFT JOIN users u ON u.id = d.staff_user_id
-                   WHERE $whereClause
+                   WHERE $whereClauseD
                    GROUP BY d.staff_user_id
                    ORDER BY count DESC";
     $stmt = $conn->prepare($byStaffSql);

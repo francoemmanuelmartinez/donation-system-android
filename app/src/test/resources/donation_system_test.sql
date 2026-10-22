@@ -180,20 +180,30 @@ CREATE TABLE `appointments` (
   `appointment_date` DATE NOT NULL,
   `appointment_time` TIME NOT NULL,
   `target_procedure` VARCHAR(50) NOT NULL,
-  `status` ENUM('SCHEDULED', 'ATTENDED', 'CANCELLED') NOT NULL DEFAULT 'SCHEDULED',
+  `status` ENUM('SCHEDULED', 'ATTENDED', 'CANCELLED', 'NO_SHOW') NOT NULL DEFAULT 'SCHEDULED',
   `is_reminder_sent` TINYINT(1) NOT NULL DEFAULT 0,
   `is_email_reminder_sent` TINYINT(1) NOT NULL DEFAULT 0,
   `reminder_sent_at` DATETIME NULL,
   `reminder_sent_by_user_id` INT NULL,
+  `cancelled_at` DATETIME NULL,
+  `cancelled_by_user_id` INT NULL,
+  `cancel_reason` VARCHAR(120) NULL,
+  `rescheduled_to_appointment_id` INT NULL,
+  `reschedule_requested_at` DATETIME NULL,
+  `updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `center_id` INT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`donor_id`) REFERENCES `donors`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`reminder_sent_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`cancelled_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`rescheduled_to_appointment_id`) REFERENCES `appointments`(`id`) ON DELETE SET NULL,
   FOREIGN KEY (`center_id`) REFERENCES `centers`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Default approved director. Password: "password" (well-known BCrypt test vector).
-INSERT INTO `centers` (`id`, `name`, `address`) VALUES (1, 'Centro Principal', 'Mar del Plata');
+ALTER TABLE `donations`
+  ADD COLUMN `appointment_id` INT NULL,
+  ADD FOREIGN KEY (`appointment_id`) REFERENCES `appointments`(`id`) ON DELETE SET NULL;
 
+-- Default approved director. Password: "password" (well-known BCrypt test vector).
 INSERT INTO `users` (`id`, `first_name`, `last_name`, `dni`, `email`, `password_hash`, `role`, `is_approved`, `center_id`) VALUES
 (1, 'Directora', 'Test', '00000000', 'director@test.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'DIRECTORA', 1, 1);

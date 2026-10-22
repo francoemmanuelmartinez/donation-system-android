@@ -5,13 +5,17 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -21,6 +25,8 @@ import com.francomartinez.donationsystem.R;
 import com.francomartinez.donationsystem.adapters.AppointmentsAdapter;
 import com.francomartinez.donationsystem.adapters.DayFilterAdapter;
 import com.francomartinez.donationsystem.models.Appointment;
+import com.francomartinez.donationsystem.models.requests.CancelAppointmentRequest;
+import com.francomartinez.donationsystem.models.requests.MarkAttendanceRequest;
 import com.francomartinez.donationsystem.utils.Resource;
 import com.francomartinez.donationsystem.utils.SessionManager;
 import com.francomartinez.donationsystem.viewmodels.AppointmentsViewModel;
@@ -28,6 +34,8 @@ import com.francomartinez.donationsystem.viewmodels.DonorsViewModel;
 import com.francomartinez.donationsystem.viewmodels.SharedDonorViewModel;
 import com.francomartinez.donationsystem.views.MainActivity;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.net.URLEncoder;
 import java.time.DayOfWeek;
@@ -49,6 +57,8 @@ public class AppointmentsFragment extends Fragment {
     private TextView textViewSelectedDateLabel;
     private TextView textViewEmptyAppointments;
     private MaterialButton buttonScheduleDonor;
+    private MaterialButton buttonToggleHistory;
+    private MaterialButton buttonToggleRequests;
     private View buttonOpenCalendar;
     private MaterialButton buttonDispatchReminders;
     private RecyclerView recyclerViewDaysFilter;
@@ -66,9 +76,17 @@ public class AppointmentsFragment extends Fragment {
     private List<Appointment> displaySource = allAppointments;
     private boolean calendarDayPicked = false;
 
+    private static final int VIEW_ACTIVE = 0;
+    private static final int VIEW_REQUESTS = 1;
+    private static final int VIEW_HISTORY = 2;
+    private int viewMode = VIEW_ACTIVE;
+
     private Integer pendingReminderAppointmentId = null;
     private String pendingReminderChannel = null;
     private String pendingAppointmentProcedure = null;
+
+    private Appointment pendingCancelAppointment = null;
+    private Appointment pendingAttendanceAppointment = null;
 
     @Nullable
     @Override
@@ -90,6 +108,8 @@ public class AppointmentsFragment extends Fragment {
         textViewSelectedDateLabel = view.findViewById(R.id.textViewSelectedDateLabel);
         textViewEmptyAppointments = view.findViewById(R.id.textViewEmptyAppointments);
         buttonScheduleDonor = view.findViewById(R.id.buttonScheduleDonor);
+        buttonToggleHistory = view.findViewById(R.id.buttonToggleHistory);
+        buttonToggleRequests = view.findViewById(R.id.buttonToggleRequests);
         buttonOpenCalendar = view.findViewById(R.id.buttonOpenCalendar);
         buttonDispatchReminders = view.findViewById(R.id.buttonDispatchReminders);
         recyclerViewDaysFilter = view.findViewById(R.id.recyclerViewDaysFilter);
@@ -97,6 +117,7 @@ public class AppointmentsFragment extends Fragment {
 
         setupWeek();
         setupRecyclers();
+        applyViewUi();
         observeViewModel();
 
         buttonScheduleDonor.setOnClickListener(v -> {
@@ -108,6 +129,10 @@ public class AppointmentsFragment extends Fragment {
 
         buttonOpenCalendar.setOnClickListener(v -> openCalendar());
         buttonDispatchReminders.setOnClickListener(v -> handleDispatchReminders());
+        buttonToggleHistory.setOnClickListener(v -> setViewMode(
+                viewMode == VIEW_HISTORY ? VIEW_ACTIVE : VIEW_HISTORY));
+        buttonToggleRequests.setOnClickListener(v -> setViewMode(
+                viewMode == VIEW_REQUESTS ? VIEW_ACTIVE : VIEW_REQUESTS));
     }
 
     @Override
@@ -119,8 +144,43 @@ public class AppointmentsFragment extends Fragment {
             textViewSelectedDateLabel.setVisibility(View.GONE);
         }
         if (viewModel != null && weekDays != null && !weekDays.isEmpty()) {
-            viewModel.loadAppointments(weekDays.get(0).format(DB_DATE));
+            viewModel.loadAppointments(weekDays.get(0).format(DB_DATE), currentStatusFilter());
         }
+    }
+
+    private void setViewMode(int newMode) {
+        viewMode = newMode;
+        applyViewUi();
+        if (viewModel != null && weekDays != null && !weekDays.isEmpty()) {
+            viewModel.loadAppointments(weekDays.get(0).format(DB_DATE), currentStatusFilter());
+        }
+    }
+
+    private void applyViewUi() {
+        boolean history = viewMode == VIEW_HISTORY;
+        buttonToggleHistory.setText(history ? R.string.action_view_active : R.string.action_view_all);
+        appointmentsAdapter.setShowStatusChip(history);
+        appointmentsAdapter.setRequestsMode(viewMode == VIEW_REQUESTS);
+        textViewWeekHeader.setText(history
+                ? getString(R.string.week_header_history, weekHeaderRange())
+                : getString(R.string.week_header_format, weekStartLabel(), weekEndLabel()));
+        buttonDispatchReminders.setVisibility(history ? View.GONE : View.VISIBLE);
+        buttonToggleRequests.setVisibility(history ? View.GONE : View.VISIBLE);
+        buttonToggleRequests.setText(viewMode == VIEW_REQUESTS
+                ? R.string.action_view_active
+                : R.string.action_view_requests);
+    }
+
+    private String weekHeaderRange() {
+        return weekStartLabel() + " – " + weekEndLabel();
+    }
+
+    private String weekStartLabel() {
+        return weekDays.isEmpty() ? "" : weekDays.get(0).format(WEEK_LABEL);
+    }
+
+    private String weekEndLabel() {
+        return weekDays.isEmpty() ? "" : weekDays.get(weekDays.size() - 1).format(WEEK_LABEL);
     }
 
     private void setupWeek() {
@@ -156,6 +216,7 @@ public class AppointmentsFragment extends Fragment {
             }
         });
         appointmentsAdapter.setOnDonorClickListener(this::onAppointmentDonorClick);
+        appointmentsAdapter.setOnActionsClickListener(this::onAppointmentActionsClick);
         recyclerViewAppointmentsList.setAdapter(appointmentsAdapter);
     }
 
@@ -222,6 +283,149 @@ public class AppointmentsFragment extends Fragment {
                 Toast.makeText(requireContext(), resource.message, Toast.LENGTH_LONG).show();
             }
         });
+
+        viewModel.getCancelResult().observe(getViewLifecycleOwner(), resource -> {
+            if (resource == null) return;
+            if (resource.status == Resource.Status.SUCCESS) {
+                Appointment cancelled = pendingCancelAppointment;
+                pendingCancelAppointment = null;
+                showUndoSnackbar(cancelled, R.string.msg_appointment_cancelled);
+                viewModel.loadAppointments(weekDays.get(0).format(DB_DATE), currentStatusFilter());
+            } else if (resource.status == Resource.Status.ERROR) {
+                pendingCancelAppointment = null;
+                Toast.makeText(requireContext(),
+                        resource.message != null ? resource.message : getString(R.string.msg_appointment_action_error),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+
+        viewModel.getAttendanceResult().observe(getViewLifecycleOwner(), resource -> {
+            if (resource == null) return;
+            if (resource.status == Resource.Status.SUCCESS) {
+                Appointment updated = pendingAttendanceAppointment;
+                pendingAttendanceAppointment = null;
+                String message = updated != null && "NO_SHOW".equals(updated.getStatus())
+                        ? getString(R.string.msg_appointment_no_show)
+                        : getString(R.string.msg_appointment_attended);
+                Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+                viewModel.loadAppointments(weekDays.get(0).format(DB_DATE), currentStatusFilter());
+            } else if (resource.status == Resource.Status.ERROR) {
+                pendingAttendanceAppointment = null;
+                Toast.makeText(requireContext(),
+                        resource.message != null ? resource.message : getString(R.string.msg_appointment_action_error),
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void onAppointmentActionsClick(Appointment appointment, View anchor) {
+        PopupMenu popup = new PopupMenu(requireContext(), anchor);
+        popup.getMenuInflater().inflate(R.menu.menu_appointment_actions, popup.getMenu());
+        Menu menu = popup.getMenu();
+        MenuItem attendance = menu.findItem(R.id.action_mark_attended);
+        MenuItem noShow = menu.findItem(R.id.action_mark_no_show);
+        // Asistencia sólo para turnos pasados (D10).
+        boolean past = isPastDate(appointment.getAppointmentDate());
+        attendance.setVisible(past);
+        noShow.setVisible(past);
+        popup.setOnMenuItemClickListener(item -> handleActionMenuItem(item, appointment));
+        popup.show();
+    }
+
+    private boolean handleActionMenuItem(MenuItem item, Appointment appointment) {
+        int id = item.getItemId();
+        if (id == R.id.action_edit_appointment) {
+            openEditAppointment(appointment);
+            return true;
+        }
+        if (id == R.id.action_reschedule_appointment) {
+            openRescheduleAppointment(appointment);
+            return true;
+        }
+        if (id == R.id.action_mark_attended) {
+            confirmAttendance(appointment, "ATTENDED");
+            return true;
+        }
+        if (id == R.id.action_mark_no_show) {
+            confirmAttendance(appointment, "NO_SHOW");
+            return true;
+        }
+        if (id == R.id.action_cancel_appointment) {
+            confirmCancel(appointment);
+            return true;
+        }
+        return false;
+    }
+
+    private void openEditAppointment(Appointment appointment) {
+        MainActivity mainActivity = (MainActivity) getActivity();
+        if (mainActivity == null) return;
+        mainActivity.openEditAppointment(appointment.getId(), appointment.getDonorId(), appointment.getDonorName(),
+                appointment.getDonorDni(), appointment.getAppointmentDate(), appointment.getAppointmentTime(),
+                appointment.getTargetProcedure());
+    }
+
+    private void openRescheduleAppointment(Appointment appointment) {
+        MainActivity mainActivity = (MainActivity) getActivity();
+        if (mainActivity == null) return;
+        mainActivity.openRescheduleAppointment(appointment.getId(), appointment.getDonorId(), appointment.getDonorName(),
+                appointment.getDonorDni(), appointment.getAppointmentDate(), appointment.getAppointmentTime(),
+                appointment.getTargetProcedure());
+    }
+
+    private void confirmAttendance(Appointment appointment, String status) {
+        int titleRes = "ATTENDED".equals(status) ? R.string.dialog_attended_title : R.string.dialog_no_show_title;
+        int messageRes = "ATTENDED".equals(status) ? R.string.dialog_attended_message : R.string.dialog_no_show_message;
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(titleRes)
+                .setMessage(getString(messageRes, appointment.getDonorName()))
+                .setNegativeButton(R.string.btn_cancel, (d, w) -> d.dismiss())
+                .setPositiveButton(R.string.btn_confirm, (d, w) -> {
+                    pendingAttendanceAppointment = appointment;
+                    viewModel.markAttendance(new MarkAttendanceRequest(
+                            appointment.getId(), appointment.getDonorId(), status, viewModel.getCurrentUserId()));
+                })
+                .show();
+    }
+
+    private void confirmCancel(Appointment appointment) {
+        EditText input = new EditText(requireContext());
+        input.setHint(R.string.hint_cancel_reason);
+        input.setMaxLines(2);
+        new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.dialog_cancel_title)
+                .setMessage(getString(R.string.dialog_cancel_message, appointment.getDonorName()))
+                .setView(input)
+                .setNegativeButton(R.string.btn_cancel, (d, w) -> d.dismiss())
+                .setPositiveButton(R.string.btn_confirm, (d, w) -> {
+                    String reason = input.getText() != null ? input.getText().toString().trim() : "";
+                    pendingCancelAppointment = appointment;
+                    viewModel.cancelAppointment(new CancelAppointmentRequest(
+                            appointment.getId(), appointment.getDonorId(),
+                            reason.isEmpty() ? null : reason, viewModel.getCurrentUserId()));
+                })
+                .show();
+    }
+
+    private void showUndoSnackbar(Appointment appointment, int messageRes) {
+        if (appointment == null || getView() == null) return;
+        Snackbar.make(getView(), messageRes, Snackbar.LENGTH_LONG)
+                .setAction(R.string.action_view_history, v -> {
+                    if (viewMode != VIEW_HISTORY) {
+                        setViewMode(VIEW_HISTORY);
+                    }
+                })
+                .show();
+    }
+
+    private boolean isPastDate(String dbDate) {
+        if (dbDate == null || dbDate.trim().isEmpty()) return false;
+        try {
+            return LocalDate.parse(dbDate.trim().substring(0, Math.min(10, dbDate.trim().length())))
+                    .isBefore(LocalDate.now());
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private void onAppointmentDonorClick(Appointment appointment) {
@@ -245,12 +449,40 @@ public class AppointmentsFragment extends Fragment {
         String target = day.format(DB_DATE);
         List<Appointment> filtered = new ArrayList<>();
         for (Appointment appointment : displaySource) {
-            if (target.equals(appointment.getAppointmentDate())) {
-                filtered.add(appointment);
+            if (!target.equals(appointment.getAppointmentDate())) {
+                continue;
             }
+            if (viewMode == VIEW_REQUESTS && !hasRescheduleRequest(appointment)) {
+                continue;
+            }
+            filtered.add(appointment);
         }
         appointmentsAdapter.submitList(filtered);
-        textViewEmptyAppointments.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+        if (filtered.isEmpty()) {
+            textViewEmptyAppointments.setText(emptyStateText());
+            textViewEmptyAppointments.setVisibility(View.VISIBLE);
+        } else {
+            textViewEmptyAppointments.setVisibility(View.GONE);
+        }
+    }
+
+    private boolean hasRescheduleRequest(Appointment appointment) {
+        String requestedAt = appointment.getRescheduleRequestedAt();
+        return requestedAt != null && !requestedAt.trim().isEmpty() && !"null".equalsIgnoreCase(requestedAt.trim());
+    }
+
+    private int emptyStateText() {
+        if (viewMode == VIEW_HISTORY) {
+            return R.string.empty_day_appointments;
+        }
+        if (viewMode == VIEW_REQUESTS) {
+            return R.string.empty_reschedule_requests;
+        }
+        return R.string.empty_active_appointments;
+    }
+
+    private String currentStatusFilter() {
+        return viewMode == VIEW_HISTORY ? "all" : "SCHEDULED";
     }
 
     private void openCalendar() {

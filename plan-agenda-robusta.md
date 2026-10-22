@@ -1,7 +1,7 @@
 # Plan — Agenda robusta (modelo estándar de agendamiento)
 
 **Fecha:** 2026-10-22
-**Estado:** propuesta, pendiente de aprobación (no implementado).
+**Estado:** implementado (T1–T10 completos; suite 68/68 en verde; docs actualizadas).
 **Alcance:** robustecer la Agenda a un modelo estándar mínimo — ciclo de vida con auditoría, CRUD completo (alta, edición, cancelación, reagendado), asistencia (`ATTENDED`/`NO_SHOW`), validaciones de negocio y listado por estado. El reagendado deja de ser un caso aislado: pasa a ser una transición del ciclo de vida.
 
 > Este plan reemplaza a `plan-reagendar-turno.md` (v1). Se consolida en un solo documento para no dejar dos guías del mismo tema.

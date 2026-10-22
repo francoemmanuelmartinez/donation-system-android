@@ -12,11 +12,15 @@ import com.francomartinez.donationsystem.models.User;
 import com.francomartinez.donationsystem.models.requests.ApproveUserRequest;
 import com.francomartinez.donationsystem.models.requests.AssignRestrictionRequest;
 import com.francomartinez.donationsystem.models.requests.AssignRestrictionsRequest;
+import com.francomartinez.donationsystem.models.requests.CancelAppointmentRequest;
 import com.francomartinez.donationsystem.models.requests.CreateAppointmentRequest;
 import com.francomartinez.donationsystem.models.requests.LoginRequest;
+import com.francomartinez.donationsystem.models.requests.MarkAttendanceRequest;
 import com.francomartinez.donationsystem.models.requests.RegisterRequest;
 import com.francomartinez.donationsystem.models.requests.ReminderRequest;
+import com.francomartinez.donationsystem.models.requests.RescheduleAppointmentRequest;
 import com.francomartinez.donationsystem.models.requests.RevokeRestrictionRequest;
+import com.francomartinez.donationsystem.models.requests.UpdateAppointmentRequest;
 import com.francomartinez.donationsystem.models.requests.UpdateRestrictionRequest;
 
 import java.util.List;
@@ -93,6 +97,13 @@ public interface ApiService {
     @GET("appointments.php")
     Call<ApiResponse<List<Appointment>>> getAppointmentsByMonth(@Query("month") String month);
 
+    @GET("appointments.php")
+    Call<ApiResponse<List<Appointment>>> getAppointmentsFiltered(@Query("week_date") String weekDate,
+                                                                 @Query("status") String status);
+
+    @GET("appointments.php")
+    Call<ApiResponse<List<Appointment>>> getAppointmentsByMonthFiltered(@Query("month") String month,
+                                                                       @Query("status") String status);
     @POST("appointments.php?action=send_reminder")
     Call<ApiResponse<Map<String, Object>>> sendWhatsAppReminder(@Body ReminderRequest request);
 
@@ -101,6 +112,18 @@ public interface ApiService {
 
     @POST("appointments.php?action=create_appointment")
     Call<ApiResponse<Map<String, Object>>> createAppointment(@Body CreateAppointmentRequest request);
+
+    @POST("appointments.php?action=update_appointment")
+    Call<ApiResponse<Map<String, Object>>> updateAppointment(@Body UpdateAppointmentRequest request);
+
+    @POST("appointments.php?action=reschedule")
+    Call<ApiResponse<Map<String, Object>>> rescheduleAppointment(@Body RescheduleAppointmentRequest request);
+
+    @POST("appointments.php?action=cancel_appointment")
+    Call<ApiResponse<Map<String, Object>>> cancelAppointment(@Body CancelAppointmentRequest request);
+
+    @POST("appointments.php?action=mark_attendance")
+    Call<ApiResponse<Map<String, Object>>> markAttendance(@Body MarkAttendanceRequest request);
 
     // --- Medical Restrictions ---
     @GET("restrictions.php")

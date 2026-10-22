@@ -20,6 +20,17 @@
             android:clickable="false"
             android:focusable="false"
             android:text="@string/loading"
+            app:layout_constraintEnd_toStartOf="@+id/buttonAppointmentActions"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonAppointmentActions"
+            style="@style/Widget.Material3.Button.IconButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/cd_appointment_actions"
+            app:icon="@drawable/ic_more_vert"
+            app:iconSize="24dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -43,6 +54,21 @@
             android:textColor="@color/medical_blue"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textViewAppointmentDonor" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chipAppointmentStatus"
+            style="@style/Widget.Material3.Chip.Suggestion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:checkable="false"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@+id/textViewAppointmentProcedure"
+            app:layout_constraintStart_toEndOf="@+id/textViewAppointmentProcedure"
+            app:layout_constraintTop_toTopOf="@+id/textViewAppointmentProcedure" />
 
         <LinearLayout
             android:id="@+id/layoutReminderActions"

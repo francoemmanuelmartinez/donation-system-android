@@ -13,6 +13,9 @@ public class Appointment {
     @SerializedName("donorName")
     private String donorName;
 
+    @SerializedName("donorDni")
+    private String donorDni;
+
     @SerializedName("donorPhone")
     private String donorPhone;
 
@@ -30,6 +33,18 @@ public class Appointment {
 
     @SerializedName("status")
     private String status;
+
+    @SerializedName("cancelReason")
+    private String cancelReason;
+
+    @SerializedName("rescheduledToAppointmentId")
+    private Integer rescheduledToAppointmentId;
+
+    @SerializedName("rescheduleRequestedAt")
+    private String rescheduleRequestedAt;
+
+    @SerializedName("centerId")
+    private Integer centerId;
 
     @SerializedName("isReminderSent")
     private boolean isReminderSent;
@@ -65,6 +80,14 @@ public class Appointment {
 
     public void setDonorName(String donorName) {
         this.donorName = donorName;
+    }
+
+    public String getDonorDni() {
+        return donorDni;
+    }
+
+    public void setDonorDni(String donorDni) {
+        this.donorDni = donorDni;
     }
 
     public String getDonorPhone() {
@@ -113,6 +136,38 @@ public class Appointment {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getCancelReason() {
+        return cancelReason;
+    }
+
+    public void setCancelReason(String cancelReason) {
+        this.cancelReason = cancelReason;
+    }
+
+    public Integer getRescheduledToAppointmentId() {
+        return rescheduledToAppointmentId;
+    }
+
+    public void setRescheduledToAppointmentId(Integer rescheduledToAppointmentId) {
+        this.rescheduledToAppointmentId = rescheduledToAppointmentId;
+    }
+
+    public String getRescheduleRequestedAt() {
+        return rescheduleRequestedAt;
+    }
+
+    public void setRescheduleRequestedAt(String rescheduleRequestedAt) {
+        this.rescheduleRequestedAt = rescheduleRequestedAt;
+    }
+
+    public Integer getCenterId() {
+        return centerId;
+    }
+
+    public void setCenterId(Integer centerId) {
+        this.centerId = centerId;
     }
 
     public boolean isReminderSent() {

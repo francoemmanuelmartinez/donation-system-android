@@ -1,5 +1,6 @@
 <?php
 require_once 'db_config.php';
+require_once 'appointments_lib.php';
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
@@ -92,93 +93,6 @@ function insertRestriction($conn, $donorId, $entry, $createdByUserId, $centerId 
         'eligibleWorkdayReturnDate'=> $eligibleWorkday,
         'notes'                    => $entry['notes'],
     ];
-}
-
-/** Valida y cancela el turno cargado. Devuelve un mensaje de error o null. */
-function cancelAppointment($conn, $appointmentId, $donorId) {
-    $stmt = $conn->prepare("SELECT status FROM appointments WHERE id = :id AND donor_id = :donorId");
-    $stmt->execute(['id' => $appointmentId, 'donorId' => $donorId]);
-    $row = $stmt->fetch();
-    if (!$row) {
-        return "El turno a cancelar no pertenece a este donante";
-    }
-    if ($row['status'] !== 'CANCELLED') {
-        $conn->prepare("UPDATE appointments SET status = 'CANCELLED' WHERE id = :id")
-             ->execute(['id' => $appointmentId]);
-    }
-    return null;
-}
-
-/** Valida fecha/hora/procedimiento del turno nuevo. Devuelve mensaje de error o null. */
-function validateAppointmentPayload($appointmentDate, $appointmentTime, $targetProcedure) {
-    $dateTime = DateTime::createFromFormat('Y-m-d', $appointmentDate);
-    if (!$dateTime || $dateTime->format('Y-m-d') !== $appointmentDate) {
-        return "Fecha de turno inválida";
-    }
-    if (!preg_match('/^\d{1,2}:\d{2}(:\d{2})?$/', $appointmentTime)) {
-        return "Hora de turno inválida";
-    }
-    if (!in_array($targetProcedure, ['BLOOD', 'PLASMA', 'PLATELETS'])) {
-        return "Tipo de donación inválido";
-    }
-    return null;
-}
-
-/** Crea el turno nuevo. Devuelve ['error'=>..,'status'=>..] o ['appointmentId'=>..]. */
-function createAppointmentRow($conn, $donorId, $appointmentDate, $appointmentTime, $targetProcedure) {
-    $stmt = $conn->prepare("SELECT id FROM appointments WHERE donor_id = :donorId AND appointment_date = :date AND status <> 'CANCELLED'");
-    $stmt->execute(['donorId' => $donorId, 'date' => $appointmentDate]);
-    if ($stmt->fetch()) {
-        return ['error' => "El donante ya tiene un turno agendado para ese día", 'status' => 409];
-    }
-
-    $conn->prepare("INSERT INTO appointments (donor_id, appointment_date, appointment_time, target_procedure, status) VALUES (:donorId, :date, :time, :procedure, 'SCHEDULED')")
-         ->execute([
-             'donorId'   => $donorId,
-             'date'      => $appointmentDate,
-             'time'      => $appointmentTime,
-             'procedure' => $targetProcedure,
-         ]);
-
-    return ['appointmentId' => (int)$conn->lastInsertId()];
-}
-
-/**
- * Cancela (si corresponde) y/o crea el turno nuevo a partir del bloque
- * "reschedule" del request. Devuelve ['error'=>..,'status'=>..] o ['appointment'=>..].
- */
-function handleReschedule($conn, $donorId, $reschedule) {
-    $result = [];
-
-    $cancelId = (int)($reschedule->cancelAppointmentId ?? $reschedule->cancel_appointment_id ?? 0);
-    if ($cancelId > 0) {
-        $error = cancelAppointment($conn, $cancelId, $donorId);
-        if ($error !== null) {
-            return ['error' => $error, 'status' => 400];
-        }
-        $result['cancelledAppointmentId'] = $cancelId;
-    }
-
-    $date     = trim($reschedule->appointmentDate ?? $reschedule->appointment_date ?? '');
-    $time     = trim($reschedule->appointmentTime ?? $reschedule->appointment_time ?? '');
-    $procedure = strtoupper(trim($reschedule->targetProcedure ?? $reschedule->target_procedure ?? ''));
-
-    if ($date !== '' || $time !== '' || $procedure !== '') {
-        $error = validateAppointmentPayload($date, $time, $procedure);
-        if ($error !== null) {
-            return ['error' => $error, 'status' => 400];
-        }
-        $created = createAppointmentRow($conn, $donorId, $date, $time, $procedure);
-        if (isset($created['error'])) {
-            return $created;
-        }
-        $result['appointmentId']   = $created['appointmentId'];
-        $result['appointmentDate'] = $date;
-        $result['appointmentTime'] = $time;
-        $result['targetProcedure'] = $procedure;
-    }
-
-    return ['appointment' => $result];
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {

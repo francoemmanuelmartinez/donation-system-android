@@ -131,8 +131,8 @@ $bloodType = trim($data->bloodType ?? $data->blood_type ?? '');
                 'address' => $address,
                 'bloodType' => $bloodType,
                 'phenotype' => $phenotype,
-                'weight' => $weightValue,
-                'height' => $heightValue,
+                'weight' => $weight,
+                'height' => $height,
                 'centerId' => $centerId,
                 'id' => $donorId
             ]);
@@ -148,8 +148,8 @@ $bloodType = trim($data->bloodType ?? $data->blood_type ?? '');
                 'address' => $address,
                 'bloodType' => $bloodType,
                 'phenotype' => $phenotype,
-                'weight' => $weightValue,
-                'height' => $heightValue,
+                'weight' => $weight,
+                'height' => $height,
                 'centerId' => $centerId
             ]);
             $donorId = (int)$conn->lastInsertId();

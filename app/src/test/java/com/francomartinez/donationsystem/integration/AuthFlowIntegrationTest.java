@@ -28,7 +28,7 @@ public class AuthFlowIntegrationTest extends BaseApiTest {
                 new RegisterRequest("Ana", "Perez", DNI, "ana@test.local", "3511111111", "secret123")));
         assertTrue(response.isSuccess());
 
-        assertEquals("NONE", TestDatabase.queryString("SELECT role FROM users WHERE dni = '" + DNI + "'"));
+        assertEquals("ADMINISTRATIVA", TestDatabase.queryString("SELECT role FROM users WHERE dni = '" + DNI + "'"));
         assertEquals(0, TestDatabase.queryInt("SELECT is_approved FROM users WHERE dni = '" + DNI + "'"));
         assertEquals(1, TestDatabase.queryInt("SELECT COUNT(*) FROM user_phones WHERE user_id = (SELECT id FROM users WHERE dni = '" + DNI + "')"));
         assertEquals(1, TestDatabase.queryInt("SELECT COUNT(*) FROM user_emails WHERE user_id = (SELECT id FROM users WHERE dni = '" + DNI + "')"));

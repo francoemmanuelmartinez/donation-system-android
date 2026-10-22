@@ -29,6 +29,10 @@ public class AppointmentsAdapter extends ListAdapter<Appointment, AppointmentsAd
         void onDonorClick(Appointment appointment);
     }
 
+    public interface OnActionsClickListener {
+        void onActionsClick(Appointment appointment, View anchor);
+    }
+
     private static final DiffUtil.ItemCallback<Appointment> DIFF_CALLBACK =
             new DiffUtil.ItemCallback<Appointment>() {
                 @Override
@@ -40,20 +44,38 @@ public class AppointmentsAdapter extends ListAdapter<Appointment, AppointmentsAd
                 public boolean areContentsTheSame(@NonNull Appointment oldItem, @NonNull Appointment newItem) {
                     return oldItem.isReminderSent() == newItem.isReminderSent()
                             && oldItem.isEmailReminderSent() == newItem.isEmailReminderSent()
-                            && Objects.equals(oldItem.getAppointmentTime(), newItem.getAppointmentTime());
+                            && Objects.equals(oldItem.getAppointmentTime(), newItem.getAppointmentTime())
+                            && Objects.equals(oldItem.getStatus(), newItem.getStatus())
+                            && Objects.equals(oldItem.getAppointmentDate(), newItem.getAppointmentDate())
+                            && Objects.equals(oldItem.getTargetProcedure(), newItem.getTargetProcedure());
                 }
             };
 
     private final OnReminderClickListener reminderListener;
     private OnDonorClickListener donorClickListener;
+    private OnActionsClickListener actionsClickListener;
+    private boolean showStatusChip = false;
+    private boolean requestsMode = false;
 
     public AppointmentsAdapter(OnReminderClickListener reminderListener) {
         super(DIFF_CALLBACK);
         this.reminderListener = reminderListener;
     }
 
+    public void setShowStatusChip(boolean showStatusChip) {
+        this.showStatusChip = showStatusChip;
+    }
+
+    public void setRequestsMode(boolean requestsMode) {
+        this.requestsMode = requestsMode;
+    }
+
     public void setOnDonorClickListener(OnDonorClickListener listener) {
         this.donorClickListener = listener;
+    }
+
+    public void setOnActionsClickListener(OnActionsClickListener listener) {
+        this.actionsClickListener = listener;
     }
 
     @NonNull
@@ -70,20 +92,24 @@ public class AppointmentsAdapter extends ListAdapter<Appointment, AppointmentsAd
 
     class AppointmentViewHolder extends RecyclerView.ViewHolder {
         final Chip chipAppointmentTime;
+        final Chip chipAppointmentStatus;
         final TextView textViewAppointmentDonor;
         final TextView textViewAppointmentProcedure;
         final MaterialButton buttonSendWhatsApp;
         final MaterialButton buttonSendEmail;
+        final MaterialButton buttonAppointmentActions;
         final ImageView imageViewReminderWhatsAppChecked;
         final ImageView imageViewReminderEmailChecked;
 
         AppointmentViewHolder(@NonNull View itemView) {
             super(itemView);
             chipAppointmentTime = itemView.findViewById(R.id.chipAppointmentTime);
+            chipAppointmentStatus = itemView.findViewById(R.id.chipAppointmentStatus);
             textViewAppointmentDonor = itemView.findViewById(R.id.textViewAppointmentDonor);
             textViewAppointmentProcedure = itemView.findViewById(R.id.textViewAppointmentProcedure);
             buttonSendWhatsApp = itemView.findViewById(R.id.buttonSendWhatsApp);
             buttonSendEmail = itemView.findViewById(R.id.buttonSendEmail);
+            buttonAppointmentActions = itemView.findViewById(R.id.buttonAppointmentActions);
             imageViewReminderWhatsAppChecked = itemView.findViewById(R.id.imageViewReminderWhatsAppChecked);
             imageViewReminderEmailChecked = itemView.findViewById(R.id.imageViewReminderEmailChecked);
         }
@@ -99,12 +125,86 @@ public class AppointmentsAdapter extends ListAdapter<Appointment, AppointmentsAd
             textViewAppointmentDonor.setText(appointment.getDonorName());
             textViewAppointmentProcedure.setText(procedureLabel(appointment.getTargetProcedure()));
 
+            bindStatusChip(appointment);
+
+            boolean scheduled = appointment.getStatus() == null || "SCHEDULED".equals(appointment.getStatus());
+            buttonAppointmentActions.setVisibility(scheduled ? View.VISIBLE : View.GONE);
+            buttonAppointmentActions.setOnClickListener(v -> {
+                if (actionsClickListener != null) {
+                    actionsClickListener.onActionsClick(appointment, buttonAppointmentActions);
+                }
+            });
+
+            // Recordatorios sólo para turnos activos (SCHEDULED).
+            if (!scheduled) {
+                buttonSendWhatsApp.setVisibility(View.GONE);
+                buttonSendEmail.setVisibility(View.GONE);
+                imageViewReminderWhatsAppChecked.setVisibility(View.GONE);
+                imageViewReminderEmailChecked.setVisibility(View.GONE);
+                return;
+            }
+
             boolean sameDay = LocalDate.now().toString().equals(appointment.getAppointmentDate());
 
             bindChannel(appointment.isReminderSent(), sameDay,
                     buttonSendWhatsApp, imageViewReminderWhatsAppChecked, R.string.cd_send_whatsapp, "whatsapp", appointment);
             bindChannel(appointment.isEmailReminderSent(), sameDay,
                     buttonSendEmail, imageViewReminderEmailChecked, R.string.cd_send_email, "email", appointment);
+        }
+
+        private void bindStatusChip(Appointment appointment) {
+            String status = appointment.getStatus();
+            boolean active = status == null || "SCHEDULED".equals(status);
+
+            // Modo "Solicitudes": turno activo con pedido de reagendado del donante (D18).
+            if (requestsMode) {
+                if (active && hasRescheduleRequest(appointment)) {
+                    chipAppointmentStatus.setText(R.string.chip_status_reschedule_requested);
+                    chipAppointmentStatus.setChipBackgroundColorResource(R.color.state_recovery);
+                    chipAppointmentStatus.setVisibility(View.VISIBLE);
+                } else {
+                    chipAppointmentStatus.setVisibility(View.GONE);
+                }
+                return;
+            }
+
+            if (!showStatusChip || active) {
+                chipAppointmentStatus.setVisibility(View.GONE);
+                return;
+            }
+
+            boolean rescheduled = "CANCELLED".equals(status)
+                    && appointment.getRescheduledToAppointmentId() != null
+                    && appointment.getRescheduledToAppointmentId() > 0;
+
+            int labelRes;
+            int colorRes;
+            if (rescheduled) {
+                labelRes = R.string.chip_status_rescheduled;
+                colorRes = R.color.medical_blue;
+            } else if ("CANCELLED".equals(status)) {
+                labelRes = R.string.chip_status_cancelled;
+                colorRes = R.color.veda_red;
+            } else if ("ATTENDED".equals(status)) {
+                labelRes = R.string.chip_status_attended;
+                colorRes = R.color.aptitude_green;
+            } else if ("NO_SHOW".equals(status)) {
+                labelRes = R.string.chip_status_no_show;
+                colorRes = R.color.status_no_show;
+            } else {
+                chipAppointmentStatus.setVisibility(View.GONE);
+                return;
+            }
+
+            chipAppointmentStatus.setText(labelRes);
+            chipAppointmentStatus.setChipBackgroundColorResource(colorRes);
+            chipAppointmentStatus.setVisibility(View.VISIBLE);
+        }
+
+        private boolean hasRescheduleRequest(Appointment appointment) {
+            String requestedAt = appointment.getRescheduleRequestedAt();
+            return requestedAt != null && !requestedAt.trim().isEmpty()
+                    && !"null".equalsIgnoreCase(requestedAt.trim());
         }
 
         private void bindChannel(boolean sent, boolean sameDay, MaterialButton button, ImageView check,

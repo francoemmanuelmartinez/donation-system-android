@@ -83,9 +83,9 @@ public final class TestDatabase {
 
     public static int insertApprovedUser(String firstName, String lastName, String dni, String email, String role)
             throws Exception {
-        execute("INSERT INTO users (first_name, last_name, dni, email, password_hash, role, is_approved) VALUES ('"
+        execute("INSERT INTO users (first_name, last_name, dni, email, password_hash, role, is_approved, center_id) VALUES ('"
                 + esc(firstName) + "', '" + esc(lastName) + "', '" + esc(dni) + "', '" + esc(email) + "', '"
-                + BCRYPT_PASSWORD + "', '" + role + "', 1)");
+                + BCRYPT_PASSWORD + "', '" + role + "', 1, 1)");
         return userIdByDni(dni);
     }
 
@@ -93,7 +93,7 @@ public final class TestDatabase {
             throws Exception {
         execute("INSERT INTO users (first_name, last_name, dni, email, password_hash, role, is_approved) VALUES ('"
                 + esc(firstName) + "', '" + esc(lastName) + "', '" + esc(dni) + "', '" + esc(email) + "', '"
-                + BCRYPT_PASSWORD + "', 'NONE', 0)");
+                + BCRYPT_PASSWORD + "', 'ADMINISTRATIVA', 0)");
         return userIdByDni(dni);
     }
 

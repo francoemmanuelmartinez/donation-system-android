@@ -94,6 +94,8 @@
     <string name="appointments_title">Agenda</string>
     <string name="appointments_placeholder">Módulo de Agenda</string>
     <string name="week_header_format">Citados para la semana del %1$s al %2$s</string>
+    <string name="week_header_history">Histórico de la semana del %1$s</string>
+    <string name="action_view_active">Ver activos</string>
     <string name="btn_send_reminder">Enviar Recordatorio</string>
     <string name="msg_reminder_sent">Recordatorio enviado</string>
     <string name="msg_reminder_error">No se pudo actualizar el recordatorio</string>
@@ -127,6 +129,43 @@
     <string name="msg_appointment_saved">Turno agendado correctamente</string>
     <string name="msg_appointment_save_error">No se pudo agendar el turno</string>
     <string name="msg_schedule_duplicate">El donante ya tiene un turno agendado para ese día</string>
+    <string name="btn_confirm_edit">GUARDAR CAMBIOS</string>
+    <string name="btn_confirm_reschedule">REAGENDAR TURNO</string>
+    <string name="label_current_appointment">Turno actual: %1$s · %2$s · %3$s</string>
+    <string name="msg_reschedule_confirmation">Reagendar el turno de %1$s</string>
+    <string name="msg_appointment_updated">Turno actualizado correctamente</string>
+    <string name="msg_appointment_rescheduled">Turno reagendado correctamente</string>
+
+    <!-- Appointment actions -->
+    <string name="cd_appointment_actions">Acciones del turno</string>
+    <string name="action_edit_appointment">Editar turno</string>
+    <string name="action_reschedule_appointment">Reagendar turno</string>
+    <string name="action_mark_attended">Marcar como atendido</string>
+    <string name="action_mark_no_show">Marcar como no vino</string>
+    <string name="action_cancel_appointment">Cancelar turno</string>
+    <string name="action_view_history">Ver histórico</string>
+    <string name="btn_confirm">Confirmar</string>
+    <string name="msg_appointment_action_error">No se pudo completar la acción</string>
+    <string name="msg_appointment_cancelled">Turno cancelado</string>
+    <string name="msg_appointment_attended">Turno marcado como atendido</string>
+    <string name="msg_appointment_no_show">Turno marcado como no vino</string>
+    <string name="hint_cancel_reason">Motivo (opcional)</string>
+    <string name="dialog_cancel_title">Cancelar turno</string>
+    <string name="dialog_cancel_message">¿Confirmás cancelar el turno de %1$s?</string>
+    <string name="dialog_attended_title">Marcar como atendido</string>
+    <string name="dialog_attended_message">¿Confirmás que %1$s asistió al turno?</string>
+    <string name="dialog_no_show_title">Marcar como no vino</string>
+    <string name="dialog_no_show_message">¿Confirmás que %1$s no asistió al turno?</string>
+    <string name="action_view_all">Ver todos</string>
+    <string name="btn_view_history">Ver histórico</string>
+    <string name="empty_active_appointments">No quedan turnos activos</string>
+    <string name="chip_status_rescheduled">Reagendado</string>
+    <string name="chip_status_cancelled">Cancelado</string>
+    <string name="chip_status_attended">Atendido</string>
+    <string name="chip_status_no_show">No vino</string>
+    <string name="action_view_requests">Solicitudes</string>
+    <string name="chip_status_reschedule_requested">Pidió reagendar</string>
+    <string name="empty_reschedule_requests">No hay solicitudes de reagendado</string>
 
     <!-- Search -->
     <string name="search_title">Buscar donante</string>

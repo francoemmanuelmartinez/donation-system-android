@@ -80,7 +80,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void openScheduleAppointment() {
-        push(new ScheduleAppointmentFragment());
+        push(ScheduleAppointmentFragment.newCreateInstance());
+    }
+
+    public void openEditAppointment(int appointmentId, int donorId, String donorName, String donorDni,
+                                    String date, String time, String procedure) {
+        push(ScheduleAppointmentFragment.newEditInstance(appointmentId, donorId, donorName, donorDni, date, time, procedure));
+    }
+
+    public void openRescheduleAppointment(int appointmentId, int donorId, String donorName, String donorDni,
+                                          String date, String time, String procedure) {
+        push(ScheduleAppointmentFragment.newRescheduleInstance(appointmentId, donorId, donorName, donorDni, date, time, procedure));
     }
 
     public void openProfile() {

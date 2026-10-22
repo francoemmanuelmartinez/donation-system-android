@@ -30,6 +30,27 @@
             android:textStyle="bold" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonToggleHistory"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:minWidth="0dp"
+            android:text="@string/action_view_all"
+            android:textColor="@color/medical_blue" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonToggleRequests"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:minWidth="0dp"
+            android:text="@string/action_view_requests"
+            android:textColor="@color/medical_blue"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonDispatchReminders"
             style="@style/Widget.Material3.Button.IconButton"
             android:layout_width="wrap_content"

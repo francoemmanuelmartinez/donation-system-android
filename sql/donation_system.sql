@@ -202,6 +202,7 @@ CREATE TABLE `donations` (
   `annual_limit_override` TINYINT(1) NOT NULL DEFAULT 0,
   `staff_user_id` INT NULL,
   `center_id` INT NULL,
+  `appointment_id` INT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`donor_id`) REFERENCES `donors`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`staff_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
@@ -227,17 +228,29 @@ CREATE TABLE `appointments` (
   `appointment_date` DATE NOT NULL,
   `appointment_time` TIME NOT NULL,
   `target_procedure` VARCHAR(50) NOT NULL,
-  `status` ENUM('SCHEDULED', 'ATTENDED', 'CANCELLED') NOT NULL DEFAULT 'SCHEDULED',
+  `status` ENUM('SCHEDULED', 'ATTENDED', 'CANCELLED', 'NO_SHOW') NOT NULL DEFAULT 'SCHEDULED',
+  `cancelled_at` DATETIME NULL,
+  `cancelled_by_user_id` INT NULL,
+  `cancel_reason` VARCHAR(120) NULL,
+  `rescheduled_to_appointment_id` INT NULL,
+  `reschedule_requested_at` DATETIME NULL,
   `is_reminder_sent` TINYINT(1) NOT NULL DEFAULT 0,
   `is_email_reminder_sent` TINYINT(1) NOT NULL DEFAULT 0,
   `reminder_sent_at` DATETIME NULL,
   `reminder_sent_by_user_id` INT NULL,
   `center_id` INT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (`donor_id`) REFERENCES `donors`(`id`) ON DELETE CASCADE,
   FOREIGN KEY (`reminder_sent_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
-  FOREIGN KEY (`center_id`) REFERENCES `centers`(`id`) ON DELETE SET NULL
+  FOREIGN KEY (`center_id`) REFERENCES `centers`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`cancelled_by_user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`rescheduled_to_appointment_id`) REFERENCES `appointments`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Deferred FK: donations.appointment_id -> appointments (appointments is created above)
+ALTER TABLE `donations`
+  ADD CONSTRAINT `fk_donations_appointment` FOREIGN KEY (`appointment_id`) REFERENCES `appointments`(`id`) ON DELETE SET NULL;
 
 -- --------------------------------------------------------
 -- Table: reminder_dispatch_control (Automatic reminder dispatch guard)
@@ -268,6 +281,8 @@ CREATE INDEX IF NOT EXISTS `idx_donor_restrictions_active`
     ON `donor_restrictions` (`donor_id`, `eligible_workday_return_date`);
 CREATE INDEX IF NOT EXISTS `idx_appointments_scheduled`
     ON `appointments` (`donor_id`, `status`, `appointment_date`);
+CREATE INDEX IF NOT EXISTS `idx_appointments_center_status_date`
+    ON `appointments` (`center_id`, `status`, `appointment_date`);
 
 -- --------------------------------------------------------
 -- Initial Seed Data: Default Approved Accounts

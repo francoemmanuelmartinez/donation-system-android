@@ -32,6 +32,7 @@
     <color name="veda_red">#FFC62828</color>
     <color name="state_recovery">#FFEF6C00</color>
     <color name="badge_grey">#FF9E9E9E</color>
+    <color name="status_no_show">#FFEF6C00</color>
 
     <color name="design_default_color_primary">#FF00639A</color>
 

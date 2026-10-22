@@ -1,5 +1,6 @@
 <?php
 require_once 'db_config.php';
+require_once 'appointments_lib.php';
 
 function annualDonationCount($conn, $donorId, $procType) {
     $stmt = $conn->prepare("SELECT COUNT(*) AS c FROM donations d JOIN donation_procedures dp ON dp.donation_id = d.id WHERE d.donor_id = :donorId AND dp.procedure_type = :procType AND d.created_at >= DATE_SUB(CURRENT_DATE(), INTERVAL 365 DAY)");
@@ -82,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $staffUserId = isset($data->staffUserId) ? (int)$data->staffUserId : null;
     $centerId = (int)($data->centerId ?? $data->center_id ?? $_GET['centerId'] ?? $_GET['center_id'] ?? 0);
     if ($centerId <= 0) { $centerId = 1; }
+    $appointmentId = (int)($data->appointmentId ?? $data->appointment_id ?? 0);
     $procedures = $data->procedures ?? $data->procedureTypes ?? [];
 
     if ($donorId <= 0 || $hto <= 0 || $plateletsCount <= 0 || empty($procedures)) {
@@ -99,6 +101,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             sendJsonResponse("error", "Donante no encontrado", null, 404);
         }
         $isFemale = ($donorData['gender'] === 'Femenino');
+
+        // Optional link to a scheduled appointment: must belong to the donor and be SCHEDULED.
+        if ($appointmentId > 0) {
+            $apptStmt = $conn->prepare("SELECT id, status FROM appointments WHERE id = :id AND donor_id = :donorId");
+            $apptStmt->execute(['id' => $appointmentId, 'donorId' => $donorId]);
+            $apptRow = $apptStmt->fetch();
+            if (!$apptRow) {
+                $conn->rollBack();
+                sendJsonResponse("error", "El turno indicado no pertenece a este donante", null, 409);
+            }
+            if ($apptRow['status'] !== 'SCHEDULED') {
+                $conn->rollBack();
+                sendJsonResponse("error", "El turno indicado no está agendado", null, 409);
+            }
+        } else {
+            $appointmentId = 0;
+        }
 
         // Recovery policies per procedure type
         $policyStmt = $conn->query("SELECT procedure_type AS procedureType, recovery_days AS recoveryDays, recovery_days_female AS recoveryDaysFemale, max_per_year AS maxPerYear, max_per_year_female AS maxPerYearFemale FROM donation_recovery_policies");
@@ -121,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         }
         $procedures = $validProcedures;
 
-        $stmt = $conn->prepare("INSERT INTO donations (donor_id, weight, height, hto, platelets_count, annual_limit_override, staff_user_id, center_id) VALUES (:donorId, :weight, :height, :hto, :plateletsCount, 0, :staffUserId, :centerId)");
+        $stmt = $conn->prepare("INSERT INTO donations (donor_id, weight, height, hto, platelets_count, annual_limit_override, staff_user_id, center_id, appointment_id) VALUES (:donorId, :weight, :height, :hto, :plateletsCount, 0, :staffUserId, :centerId, :appointmentId)");
         $stmt->execute([
             'donorId' => $donorId,
             'weight' => $weight,
@@ -129,7 +148,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'hto' => $hto,
             'plateletsCount' => $plateletsCount,
             'staffUserId' => $staffUserId,
-            'centerId' => $centerId
+            'centerId' => $centerId,
+            'appointmentId' => $appointmentId > 0 ? $appointmentId : null
         ]);
 
         $donationId = (int)$conn->lastInsertId();
@@ -168,6 +188,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         // Update donor last donation + next eligible date
         $updateDonorStmt = $conn->prepare("UPDATE donors SET last_donation_date = CURRENT_DATE(), next_eligible_date = :nextEligible WHERE id = :donorId");
         $updateDonorStmt->execute(['donorId' => $donorId, 'nextEligible' => $nextEligibleDate]);
+
+        // Link the fulfilled appointment and mark it ATTENDED (same transaction).
+        if ($appointmentId > 0) {
+            $markError = markAppointmentAttendance($conn, $appointmentId, $donorId, 'ATTENDED', $staffUserId);
+            if ($markError !== null) {
+                $conn->rollBack();
+                sendJsonResponse("error", $markError, null, 409);
+            }
+        }
 
         $conn->commit();
 

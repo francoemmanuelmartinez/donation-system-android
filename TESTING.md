@@ -97,6 +97,20 @@ Checklist para probar la app a mano contra el backend real (XAMPP). Ejecutar en 
       secuencialmente, respeta la ventana horaria 08:00–13:00 y marca los flags por canal
       (ver `whatsapp-reminders-guide.md` §7).
 
+### 7.1 Ciclo de vida del turno (plan-agenda-robusta)
+
+- [ ] **Menú de acciones (⋮)** aparece solo en turnos `SCHEDULED` (oculto para `ATTENDED` / `NO_SHOW` / `CANCELLED`).
+- [ ] **Editar turno** → formulario en modo EDIT (sin búsqueda, con fecha/hora/procedimiento precargados) → guardar aplica los cambios y refresca la Agenda.
+- [ ] **Reagendar** → formulario en modo RESCHEDULE → al confirmar, el turno viejo queda `CANCELLED` con `cancel_reason='RESCHEDULED'` y `rescheduled_to_appointment_id` apuntando al nuevo; el nuevo queda `SCHEDULED`.
+- [ ] **Cancelar** (motivo opcional, max 120) → turno sale del activo, aparece en histórico con chip "Cancelado"; si fue reagendado, el chip dice "Reagendado".
+- [ ] **Atendido / No vino** (solo turnos de fecha pasada `SCHEDULED`) → cambia el estado; `NO_SHOW` disponible únicamente para fechas anteriores a hoy.
+- [ ] `ATTENDED` / `NO_SHOW` están protegidos: no se pueden cancelar ni reagendar (sin acciones en el ⋮).
+- [ ] **Registrar donación desde un turno** → setea `donations.appointment_id` y marca el turno `ATTENDED` en la misma transacción.
+- [ ] **Alerta WhatsApp** al cancelar/reagendar (post-commit, best-effort): se dispara si `REMINDER_ENABLED` está activo y el donante tiene teléfono; el fallo del envío no revierte la operación.
+- [ ] **Ver todos / histórico:** botón de texto en el header alterna activo ↔ histórico; el chip de estado solo se muestra en histórico; estado vacío "No quedan turnos activos".
+- [ ] **Solicitudes (D18):** un donante que pidió reagendar aparece en modo "Solicitudes" con chip "Pidió reagendar"; al reagendar/editar el turno, la marca se limpia.
+- [ ] Fecha pasada rechazada: `create_appointment` y `update_appointment` con fecha `< hoy` → 400.
+
 ## 8. Políticas de recuperación (panel Directora)
 
 - [ ] Abrir "Políticas de recuperación" desde el dashboard de la Directora → lista las
@@ -117,7 +131,7 @@ Checklist para probar la app a mano contra el backend real (XAMPP). Ejecutar en 
 
 ## 10. Automatizado (opcional, al final)
 
-- [ ] `.\gradlew.bat testDebugUnitTest` → 58/58 en verde (requiere XAMPP levantado).
+- [ ] `.\gradlew.bat testDebugUnitTest` → 68/68 en verde (requiere XAMPP levantado).
 - [ ] `.\gradlew.bat assembleDebug` → BUILD SUCCESSFUL.
 
 ## Reactivar el test automatizado

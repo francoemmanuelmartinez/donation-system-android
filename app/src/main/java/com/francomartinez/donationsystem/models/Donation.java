@@ -29,6 +29,9 @@ public class Donation {
     @SerializedName("procedures")
     private List<String> procedures;
 
+    @SerializedName("appointmentId")
+    private Integer appointmentId;
+
     public Donation() {
     }
 
@@ -42,10 +45,17 @@ public class Donation {
         this.procedures = procedures;
     }
 
+    public Integer getAppointmentId() {
+        return appointmentId;
+    }
+
+    public void setAppointmentId(Integer appointmentId) {
+        this.appointmentId = appointmentId;
+    }
+
     public int getId() {
         return id;
     }
-
     public void setId(int id) {
         this.id = id;
     }

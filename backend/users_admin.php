@@ -29,14 +29,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     } else {
         sendJsonResponse("error", "Invalid action", null, 400);
     }
-}
-?>
 } else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $json = file_get_contents('php://input');
     $data = json_decode($json);
 
     if (!$data) {
         sendJsonResponse("error", "Invalid JSON payload", null, 400);
+    }
+
+    if (isset($data->action)) {
+        $action = trim($data->action);
     }
 
     if ($action === 'approve') {
@@ -235,3 +237,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     } else {
         sendJsonResponse("error", "Invalid action", null, 400);
     }
+}

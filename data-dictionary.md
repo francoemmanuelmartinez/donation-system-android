@@ -176,6 +176,7 @@ Documento de referencia de todas las tablas y campos de la BD `donation_system`.
 | `platelets_count` | INT | No | Recuento de plaquetas (u/µL) | Formulario clínico |
 | `annual_limit_override` | TINYINT(1) DEFAULT 0 | No | Superó tope anual (advertencia) | Calculado por backend |
 | `staff_user_id` | INT FK→users | Sí | Staff que registró ("atendido por") | Sesión del usuario logueado |
+| `appointment_id` | INT FK→appointments | Sí | Turno que originó la donación (si se cargó desde la Agenda) | Agenda → "registrar donación" |
 | `center_id` | INT FK→centers | Sí | Centro | Automático (del donante/usuario) |
 | `created_at` | TIMESTAMP | No | Fecha y hora de registro | Sistema |
 
@@ -202,13 +203,33 @@ Documento de referencia de todas las tablas y campos de la BD `donation_system`.
 | `appointment_date` | DATE | No | Fecha del turno | Agendar turno |
 | `appointment_time` | TIME | No | Hora del turno | Agendar turno |
 | `target_procedure` | VARCHAR(50) | No | Procedimiento (Plasma/Plaquetas/Sangre) | Agendar turno |
-| `status` | ENUM('SCHEDULED','ATTENDED','CANCELLED') DEFAULT 'SCHEDULED' | No | Estado del turno | Sistema / cancelación |
+| `status` | ENUM('SCHEDULED','ATTENDED','CANCELLED','NO_SHOW') DEFAULT 'SCHEDULED' | No | Estado del turno | Sistema / cancelación / asistencia |
 | `is_reminder_sent` | TINYINT(1) DEFAULT 0 | No | Recordatorio WhatsApp enviado | Envío de recordatorio |
 | `is_email_reminder_sent` | TINYINT(1) DEFAULT 0 | No | Recordatorio email enviado | Envío de recordatorio |
 | `reminder_sent_at` | DATETIME | Sí | Fecha/hora de envío del recordatorio | Envío de recordatorio |
 | `reminder_sent_by_user_id` | INT FK→users | Sí | Staff que envió el recordatorio | Envío de recordatorio |
+| `cancelled_at` | DATETIME | Sí | Fecha/hora de cancelación | Cancelar / reagendar turno |
+| `cancelled_by_user_id` | INT FK→users | Sí | Staff que canceló (NULL si lo canceló el donante vía WhatsApp) | Cancelar turno / recordatorio interactivo |
+| `cancel_reason` | VARCHAR(120) | Sí | Motivo de cancelación ('RESCHEDULED' cuando se reagenda; 'DONOR_CANCELLED' si lo canceló el donante) | Cancelar / reagendar turno |
+| `rescheduled_to_appointment_id` | INT FK→appointments | Sí | ID del turno nuevo que reemplaza a este (trazabilidad viejo↔nuevo) | Reagendar turno |
+| `reschedule_requested_at` | DATETIME | Sí | El donante pidió reagendar (señal para el operador) | Recordatorio interactivo / solicitud del donante |
+| `updated_at` | TIMESTAMP | Sí | Última modificación del turno | Sistema |
 | `center_id` | INT FK→centers | Sí | Centro | Automático (del donante) |
 | `created_at` | TIMESTAMP | No | Fecha de creación | Sistema |
+
+**Estados del turno y transiciones:**
+
+| Estado | Se muestra como | Es "activo" | Se puede cancelar/reagendar |
+|---|---|---|---|
+| `SCHEDULED` | (sin chip en activo) | Sí | Sí |
+| `ATTENDED` | "Atendido" | No (histórico) | No (protegido) |
+| `NO_SHOW` | "No vino" | No (histórico) | No (protegido) |
+| `CANCELLED` + `rescheduled_to_appointment_id` | "Reagendado" | No (histórico) | No |
+| `CANCELLED` (sin reagendado) | "Cancelado" | No (histórico) | No |
+
+- **Activo** = solo `SCHEDULED`. `CANCELLED` / `ATTENDED` / `NO_SHOW` aparecen únicamente en el histórico.
+- La etiqueta "Reagendado" **se deriva**: `CANCELLED` con `cancel_reason='RESCHEDULED'` (o con `rescheduled_to_appointment_id`) se muestra como "Reagendado" en vez de "Cancelado". No existe un estado `RESCHEDULED` persistido.
+- `NO_SHOW` solo se registra manualmente sobre turnos de fecha pasada que seguían `SCHEDULED`.
 
 ---
 
@@ -239,6 +260,9 @@ Documento de referencia de todas las tablas y campos de la BD `donation_system`.
 | Donación → Procedimientos | 1:N | `donations` → `donation_procedures` |
 | Donante ↔ Restricciones | N:M | `donors` ↔ `restrictions` via `donor_restrictions` |
 | Donante → Turnos | 1:N | `donors` → `appointments` |
+| Turno → Donación (origen) | 1:N | `appointments` → `donations` (`appointment_id`) |
+| Turno → Turno (reagendado) | 1:1 | `appointments` → `appointments` (`rescheduled_to_appointment_id`) |
+| Staff → Turnos (cancelado por) | 1:N | `users` → `appointments` (`cancelled_by_user_id`) |
 | Staff → Donaciones (atendido por) | 1:N | `users` → `donations` (`staff_user_id`) |
 | Staff → Restricciones (creado por) | 1:N | `users` → `donor_restrictions` (`created_by_user_id`) |
 | Staff → Turnos (recordatorio enviado por) | 1:N | `users` → `appointments` (`reminder_sent_by_user_id`) |
