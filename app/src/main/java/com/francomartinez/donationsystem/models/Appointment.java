@@ -40,6 +40,15 @@ public class Appointment {
     @SerializedName("rescheduledToAppointmentId")
     private Integer rescheduledToAppointmentId;
 
+    @SerializedName("newAppointmentDate")
+    private String newAppointmentDate;
+
+    @SerializedName("newAppointmentTime")
+    private String newAppointmentTime;
+
+    @SerializedName("newTargetProcedure")
+    private String newTargetProcedure;
+
     @SerializedName("rescheduleRequestedAt")
     private String rescheduleRequestedAt;
 
@@ -152,6 +161,30 @@ public class Appointment {
 
     public void setRescheduledToAppointmentId(Integer rescheduledToAppointmentId) {
         this.rescheduledToAppointmentId = rescheduledToAppointmentId;
+    }
+
+    public String getNewAppointmentDate() {
+        return newAppointmentDate;
+    }
+
+    public void setNewAppointmentDate(String newAppointmentDate) {
+        this.newAppointmentDate = newAppointmentDate;
+    }
+
+    public String getNewAppointmentTime() {
+        return newAppointmentTime;
+    }
+
+    public void setNewAppointmentTime(String newAppointmentTime) {
+        this.newAppointmentTime = newAppointmentTime;
+    }
+
+    public String getNewTargetProcedure() {
+        return newTargetProcedure;
+    }
+
+    public void setNewTargetProcedure(String newTargetProcedure) {
+        this.newTargetProcedure = newTargetProcedure;
     }
 
     public String getRescheduleRequestedAt() {

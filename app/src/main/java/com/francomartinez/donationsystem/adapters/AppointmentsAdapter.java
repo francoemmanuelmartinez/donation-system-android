@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -17,6 +18,8 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Objects;
 
 public class AppointmentsAdapter extends ListAdapter<Appointment, AppointmentsAdapter.AppointmentViewHolder> {
@@ -95,6 +98,8 @@ public class AppointmentsAdapter extends ListAdapter<Appointment, AppointmentsAd
         final Chip chipAppointmentStatus;
         final TextView textViewAppointmentDonor;
         final TextView textViewAppointmentProcedure;
+        final LinearLayout layoutRescheduledTo;
+        final TextView textViewRescheduledToDetail;
         final MaterialButton buttonSendWhatsApp;
         final MaterialButton buttonSendEmail;
         final MaterialButton buttonAppointmentActions;
@@ -107,6 +112,8 @@ public class AppointmentsAdapter extends ListAdapter<Appointment, AppointmentsAd
             chipAppointmentStatus = itemView.findViewById(R.id.chipAppointmentStatus);
             textViewAppointmentDonor = itemView.findViewById(R.id.textViewAppointmentDonor);
             textViewAppointmentProcedure = itemView.findViewById(R.id.textViewAppointmentProcedure);
+            layoutRescheduledTo = itemView.findViewById(R.id.layoutRescheduledTo);
+            textViewRescheduledToDetail = itemView.findViewById(R.id.textViewRescheduledToDetail);
             buttonSendWhatsApp = itemView.findViewById(R.id.buttonSendWhatsApp);
             buttonSendEmail = itemView.findViewById(R.id.buttonSendEmail);
             buttonAppointmentActions = itemView.findViewById(R.id.buttonAppointmentActions);
@@ -124,6 +131,8 @@ public class AppointmentsAdapter extends ListAdapter<Appointment, AppointmentsAd
             chipAppointmentTime.setText(appointment.getAppointmentTime());
             textViewAppointmentDonor.setText(appointment.getDonorName());
             textViewAppointmentProcedure.setText(procedureLabel(appointment.getTargetProcedure()));
+
+            bindRescheduledTo(appointment);
 
             bindStatusChip(appointment);
 
@@ -152,7 +161,54 @@ public class AppointmentsAdapter extends ListAdapter<Appointment, AppointmentsAd
                     buttonSendEmail, imageViewReminderEmailChecked, R.string.cd_send_email, "email", appointment);
         }
 
-        private void bindStatusChip(Appointment appointment) {
+        private void bindRescheduledTo(Appointment appointment) {
+        boolean rescheduled = "CANCELLED".equals(appointment.getStatus())
+                && appointment.getRescheduledToAppointmentId() != null
+                && appointment.getRescheduledToAppointmentId() > 0;
+        if (!rescheduled) {
+            layoutRescheduledTo.setVisibility(View.GONE);
+            return;
+        }
+        String newDate = appointment.getNewAppointmentDate();
+        String newTime = appointment.getNewAppointmentTime();
+        String newProcedure = procedureLabel(appointment.getNewTargetProcedure());
+        StringBuilder detail = new StringBuilder();
+        if (newDate != null && !newDate.trim().isEmpty()) {
+            detail.append(formatDate(newDate));
+        }
+        if (newTime != null && !newTime.trim().isEmpty()) {
+            if (detail.length() > 0) {
+                detail.append(" · ");
+            }
+            detail.append(newTime);
+        }
+        if (newProcedure != null && !newProcedure.trim().isEmpty()) {
+            if (detail.length() > 0) {
+                detail.append(" · ");
+            }
+            detail.append(newProcedure);
+        }
+        if (detail.length() == 0) {
+            layoutRescheduledTo.setVisibility(View.GONE);
+            return;
+        }
+        textViewRescheduledToDetail.setText(detail.toString());
+        layoutRescheduledTo.setVisibility(View.VISIBLE);
+    }
+
+    private String formatDate(String dbDate) {
+        try {
+            String normalized = dbDate.trim();
+            if (normalized.length() > 10) {
+                normalized = normalized.substring(0, 10);
+            }
+            return LocalDate.parse(normalized).format(DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault()));
+        } catch (Exception e) {
+            return dbDate;
+        }
+    }
+
+    private void bindStatusChip(Appointment appointment) {
             String status = appointment.getStatus();
             boolean active = status == null || "SCHEDULED".equals(status);
 

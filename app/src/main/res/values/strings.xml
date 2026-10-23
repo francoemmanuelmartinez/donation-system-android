@@ -168,6 +168,7 @@
     <string name="action_view_all">Ver historial</string>
     <string name="empty_active_appointments">No quedan turnos activos</string>
     <string name="chip_status_rescheduled">Reagendado</string>
+    <string name="label_rescheduled_to">Reagendado a:</string>
     <string name="chip_status_cancelled">Cancelado</string>
     <string name="chip_status_attended">Atendido</string>
     <string name="chip_status_no_show">No vino</string>

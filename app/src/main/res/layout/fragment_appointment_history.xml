@@ -42,24 +42,18 @@
             android:textColor="@color/medical_blue" />
     </LinearLayout>
 
-    <HorizontalScrollView
-        android:id="@+id/scrollHistoryFilters"
-        android:layout_width="0dp"
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipGroupHistoryType"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:scrollbars="none"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/rowHistoryRange">
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chipGroupHistoryType"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            app:singleLine="true"
-            app:singleSelection="true">
+        app:layout_constraintTop_toBottomOf="@+id/rowHistoryRange"
+        app:singleLine="false"
+        app:singleSelection="true">
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chipHistoryAll"
@@ -97,7 +91,6 @@
                 android:layout_height="wrap_content"
                 android:text="@string/history_filter_rescheduled" />
         </com.google.android.material.chip.ChipGroup>
-    </HorizontalScrollView>
 
     <TextView
         android:id="@+id/textViewHistoryEmpty"
@@ -121,7 +114,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/scrollHistoryFilters"
+        app:layout_constraintTop_toBottomOf="@+id/chipGroupHistoryType"
         tools:listitem="@layout/item_appointment" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

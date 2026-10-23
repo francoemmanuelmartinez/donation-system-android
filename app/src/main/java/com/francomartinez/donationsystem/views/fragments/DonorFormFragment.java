@@ -80,6 +80,8 @@ public class DonorFormFragment extends Fragment {
 
     private DonorsViewModel viewModel;
     private SharedDonorViewModel sharedDonorViewModel;
+    private ArrayAdapter<CharSequence> genderAdapter;
+    private ArrayAdapter<CharSequence> bloodAdapter;
 
     private int mode = MODE_REGISTER;
     private Donor currentDonor;
@@ -181,13 +183,10 @@ public class DonorFormFragment extends Fragment {
     }
 
     private void setupDropdowns() {
-        ArrayAdapter<CharSequence> genderAdapter = ArrayAdapter.createFromResource(requireContext(),
+        genderAdapter = ArrayAdapter.createFromResource(requireContext(),
                 R.array.genders, android.R.layout.simple_dropdown_item_1line);
-        spinnerGender.setAdapter(genderAdapter);
-
-        ArrayAdapter<CharSequence> bloodAdapter = ArrayAdapter.createFromResource(requireContext(),
+        bloodAdapter = ArrayAdapter.createFromResource(requireContext(),
                 R.array.blood_types, android.R.layout.simple_dropdown_item_1line);
-        spinnerBloodType.setAdapter(bloodAdapter);
     }
 
     private void observeViewModel() {
@@ -402,6 +401,9 @@ public class DonorFormFragment extends Fragment {
         setEditTextEnabled(editTextFirstName, !viewOnly);
         setEditTextEnabled(editTextDni, !viewOnly);
         setEditTextEnabled(spinnerGender, !viewOnly);
+        if (spinnerGender != null) {
+            spinnerGender.setAdapter(viewOnly ? null : genderAdapter);
+        }
         if (editTextBirthDate != null) {
             editTextBirthDate.setEnabled(!viewOnly);
             editTextBirthDate.setFocusable(false);
@@ -411,6 +413,9 @@ public class DonorFormFragment extends Fragment {
         setEditTextEnabled(editTextCity, !viewOnly);
         setEditTextEnabled(editTextAddress, !viewOnly);
         setEditTextEnabled(spinnerBloodType, !viewOnly);
+        if (spinnerBloodType != null) {
+            spinnerBloodType.setAdapter(viewOnly ? null : bloodAdapter);
+        }
         setEditTextEnabled(editTextWeight, !viewOnly);
         setEditTextEnabled(editTextHeight, !viewOnly);
 
