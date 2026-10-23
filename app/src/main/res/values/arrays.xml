@@ -43,8 +43,9 @@
     </string-array>
 
     <string-array name="appointment_procedures">
+        <item>Sangre</item>
         <item>Plasma</item>
         <item>Plaquetas</item>
-        <item>Sangre</item>
+        <item>Plasma + Plaquetas</item>
     </string-array>
 </resources>

@@ -235,6 +235,10 @@ public class AppointmentsAdapter extends ListAdapter<Appointment, AppointmentsAd
                     return itemView.getContext().getString(R.string.procedure_platelets);
                 case "BLOOD":
                     return itemView.getContext().getString(R.string.procedure_blood);
+                case "PLASMA_PLATELETS":
+                case "PLASMA+PLATELETS":
+                case "PLATELETS+PLASMA":
+                    return itemView.getContext().getString(R.string.procedure_plasma_platelets);
                 default:
                     return code;
             }

@@ -45,6 +45,10 @@
         <activity
             android:name=".views.ProfileActivity"
             android:exported="false" />
+        <activity
+            android:name=".views.AppointmentHistoryActivity"
+            android:exported="false"
+            android:label="@string/history_title" />
     </application>
 
 </manifest>

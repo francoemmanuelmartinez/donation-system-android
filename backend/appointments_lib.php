@@ -16,7 +16,7 @@ function validateAppointmentPayload($appointmentDate, $appointmentTime, $targetP
     if (!preg_match('/^\d{1,2}:\d{2}(:\d{2})?$/', $appointmentTime)) {
         return "Hora de turno inválida";
     }
-    if (!in_array($targetProcedure, ['BLOOD', 'PLASMA', 'PLATELETS'])) {
+    if (!in_array($targetProcedure, ['BLOOD', 'PLASMA', 'PLATELETS', 'PLASMA_PLATELETS'])) {
         return "Tipo de donación inválido";
     }
     return null;
@@ -191,6 +191,10 @@ function appointmentProcedureLabel($procedure) {
         case 'PLASMA':    return 'plasma';
         case 'PLATELETS': return 'plaquetas';
         case 'BLOOD':     return 'sangre';
+        case 'PLASMA_PLATELETS':
+        case 'PLASMA+PLATELETS':
+        case 'PLATELETS+PLASMA':
+            return 'plasma y plaquetas';
         default:          return (string)$procedure;
     }
 }

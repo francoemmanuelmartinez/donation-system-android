@@ -37,7 +37,6 @@ import com.francomartinez.donationsystem.viewmodels.DonorsViewModel;
 import com.francomartinez.donationsystem.viewmodels.SharedDonorViewModel;
 import com.francomartinez.donationsystem.views.MainActivity;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
@@ -71,7 +70,7 @@ public class DonationsFragment extends Fragment {
     private MaterialButton buttonSeeDonorData;
     private TextInputEditText editTextHto;
     private TextInputEditText editTextPlateletsCount;
-    private MaterialButtonToggleGroup toggleGroupDonationType;
+    private ChipGroup chipGroupDonationType;
     private MaterialButton buttonSaveDonation;
     private LinearLayout layoutDonationEntry;
 
@@ -100,8 +99,6 @@ public class DonationsFragment extends Fragment {
 
     private final List<MedicalRestriction> dictionaryRestrictions = new ArrayList<>();
     private final LinkedHashMap<String, Integer> newRestrictions = new LinkedHashMap<>();
-
-    private boolean mutexUpdating = false;
     private boolean suppressVedaWatcher = false;
 
     @Nullable
@@ -128,7 +125,7 @@ public class DonationsFragment extends Fragment {
         buttonSeeDonorData = view.findViewById(R.id.buttonSeeDonorData);
         editTextHto = view.findViewById(R.id.editTextHto);
         editTextPlateletsCount = view.findViewById(R.id.editTextPlateletsCount);
-        toggleGroupDonationType = view.findViewById(R.id.toggleGroupDonationType);
+        chipGroupDonationType = view.findViewById(R.id.chipGroupDonationType);
         buttonSaveDonation = view.findViewById(R.id.buttonSaveDonation);
         layoutDonationEntry = view.findViewById(R.id.layoutDonationEntry);
 
@@ -149,7 +146,6 @@ public class DonationsFragment extends Fragment {
         editTextAppointmentTime = view.findViewById(R.id.editTextAppointmentTime);
         spinnerAppointmentProcedure = view.findViewById(R.id.spinnerAppointmentProcedure);
 
-        setupMutexLogic();
         setupRestrictionEditor();
         observeViewModel();
         observeSharedDonor();
@@ -168,24 +164,6 @@ public class DonationsFragment extends Fragment {
             if (mainActivity != null) {
                 mainActivity.openDonorDetails();
             }
-        });
-    }
-
-    private void setupMutexLogic() {
-        toggleGroupDonationType.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
-            if (!isChecked || mutexUpdating) return;
-
-            mutexUpdating = true;
-            if (checkedId == R.id.buttonTypeBlood) {
-                MaterialButton plasma = group.findViewById(R.id.buttonTypePlasma);
-                MaterialButton platelets = group.findViewById(R.id.buttonTypePlatelets);
-                plasma.setChecked(false);
-                platelets.setChecked(false);
-            } else {
-                MaterialButton blood = group.findViewById(R.id.buttonTypeBlood);
-                blood.setChecked(false);
-            }
-            mutexUpdating = false;
         });
     }
 
@@ -473,21 +451,23 @@ public class DonationsFragment extends Fragment {
         int targetId;
         switch (procedure) {
             case "PLASMA":
-                targetId = R.id.buttonTypePlasma;
+                targetId = R.id.chipTypePlasma;
                 break;
             case "PLATELETS":
-                targetId = R.id.buttonTypePlatelets;
+                targetId = R.id.chipTypePlatelets;
                 break;
             case "BLOOD":
-                targetId = R.id.buttonTypeBlood;
+                targetId = R.id.chipTypeBlood;
+                break;
+            case "PLASMA_PLATELETS":
+            case "PLASMA+PLATELETS":
+            case "PLATELETS+PLASMA":
+                targetId = R.id.chipTypePlasmaPlatelets;
                 break;
             default:
                 return;
         }
-        mutexUpdating = true;
-        toggleGroupDonationType.clearChecked();
-        mutexUpdating = false;
-        toggleGroupDonationType.check(targetId);
+        chipGroupDonationType.check(targetId);
     }
 
     private void bindBadge(Donor donor) {
@@ -509,7 +489,7 @@ public class DonationsFragment extends Fragment {
     private void clearClinicalForm() {
         editTextHto.setText("");
         editTextPlateletsCount.setText("");
-        toggleGroupDonationType.check(R.id.buttonTypePlasma);
+        chipGroupDonationType.check(R.id.chipTypePlasma);
     }
 
     // --- Donation save ---
@@ -807,6 +787,10 @@ public class DonationsFragment extends Fragment {
         if ("PLATELETS".equals(code)) {
             return getString(R.string.procedure_platelets);
         }
+        if ("PLASMA_PLATELETS".equals(code) || "PLASMA+PLATELETS".equals(code)
+                || "PLATELETS+PLASMA".equals(code)) {
+            return getString(R.string.procedure_plasma_platelets);
+        }
         return code;
     }
 
@@ -821,6 +805,9 @@ public class DonationsFragment extends Fragment {
                 return "PLATELETS";
             case "sangre":
                 return "BLOOD";
+            case "plasma + plaquetas":
+            case "plasma+plaquetas":
+                return "PLASMA_PLATELETS";
             default:
                 return null;
         }
@@ -844,14 +831,16 @@ public class DonationsFragment extends Fragment {
 
     private List<String> getCheckedProcedures() {
         List<String> procedures = new ArrayList<>();
-        if (toggleGroupDonationType.getCheckedButtonIds().contains(R.id.buttonTypePlasma)) {
+        int checkedId = chipGroupDonationType.getCheckedChipId();
+        if (checkedId == R.id.chipTypePlasma) {
             procedures.add("PLASMA");
-        }
-        if (toggleGroupDonationType.getCheckedButtonIds().contains(R.id.buttonTypePlatelets)) {
+        } else if (checkedId == R.id.chipTypePlatelets) {
             procedures.add("PLATELETS");
-        }
-        if (toggleGroupDonationType.getCheckedButtonIds().contains(R.id.buttonTypeBlood)) {
+        } else if (checkedId == R.id.chipTypeBlood) {
             procedures.add("BLOOD");
+        } else if (checkedId == R.id.chipTypePlasmaPlatelets) {
+            procedures.add("PLASMA");
+            procedures.add("PLATELETS");
         }
         return procedures;
     }

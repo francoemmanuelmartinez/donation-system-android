@@ -30,11 +30,6 @@ public class AppointmentRepository {
         call.enqueue(callback);
     }
 
-    public void getAppointmentsByMonth(String month, Callback<ApiResponse<List<Appointment>>> callback) {
-        Call<ApiResponse<List<Appointment>>> call = apiService.getAppointmentsByMonth(month);
-        call.enqueue(callback);
-    }
-
     public void sendReminder(ReminderRequest request, Callback<ApiResponse<Map<String, Object>>> callback) {
         Call<ApiResponse<Map<String, Object>>> call = apiService.sendWhatsAppReminder(request);
         call.enqueue(callback);
@@ -77,8 +72,8 @@ public class AppointmentRepository {
         call.enqueue(callback);
     }
 
-    public void getAppointmentsByMonthFiltered(String month, String status, Callback<ApiResponse<List<Appointment>>> callback) {
-        Call<ApiResponse<List<Appointment>>> call = apiService.getAppointmentsByMonthFiltered(month, status);
+    public void getAppointmentsInRange(String from, String to, String status, Callback<ApiResponse<List<Appointment>>> callback) {
+        Call<ApiResponse<List<Appointment>>> call = apiService.getAppointmentsInRange(from, to, status);
         call.enqueue(callback);
     }
 }

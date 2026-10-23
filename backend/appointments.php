@@ -64,18 +64,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
     $weekDate = trim($_GET['week_date'] ?? $_GET['date'] ?? date('Y-m-d'));
     $month = trim($_GET['month'] ?? '');
+    $from = trim($_GET['from'] ?? '');
+    $to = trim($_GET['to'] ?? '');
     $centerId = (int)($_GET['centerId'] ?? $_GET['center_id'] ?? 0);
     $statusFilter = strtolower(trim($_GET['status'] ?? 'SCHEDULED'));
     $allowedStatuses = ['SCHEDULED', 'ATTENDED', 'CANCELLED', 'NO_SHOW'];
 
+    $fromValid = $from !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $from);
+    $toValid = $to !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to);
+    $rangeMode = $fromValid || $toValid;
+
     $baseSelect = "SELECT a.id, a.donor_id AS donorId, CONCAT(d.first_name, ' ', d.last_name) AS donorName, d.dni AS donorDni, dp.phone_number AS donorPhone, dem.email_address AS donorEmail, a.appointment_date AS appointmentDate, DATE_FORMAT(a.appointment_time, '%H:%i') AS appointmentTime, a.target_procedure AS targetProcedure, a.status, a.cancel_reason AS cancelReason, a.rescheduled_to_appointment_id AS rescheduledToAppointmentId, a.reschedule_requested_at AS rescheduleRequestedAt, a.center_id AS centerId, a.is_reminder_sent AS isReminderSent, a.is_email_reminder_sent AS isEmailReminderSent, a.reminder_sent_at AS reminderSentAt FROM appointments a JOIN donors d ON a.donor_id = d.id LEFT JOIN donor_phones dp ON dp.donor_id = d.id AND dp.is_primary = 1 LEFT JOIN donor_emails dem ON dem.donor_id = d.id AND dem.is_primary = 1";
 
-    // Filtro por estado: default solo SCHEDULED (D1). "all" trae el histórico
-    // (todos los estados). Cualquier otro valor válido filtra por ese estado.
+    // Filtro por estado: default solo SCHEDULED (D1). "all" trae todos los estados;
+    // "resolved" trae el histórico (todo lo ya resuelto, sin SCHEDULED).
+    // Cualquier otro valor válido filtra por ese estado.
     $statusWhere = '';
     $statusParams = [];
     if ($statusFilter === 'all') {
         $statusWhere = '';
+    } elseif ($statusFilter === 'resolved') {
+        $statusWhere = " AND a.status <> 'SCHEDULED'";
     } elseif (in_array(strtoupper($statusFilter), $allowedStatuses, true)) {
         $statusWhere = " AND a.status = :status";
         $statusParams['status'] = strtoupper($statusFilter);
@@ -83,8 +92,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $statusWhere = " AND a.status = 'SCHEDULED'";
     }
 
+    // El histórico (rango o "resolved") se ordena con lo más reciente primero.
+    $historyMode = $rangeMode || $statusFilter === 'resolved';
+    $orderClause = $historyMode
+        ? " ORDER BY a.appointment_date DESC, a.appointment_time DESC"
+        : " ORDER BY a.appointment_date ASC, a.appointment_time ASC";
+
     try {
-        if ($month !== '' && preg_match('/^\d{4}-\d{2}$/', $month)) {
+        if ($rangeMode) {
+            $params = [];
+            if ($fromValid && $toValid) {
+                $sql = $baseSelect . " WHERE a.appointment_date BETWEEN :fromDate AND :toDate";
+                $params['fromDate'] = $from;
+                $params['toDate'] = $to;
+            } elseif ($fromValid) {
+                $sql = $baseSelect . " WHERE a.appointment_date >= :fromDate";
+                $params['fromDate'] = $from;
+            } else {
+                $sql = $baseSelect . " WHERE a.appointment_date <= :toDate";
+                $params['toDate'] = $to;
+            }
+            if ($centerId > 0) {
+                $sql .= " AND a.center_id = :centerId";
+                $params['centerId'] = $centerId;
+            }
+            $sql .= $statusWhere;
+            $params = array_merge($params, $statusParams);
+            $sql .= $orderClause;
+            $stmt = $conn->prepare($sql);
+            $stmt->execute($params);
+        } elseif ($month !== '' && preg_match('/^\d{4}-\d{2}$/', $month)) {
             $startDate = $month . '-01';
             $endDate = date('Y-m-t', strtotime($startDate));
             $sql = $baseSelect . " WHERE a.appointment_date BETWEEN :startDate AND :endDate";
@@ -95,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
             $sql .= $statusWhere;
             $params = array_merge($params, $statusParams);
-            $sql .= " ORDER BY a.appointment_date ASC, a.appointment_time ASC";
+            $sql .= $orderClause;
             $stmt = $conn->prepare($sql);
             $stmt->execute($params);
         } else {
@@ -107,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
             $sql .= $statusWhere;
             $params = array_merge($params, $statusParams);
-            $sql .= " ORDER BY a.appointment_date ASC, a.appointment_time ASC";
+            $sql .= $orderClause;
             $stmt = $conn->prepare($sql);
             $stmt->execute($params);
         }
@@ -192,6 +229,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $appointmentDate = trim($data->appointmentDate ?? $data->appointment_date ?? '');
         $appointmentTime = trim($data->appointmentTime ?? $data->appointment_time ?? '');
         $targetProcedure = strtoupper(trim($data->targetProcedure ?? $data->target_procedure ?? ''));
+        if ($targetProcedure === 'PLASMA+PLATELETS' || $targetProcedure === 'PLATELETS+PLASMA') {
+            $targetProcedure = 'PLASMA_PLATELETS';
+        }
 
         if ($donorId <= 0) {
             sendJsonResponse("error", "Seleccioná un donante válido", null, 400);
@@ -210,7 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             sendJsonResponse("error", "Hora de turno inválida", null, 400);
         }
 
-        $allowedProcedures = ['BLOOD', 'PLASMA', 'PLATELETS'];
+        $allowedProcedures = ['BLOOD', 'PLASMA', 'PLATELETS', 'PLASMA_PLATELETS'];
         if (!in_array($targetProcedure, $allowedProcedures)) {
             sendJsonResponse("error", "Tipo de donación inválido", null, 400);
         }

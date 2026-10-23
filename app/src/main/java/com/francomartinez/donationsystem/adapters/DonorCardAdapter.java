@@ -141,6 +141,10 @@ public class DonorCardAdapter extends RecyclerView.Adapter<DonorCardAdapter.Dono
                 return context.getString(R.string.procedure_platelets);
             case "BLOOD":
                 return context.getString(R.string.procedure_blood);
+            case "PLASMA_PLATELETS":
+            case "PLASMA+PLATELETS":
+            case "PLATELETS+PLASMA":
+                return context.getString(R.string.procedure_plasma_platelets);
             default:
                 return procedure;
         }

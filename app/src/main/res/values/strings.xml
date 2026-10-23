@@ -84,6 +84,7 @@
     <string name="btn_type_plasma">Plasma</string>
     <string name="btn_type_platelets">Plaquetas</string>
     <string name="btn_type_blood">Sangre</string>
+    <string name="btn_type_plasma_platelets">Plasma + Plaquetas</string>
     <string name="btn_save_donation">GUARDAR DONACIÓN</string>
     <string name="msg_save_donation">Donación registrada correctamente</string>
     <string name="msg_select_donor_first">Seleccioná un donante primero</string>
@@ -93,8 +94,7 @@
     <!-- Appointments -->
     <string name="appointments_title">Agenda</string>
     <string name="appointments_placeholder">Módulo de Agenda</string>
-    <string name="week_header_format">Citados para la semana del %1$s al %2$s</string>
-    <string name="week_header_history">Histórico de la semana del %1$s</string>
+    <string name="action_today">Hoy</string>
     <string name="action_view_active">Ver activos</string>
     <string name="btn_send_reminder">Enviar Recordatorio</string>
     <string name="msg_reminder_sent">Recordatorio enviado</string>
@@ -109,9 +109,6 @@
     <string name="email_reminder_format">Hola %1$s, te recordamos tu turno para donación de %2$s el día %3$s a las %4$s hs.</string>
     <string name="msg_no_donor_email">El donante no tiene email registrado</string>
     <string name="msg_email_not_available">No hay ninguna app de correo instalada</string>
-    <string name="cd_open_calendar">Abrir calendario</string>
-    <string name="cd_prev_month">Mes anterior</string>
-    <string name="cd_next_month">Mes siguiente</string>
     <string name="cd_send_whatsapp">Enviar recordatorio por WhatsApp</string>
     <string name="cd_send_email">Enviar recordatorio por email</string>
     <string name="date_label_format">Turnos del %1$s</string>
@@ -120,6 +117,7 @@
     <string name="procedure_plasma">Plasma</string>
     <string name="procedure_platelets">Plaquetas</string>
     <string name="procedure_blood">Sangre</string>
+    <string name="procedure_plasma_platelets">Plasma + Plaquetas</string>
     <string name="label_next_appointment">Turno: %1$s · %2$s</string>
     <string name="btn_schedule_donor">AGENDAR UN DONANTE</string>
     <string name="schedule_date_picker_title">Elegí la fecha del turno</string>
@@ -132,7 +130,18 @@
     <string name="btn_confirm_edit">GUARDAR CAMBIOS</string>
     <string name="btn_confirm_reschedule">REAGENDAR TURNO</string>
     <string name="label_current_appointment">Turno actual: %1$s · %2$s · %3$s</string>
-    <string name="msg_reschedule_confirmation">Reagendar el turno de %1$s</string>
+    <string name="label_new_schedule">Nueva fecha y hora</string>
+    <string name="label_schedule_datetime">Fecha y hora del turno</string>
+    <string name="action_change_donor">Cambiar donante</string>
+    <string name="msg_choose_schedule">Elegí la fecha y hora del turno</string>
+    <string name="btn_pick_date">ELEGIR FECHA</string>
+    <string name="btn_pick_time">ELEGIR HORA</string>
+    <string name="btn_date_selected">Fecha: %1$s</string>
+    <string name="btn_time_selected">Hora: %1$s</string>
+    <string name="msg_new_schedule_selection">Nuevo turno: %1$s a las %2$s</string>
+    <string name="msg_choose_new_schedule">Elegí la nueva fecha y hora del turno</string>
+    <string name="msg_reschedule_confirmation">Reagendar turno de %1$s para el %2$s a las %3$s</string>
+    <string name="msg_edit_appointment_confirmation">Editar turno de %1$s para el %2$s a las %3$s</string>
     <string name="msg_appointment_updated">Turno actualizado correctamente</string>
     <string name="msg_appointment_rescheduled">Turno reagendado correctamente</string>
 
@@ -156,8 +165,7 @@
     <string name="dialog_attended_message">¿Confirmás que %1$s asistió al turno?</string>
     <string name="dialog_no_show_title">Marcar como no vino</string>
     <string name="dialog_no_show_message">¿Confirmás que %1$s no asistió al turno?</string>
-    <string name="action_view_all">Ver todos</string>
-    <string name="btn_view_history">Ver histórico</string>
+    <string name="action_view_all">Ver historial</string>
     <string name="empty_active_appointments">No quedan turnos activos</string>
     <string name="chip_status_rescheduled">Reagendado</string>
     <string name="chip_status_cancelled">Cancelado</string>
@@ -166,6 +174,19 @@
     <string name="action_view_requests">Solicitudes</string>
     <string name="chip_status_reschedule_requested">Pidió reagendar</string>
     <string name="empty_reschedule_requests">No hay solicitudes de reagendado</string>
+
+    <!-- Historial de turnos -->
+    <string name="history_title">Historial de turnos</string>
+    <string name="cd_history_back">Volver a la agenda</string>
+    <string name="history_range_from">Desde: %1$s</string>
+    <string name="history_range_to">Hasta: %1$s</string>
+    <string name="history_filter_all">Todos</string>
+    <string name="history_filter_attended">Atendido</string>
+    <string name="history_filter_no_show">No vino</string>
+    <string name="history_filter_cancelled">Cancelado</string>
+    <string name="history_filter_rescheduled">Reagendado</string>
+    <string name="history_empty_range">No hay turnos en el rango seleccionado</string>
+    <string name="history_error_load">No se pudo recuperar el historial</string>
 
     <!-- Search -->
     <string name="search_title">Buscar donante</string>

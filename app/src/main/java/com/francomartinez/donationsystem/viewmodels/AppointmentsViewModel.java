@@ -26,7 +26,7 @@ public class AppointmentsViewModel extends ViewModel {
 
     private final AppointmentRepository appointmentRepository;
     private final MutableLiveData<Resource<List<Appointment>>> appointmentsResult = new MutableLiveData<>();
-    private final MutableLiveData<Resource<List<Appointment>>> monthResult = new MutableLiveData<>();
+    private final MutableLiveData<Resource<List<Appointment>>> historyResult = new MutableLiveData<>();
     private final MutableLiveData<Resource<Map<String, Object>>> reminderResult = new MutableLiveData<>();
     private final MutableLiveData<Resource<Map<String, Object>>> createResult = new MutableLiveData<>();
     private final MutableLiveData<Resource<Map<String, Object>>> dispatchResult = new MutableLiveData<>();
@@ -43,8 +43,8 @@ public class AppointmentsViewModel extends ViewModel {
         return appointmentsResult;
     }
 
-    public LiveData<Resource<List<Appointment>>> getMonthResult() {
-        return monthResult;
+    public LiveData<Resource<List<Appointment>>> getHistoryResult() {
+        return historyResult;
     }
 
     public LiveData<Resource<Map<String, Object>>> getReminderResult() {
@@ -174,30 +174,6 @@ public class AppointmentsViewModel extends ViewModel {
         });
     }
 
-    public void loadMonthAppointments(String month, String status) {
-        monthResult.postValue(Resource.loading());
-        appointmentRepository.getAppointmentsByMonthFiltered(month, status, new Callback<ApiResponse<List<Appointment>>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<List<Appointment>>> call, Response<ApiResponse<List<Appointment>>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    ApiResponse<List<Appointment>> body = response.body();
-                    if (body.isSuccess()) {
-                        monthResult.postValue(Resource.success(body.getData()));
-                    } else {
-                        monthResult.postValue(Resource.error(body.getMessage() != null ? body.getMessage() : "No se pudo recuperar la agenda"));
-                    }
-                } else {
-                    monthResult.postValue(Resource.error("No se pudo recuperar la agenda: " + response.code()));
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ApiResponse<List<Appointment>>> call, Throwable t) {
-                monthResult.postValue(Resource.error("Error de red: " + t.getMessage()));
-            }
-        });
-    }
-
     public void dispatchReminders() {
         dispatchResult.postValue(Resource.loading());
         appointmentRepository.dispatchReminders(new Callback<ApiResponse<Map<String, Object>>>() {
@@ -276,26 +252,26 @@ public class AppointmentsViewModel extends ViewModel {
                 });
     }
 
-    public void loadMonthAppointments(String month) {
-        monthResult.postValue(Resource.loading());
-        appointmentRepository.getAppointmentsByMonth(month, new Callback<ApiResponse<List<Appointment>>>() {
+    public void loadHistory(String from, String to, String status) {
+        historyResult.postValue(Resource.loading());
+        appointmentRepository.getAppointmentsInRange(from, to, status, new Callback<ApiResponse<List<Appointment>>>() {
             @Override
             public void onResponse(Call<ApiResponse<List<Appointment>>> call, Response<ApiResponse<List<Appointment>>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     ApiResponse<List<Appointment>> body = response.body();
                     if (body.isSuccess()) {
-                        monthResult.postValue(Resource.success(body.getData()));
+                        historyResult.postValue(Resource.success(body.getData()));
                     } else {
-                        monthResult.postValue(Resource.error(body.getMessage() != null ? body.getMessage() : "No se pudo recuperar la agenda"));
+                        historyResult.postValue(Resource.error(body.getMessage() != null ? body.getMessage() : "No se pudo recuperar el historial"));
                     }
                 } else {
-                    monthResult.postValue(Resource.error("No se pudo recuperar la agenda: " + response.code()));
+                    historyResult.postValue(Resource.error("No se pudo recuperar el historial: " + response.code()));
                 }
             }
 
             @Override
             public void onFailure(Call<ApiResponse<List<Appointment>>> call, Throwable t) {
-                monthResult.postValue(Resource.error("Error de red: " + t.getMessage()));
+                historyResult.postValue(Resource.error("Error de red: " + t.getMessage()));
             }
         });
     }

@@ -139,7 +139,10 @@ function procedureLabel($code) {
     $labels = [
         'PLASMA'     => 'PLASMA',
         'PLATELETS'  => 'PLAQUETAS',
-        'BLOOD'      => 'SANGRE'
+        'BLOOD'      => 'SANGRE',
+        'PLASMA_PLATELETS' => 'PLASMA Y PLAQUETAS',
+        'PLASMA+PLATELETS' => 'PLASMA Y PLAQUETAS',
+        'PLATELETS+PLASMA' => 'PLASMA Y PLAQUETAS'
     ];
     $code = strtoupper((string)$code);
     return $labels[$code] ?? $code;

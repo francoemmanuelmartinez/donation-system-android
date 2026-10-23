@@ -23,7 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.francomartinez.donationsystem.R;
 import com.francomartinez.donationsystem.adapters.AppointmentsAdapter;
-import com.francomartinez.donationsystem.adapters.DayFilterAdapter;
+import com.francomartinez.donationsystem.adapters.DayStripAdapter;
 import com.francomartinez.donationsystem.models.Appointment;
 import com.francomartinez.donationsystem.models.requests.CancelAppointmentRequest;
 import com.francomartinez.donationsystem.models.requests.MarkAttendanceRequest;
@@ -32,34 +32,33 @@ import com.francomartinez.donationsystem.utils.SessionManager;
 import com.francomartinez.donationsystem.viewmodels.AppointmentsViewModel;
 import com.francomartinez.donationsystem.viewmodels.DonorsViewModel;
 import com.francomartinez.donationsystem.viewmodels.SharedDonorViewModel;
+import com.francomartinez.donationsystem.views.AppointmentHistoryActivity;
 import com.francomartinez.donationsystem.views.MainActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.net.URLEncoder;
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class AppointmentsFragment extends Fragment {
 
     private static final DateTimeFormatter DB_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
-    private static final DateTimeFormatter WEEK_LABEL = DateTimeFormatter.ofPattern("dd/MM", Locale.getDefault());
     private static final DateTimeFormatter DISPLAY_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.getDefault());
-    private static final int WEEK_COUNT = 5;
+    private static final int STRIP_DAYS = 90;
 
     private TextView textViewWeekHeader;
-    private TextView textViewSelectedDateLabel;
     private TextView textViewEmptyAppointments;
     private MaterialButton buttonScheduleDonor;
-    private MaterialButton buttonToggleHistory;
+    private MaterialButton buttonOpenHistory;
+    private MaterialButton buttonToday;
     private MaterialButton buttonToggleRequests;
-    private View buttonOpenCalendar;
     private MaterialButton buttonDispatchReminders;
     private RecyclerView recyclerViewDaysFilter;
     private RecyclerView recyclerViewAppointmentsList;
@@ -67,18 +66,16 @@ public class AppointmentsFragment extends Fragment {
     private AppointmentsViewModel viewModel;
     private DonorsViewModel donorViewModel;
     private SharedDonorViewModel sharedDonorViewModel;
-    private DayFilterAdapter dayFilterAdapter;
+    private DayStripAdapter dayStripAdapter;
     private AppointmentsAdapter appointmentsAdapter;
 
-    private List<LocalDate> weekDays = new ArrayList<>();
+    private final List<LocalDate> stripDays = new ArrayList<>();
     private LocalDate selectedDay;
     private final List<Appointment> allAppointments = new ArrayList<>();
-    private List<Appointment> displaySource = allAppointments;
-    private boolean calendarDayPicked = false;
+    private final Map<String, Integer> dayCounts = new HashMap<>();
 
     private static final int VIEW_ACTIVE = 0;
     private static final int VIEW_REQUESTS = 1;
-    private static final int VIEW_HISTORY = 2;
     private int viewMode = VIEW_ACTIVE;
 
     private Integer pendingReminderAppointmentId = null;
@@ -105,17 +102,16 @@ public class AppointmentsFragment extends Fragment {
         sharedDonorViewModel = new ViewModelProvider(requireActivity()).get(SharedDonorViewModel.class);
 
         textViewWeekHeader = view.findViewById(R.id.textViewWeekHeader);
-        textViewSelectedDateLabel = view.findViewById(R.id.textViewSelectedDateLabel);
         textViewEmptyAppointments = view.findViewById(R.id.textViewEmptyAppointments);
         buttonScheduleDonor = view.findViewById(R.id.buttonScheduleDonor);
-        buttonToggleHistory = view.findViewById(R.id.buttonToggleHistory);
+        buttonOpenHistory = view.findViewById(R.id.buttonOpenHistory);
+        buttonToday = view.findViewById(R.id.buttonToday);
         buttonToggleRequests = view.findViewById(R.id.buttonToggleRequests);
-        buttonOpenCalendar = view.findViewById(R.id.buttonOpenCalendar);
         buttonDispatchReminders = view.findViewById(R.id.buttonDispatchReminders);
         recyclerViewDaysFilter = view.findViewById(R.id.recyclerViewDaysFilter);
         recyclerViewAppointmentsList = view.findViewById(R.id.recyclerViewAppointmentsList);
 
-        setupWeek();
+        setupStrip();
         setupRecyclers();
         applyViewUi();
         observeViewModel();
@@ -127,10 +123,10 @@ public class AppointmentsFragment extends Fragment {
             }
         });
 
-        buttonOpenCalendar.setOnClickListener(v -> openCalendar());
+        buttonToday.setOnClickListener(v -> selectDay(LocalDate.now()));
         buttonDispatchReminders.setOnClickListener(v -> handleDispatchReminders());
-        buttonToggleHistory.setOnClickListener(v -> setViewMode(
-                viewMode == VIEW_HISTORY ? VIEW_ACTIVE : VIEW_HISTORY));
+        buttonOpenHistory.setOnClickListener(v ->
+                startActivity(new Intent(requireContext(), AppointmentHistoryActivity.class)));
         buttonToggleRequests.setOnClickListener(v -> setViewMode(
                 viewMode == VIEW_REQUESTS ? VIEW_ACTIVE : VIEW_REQUESTS));
     }
@@ -138,74 +134,45 @@ public class AppointmentsFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if (calendarDayPicked) {
-            calendarDayPicked = false;
-            displaySource = allAppointments;
-            textViewSelectedDateLabel.setVisibility(View.GONE);
-        }
-        if (viewModel != null && weekDays != null && !weekDays.isEmpty()) {
-            viewModel.loadAppointments(weekDays.get(0).format(DB_DATE), currentStatusFilter());
+        if (viewModel != null && !stripDays.isEmpty()) {
+            viewModel.loadAppointments(stripDays.get(0).format(DB_DATE), currentStatusFilter());
         }
     }
 
     private void setViewMode(int newMode) {
         viewMode = newMode;
         applyViewUi();
-        if (viewModel != null && weekDays != null && !weekDays.isEmpty()) {
-            viewModel.loadAppointments(weekDays.get(0).format(DB_DATE), currentStatusFilter());
+        if (viewModel != null && !stripDays.isEmpty()) {
+            viewModel.loadAppointments(stripDays.get(0).format(DB_DATE), currentStatusFilter());
         }
     }
 
     private void applyViewUi() {
-        boolean history = viewMode == VIEW_HISTORY;
-        buttonToggleHistory.setText(history ? R.string.action_view_active : R.string.action_view_all);
-        appointmentsAdapter.setShowStatusChip(history);
+        appointmentsAdapter.setShowStatusChip(false);
         appointmentsAdapter.setRequestsMode(viewMode == VIEW_REQUESTS);
-        textViewWeekHeader.setText(history
-                ? getString(R.string.week_header_history, weekHeaderRange())
-                : getString(R.string.week_header_format, weekStartLabel(), weekEndLabel()));
-        buttonDispatchReminders.setVisibility(history ? View.GONE : View.VISIBLE);
-        buttonToggleRequests.setVisibility(history ? View.GONE : View.VISIBLE);
+        textViewWeekHeader.setText(getString(R.string.date_label_format, selectedDay.format(DISPLAY_DATE)));
+        buttonDispatchReminders.setVisibility(View.VISIBLE);
+        buttonToggleRequests.setVisibility(View.VISIBLE);
         buttonToggleRequests.setText(viewMode == VIEW_REQUESTS
                 ? R.string.action_view_active
                 : R.string.action_view_requests);
     }
 
-    private String weekHeaderRange() {
-        return weekStartLabel() + " – " + weekEndLabel();
-    }
-
-    private String weekStartLabel() {
-        return weekDays.isEmpty() ? "" : weekDays.get(0).format(WEEK_LABEL);
-    }
-
-    private String weekEndLabel() {
-        return weekDays.isEmpty() ? "" : weekDays.get(weekDays.size() - 1).format(WEEK_LABEL);
-    }
-
-    private void setupWeek() {
+    private void setupStrip() {
         LocalDate today = LocalDate.now();
-        LocalDate monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        weekDays = new ArrayList<>();
-        for (int i = 0; i < WEEK_COUNT; i++) {
-            weekDays.add(monday.plusDays(i));
+        stripDays.clear();
+        for (int i = 0; i < STRIP_DAYS; i++) {
+            stripDays.add(today.plusDays(i));
         }
-
-        LocalDate friday = monday.plusDays(WEEK_COUNT - 1L);
-        selectedDay = today.isBefore(monday) || today.isAfter(friday) ? monday : today;
-        textViewWeekHeader.setText(getString(R.string.week_header_format,
-                monday.format(WEEK_LABEL), friday.format(WEEK_LABEL)));
+        selectedDay = today;
     }
 
     private void setupRecyclers() {
         recyclerViewDaysFilter.setLayoutManager(
                 new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
-        dayFilterAdapter = new DayFilterAdapter(weekDays, this::applyDayFilter);
-        recyclerViewDaysFilter.setAdapter(dayFilterAdapter);
-
-        int todayIdx = weekDays.indexOf(selectedDay);
-        if (todayIdx < 0) todayIdx = 0;
-        dayFilterAdapter.setSelectedPosition(todayIdx);
+        dayStripAdapter = new DayStripAdapter(stripDays, this::applyDayFilter);
+        recyclerViewDaysFilter.setAdapter(dayStripAdapter);
+        dayStripAdapter.setSelectedPosition(stripDays.indexOf(selectedDay));
 
         recyclerViewAppointmentsList.setLayoutManager(new LinearLayoutManager(requireContext()));
         appointmentsAdapter = new AppointmentsAdapter((appointment, channel) -> {
@@ -220,6 +187,14 @@ public class AppointmentsFragment extends Fragment {
         recyclerViewAppointmentsList.setAdapter(appointmentsAdapter);
     }
 
+    private void selectDay(LocalDate day) {
+        applyDayFilter(day);
+        int idx = stripDays.indexOf(day);
+        if (idx >= 0) {
+            recyclerViewDaysFilter.scrollToPosition(idx);
+        }
+    }
+
     private void observeViewModel() {
         viewModel.getAppointmentsResult().observe(getViewLifecycleOwner(), resource -> {
             if (resource == null) return;
@@ -228,6 +203,7 @@ public class AppointmentsFragment extends Fragment {
                 if (resource.data != null) {
                     allAppointments.addAll(resource.data);
                 }
+                recomputeDayCounts();
                 applyDayFilter(selectedDay);
             } else if (resource.status == Resource.Status.ERROR && resource.message != null) {
                 Toast.makeText(requireContext(), resource.message, Toast.LENGTH_LONG).show();
@@ -290,7 +266,7 @@ public class AppointmentsFragment extends Fragment {
                 Appointment cancelled = pendingCancelAppointment;
                 pendingCancelAppointment = null;
                 showUndoSnackbar(cancelled, R.string.msg_appointment_cancelled);
-                viewModel.loadAppointments(weekDays.get(0).format(DB_DATE), currentStatusFilter());
+                viewModel.loadAppointments(stripDays.get(0).format(DB_DATE), currentStatusFilter());
             } else if (resource.status == Resource.Status.ERROR) {
                 pendingCancelAppointment = null;
                 Toast.makeText(requireContext(),
@@ -308,7 +284,7 @@ public class AppointmentsFragment extends Fragment {
                         ? getString(R.string.msg_appointment_no_show)
                         : getString(R.string.msg_appointment_attended);
                 Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
-                viewModel.loadAppointments(weekDays.get(0).format(DB_DATE), currentStatusFilter());
+                viewModel.loadAppointments(stripDays.get(0).format(DB_DATE), currentStatusFilter());
             } else if (resource.status == Resource.Status.ERROR) {
                 pendingAttendanceAppointment = null;
                 Toast.makeText(requireContext(),
@@ -410,11 +386,8 @@ public class AppointmentsFragment extends Fragment {
     private void showUndoSnackbar(Appointment appointment, int messageRes) {
         if (appointment == null || getView() == null) return;
         Snackbar.make(getView(), messageRes, Snackbar.LENGTH_LONG)
-                .setAction(R.string.action_view_history, v -> {
-                    if (viewMode != VIEW_HISTORY) {
-                        setViewMode(VIEW_HISTORY);
-                    }
-                })
+                .setAction(R.string.action_view_history, v ->
+                        startActivity(new Intent(requireContext(), AppointmentHistoryActivity.class)))
                 .show();
     }
 
@@ -436,20 +409,20 @@ public class AppointmentsFragment extends Fragment {
 
     private void applyDayFilter(LocalDate day) {
         selectedDay = day;
-        int idx = weekDays.indexOf(day);
+        textViewWeekHeader.setText(getString(R.string.date_label_format, day.format(DISPLAY_DATE)));
+
+        int idx = stripDays.indexOf(day);
         if (idx >= 0) {
-            dayFilterAdapter.setSelectedPosition(idx);
-            textViewSelectedDateLabel.setVisibility(View.GONE);
-        } else {
-            dayFilterAdapter.clearSelection();
-            textViewSelectedDateLabel.setText(getString(R.string.date_label_format, day.format(DISPLAY_DATE)));
-            textViewSelectedDateLabel.setVisibility(View.VISIBLE);
+            dayStripAdapter.setSelectedPosition(idx);
         }
 
         String target = day.format(DB_DATE);
         List<Appointment> filtered = new ArrayList<>();
-        for (Appointment appointment : displaySource) {
+        for (Appointment appointment : allAppointments) {
             if (!target.equals(appointment.getAppointmentDate())) {
+                continue;
+            }
+            if (!isScheduled(appointment)) {
                 continue;
             }
             if (viewMode == VIEW_REQUESTS && !hasRescheduleRequest(appointment)) {
@@ -466,15 +439,31 @@ public class AppointmentsFragment extends Fragment {
         }
     }
 
+    private void recomputeDayCounts() {
+        dayCounts.clear();
+        for (Appointment appointment : allAppointments) {
+            if (!isScheduled(appointment)) {
+                continue;
+            }
+            String date = appointment.getAppointmentDate();
+            if (date != null) {
+                dayCounts.merge(date, 1, Integer::sum);
+            }
+        }
+        dayStripAdapter.setCounts(dayCounts);
+    }
+
     private boolean hasRescheduleRequest(Appointment appointment) {
         String requestedAt = appointment.getRescheduleRequestedAt();
         return requestedAt != null && !requestedAt.trim().isEmpty() && !"null".equalsIgnoreCase(requestedAt.trim());
     }
 
+    private boolean isScheduled(Appointment appointment) {
+        String status = appointment.getStatus();
+        return status == null || "SCHEDULED".equalsIgnoreCase(status);
+    }
+
     private int emptyStateText() {
-        if (viewMode == VIEW_HISTORY) {
-            return R.string.empty_day_appointments;
-        }
         if (viewMode == VIEW_REQUESTS) {
             return R.string.empty_reschedule_requests;
         }
@@ -482,19 +471,7 @@ public class AppointmentsFragment extends Fragment {
     }
 
     private String currentStatusFilter() {
-        return viewMode == VIEW_HISTORY ? "all" : "SCHEDULED";
-    }
-
-    private void openCalendar() {
-        AppointmentCalendarDialogFragment dialog = new AppointmentCalendarDialogFragment();
-        dialog.setDayPickedListener(this::onCalendarDayPicked);
-        dialog.show(getParentFragmentManager(), "appointment_calendar");
-    }
-
-    private void onCalendarDayPicked(LocalDate day, List<Appointment> monthAppointments) {
-        calendarDayPicked = true;
-        displaySource = monthAppointments;
-        applyDayFilter(day);
+        return "SCHEDULED";
     }
 
     private void handleDispatchReminders() {
@@ -607,6 +584,10 @@ public class AppointmentsFragment extends Fragment {
                 return getString(R.string.procedure_platelets);
             case "BLOOD":
                 return getString(R.string.procedure_blood);
+            case "PLASMA_PLATELETS":
+            case "PLASMA+PLATELETS":
+            case "PLATELETS+PLASMA":
+                return getString(R.string.procedure_plasma_platelets);
             default:
                 return code;
         }

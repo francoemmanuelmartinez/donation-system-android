@@ -95,15 +95,13 @@ public interface ApiService {
     Call<ApiResponse<List<Appointment>>> getAppointments(@Query("week_date") String weekDate);
 
     @GET("appointments.php")
-    Call<ApiResponse<List<Appointment>>> getAppointmentsByMonth(@Query("month") String month);
-
-    @GET("appointments.php")
     Call<ApiResponse<List<Appointment>>> getAppointmentsFiltered(@Query("week_date") String weekDate,
                                                                  @Query("status") String status);
 
     @GET("appointments.php")
-    Call<ApiResponse<List<Appointment>>> getAppointmentsByMonthFiltered(@Query("month") String month,
-                                                                       @Query("status") String status);
+    Call<ApiResponse<List<Appointment>>> getAppointmentsInRange(@Query("from") String from,
+                                                               @Query("to") String to,
+                                                               @Query("status") String status);
     @POST("appointments.php?action=send_reminder")
     Call<ApiResponse<Map<String, Object>>> sendWhatsAppReminder(@Body ReminderRequest request);
 

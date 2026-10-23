@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,8 +34,8 @@ import com.francomartinez.donationsystem.viewmodels.AppointmentsViewModel;
 import com.francomartinez.donationsystem.viewmodels.DonorsViewModel;
 import com.francomartinez.donationsystem.viewmodels.SearchViewModel;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.datepicker.CalendarConstraints;
 import com.google.android.material.datepicker.DateValidatorPointForward;
 import com.google.android.material.datepicker.MaterialDatePicker;
@@ -73,9 +74,15 @@ public class ScheduleAppointmentFragment extends Fragment {
     private TextView textViewScheduleDonorName;
     private TextView textViewScheduleDonorDni;
     private Chip chipScheduleDonorStatus;
-    private Chip chipScheduleUpcomingAppointment;
+    private TextView textViewScheduleUpcomingAppointment;
     private TextView textViewScheduleConfirmation;
-    private MaterialButtonToggleGroup toggleGroupScheduleProcedure;
+    private TextView textViewScheduleDateTimeLabel;
+    private MaterialButton buttonChangeDonor;
+    private LinearLayout layoutNewSchedule;
+    private MaterialButton buttonPickScheduleDate;
+    private MaterialButton buttonPickScheduleTime;
+    private TextView textViewNewScheduleSelection;
+    private ChipGroup chipGroupScheduleProcedure;
     private MaterialButton buttonConfirmAppointment;
 
     private SearchViewModel searchViewModel;
@@ -148,9 +155,15 @@ public class ScheduleAppointmentFragment extends Fragment {
         textViewScheduleDonorName = view.findViewById(R.id.textViewScheduleDonorName);
         textViewScheduleDonorDni = view.findViewById(R.id.textViewScheduleDonorDni);
         chipScheduleDonorStatus = view.findViewById(R.id.chipScheduleDonorStatus);
-        chipScheduleUpcomingAppointment = view.findViewById(R.id.chipScheduleUpcomingAppointment);
+        textViewScheduleUpcomingAppointment = view.findViewById(R.id.textViewScheduleUpcomingAppointment);
         textViewScheduleConfirmation = view.findViewById(R.id.textViewScheduleConfirmation);
-        toggleGroupScheduleProcedure = view.findViewById(R.id.toggleGroupScheduleProcedure);
+        textViewScheduleDateTimeLabel = view.findViewById(R.id.textViewScheduleDateTimeLabel);
+        buttonChangeDonor = view.findViewById(R.id.buttonChangeDonor);
+        layoutNewSchedule = view.findViewById(R.id.layoutNewSchedule);
+        buttonPickScheduleDate = view.findViewById(R.id.buttonPickScheduleDate);
+        buttonPickScheduleTime = view.findViewById(R.id.buttonPickScheduleTime);
+        textViewNewScheduleSelection = view.findViewById(R.id.textViewNewScheduleSelection);
+        chipGroupScheduleProcedure = view.findViewById(R.id.chipGroupScheduleProcedure);
         buttonConfirmAppointment = view.findViewById(R.id.buttonConfirmAppointment);
 
         searchViewModel = new ViewModelProvider(this).get(SearchViewModel.class);
@@ -174,6 +187,10 @@ public class ScheduleAppointmentFragment extends Fragment {
         });
 
         buttonConfirmAppointment.setOnClickListener(v -> confirmAppointment());
+        buttonPickScheduleDate.setOnClickListener(v -> showDatePicker());
+        buttonPickScheduleTime.setOnClickListener(v -> showTimePicker());
+        buttonChangeDonor.setOnClickListener(v -> resetToSearch());
+        chipGroupScheduleProcedure.setOnCheckedStateChangeListener((group, checkedIds) -> refreshConfirmEnabled());
 
         searchViewModel.getSearchResult().observe(getViewLifecycleOwner(), result -> onSearchResult(result));
         appointmentsViewModel.getCreateResult().observe(getViewLifecycleOwner(), result -> onActionResult(result));
@@ -184,6 +201,7 @@ public class ScheduleAppointmentFragment extends Fragment {
         if (isLifecycleMode()) {
             setupLifecycleMode();
         }
+        refreshConfirmEnabled();
     }
 
     private void readArguments() {
@@ -215,11 +233,17 @@ public class ScheduleAppointmentFragment extends Fragment {
                 ? R.string.btn_confirm_reschedule
                 : R.string.btn_confirm_edit);
 
-        // Precarga de la fecha/hora/procedimiento actuales y salto directo a la confirmación.
-        selectedDate = parseDate(argCurrentDate);
-        selectedTime = argCurrentTime;
+        // La tarjeta "Turno actual" siempre muestra los datos originales; la selección
+        // de fecha/hora es independiente y representa el nuevo turno.
+        boolean editMode = MODE_EDIT.equals(mode);
+        selectedDate = editMode ? parseDate(argCurrentDate) : null;
+        selectedTime = editMode ? argCurrentTime : null;
         preselectProcedure(argCurrentProcedure);
         renderCurrentTurnCard();
+        textViewScheduleDateTimeLabel.setText(R.string.label_new_schedule);
+        buttonChangeDonor.setVisibility(View.GONE);
+        layoutNewSchedule.setVisibility(View.VISIBLE);
+        updateSelectionControls();
         scrollScheduleConfirm.setVisibility(View.VISIBLE);
 
         // Elegibilidad del donante (avisa, no bloquea; si falla se permite sin aviso - D4).
@@ -229,22 +253,28 @@ public class ScheduleAppointmentFragment extends Fragment {
     }
 
     private void preselectProcedure(String procedure) {
-        if (procedure == null) {
+        if (procedure == null || procedure.trim().isEmpty()) {
+            chipGroupScheduleProcedure.clearCheck();
             return;
         }
-        int buttonId;
+        int chipId;
         switch (procedure.trim().toUpperCase(Locale.ROOT)) {
             case "PLASMA":
-                buttonId = R.id.buttonSchedulePlasma;
+                chipId = R.id.chipSchedulePlasma;
                 break;
             case "PLATELETS":
-                buttonId = R.id.buttonSchedulePlatelets;
+                chipId = R.id.chipSchedulePlatelets;
+                break;
+            case "PLASMA_PLATELETS":
+            case "PLASMA+PLATELETS":
+            case "PLATELETS+PLASMA":
+                chipId = R.id.chipSchedulePlasmaPlatelets;
                 break;
             default:
-                buttonId = R.id.buttonScheduleBlood;
+                chipId = R.id.chipScheduleBlood;
                 break;
         }
-        toggleGroupScheduleProcedure.check(buttonId);
+        chipGroupScheduleProcedure.check(chipId);
     }
 
     private void renderCurrentTurnCard() {
@@ -252,13 +282,75 @@ public class ScheduleAppointmentFragment extends Fragment {
         textViewScheduleDonorDni.setText(getString(R.string.hint_dni) + " " + (argDonorDni != null ? argDonorDni : ""));
         chipScheduleDonorStatus.setVisibility(View.GONE);
 
-        String dateText = selectedDate != null ? selectedDate.format(DISPLAY_DATE) : (argCurrentDate != null ? argCurrentDate : "");
-        chipScheduleUpcomingAppointment.setVisibility(View.VISIBLE);
-        chipScheduleUpcomingAppointment.setText(getString(R.string.label_current_appointment,
+        LocalDate currentDate = parseDate(argCurrentDate);
+        String dateText = currentDate != null ? currentDate.format(DISPLAY_DATE)
+                : (argCurrentDate != null ? argCurrentDate : "");
+        textViewScheduleUpcomingAppointment.setVisibility(View.VISIBLE);
+        textViewScheduleUpcomingAppointment.setText(getString(R.string.label_current_appointment,
                 procedureLabel(argCurrentProcedure), dateText, argCurrentTime != null ? argCurrentTime : ""));
+    }
 
-        textViewScheduleConfirmation.setText(getString(R.string.msg_reschedule_confirmation,
-                argDonorName != null ? argDonorName : ""));
+    private void updateLifecycleConfirmation() {
+        if (!isLifecycleMode()) {
+            return;
+        }
+        String donorName = argDonorName != null ? argDonorName : "";
+        if (selectedDate != null && selectedTime != null) {
+            int messageRes = MODE_RESCHEDULE.equals(mode)
+                    ? R.string.msg_reschedule_confirmation
+                    : R.string.msg_edit_appointment_confirmation;
+            textViewScheduleConfirmation.setText(getString(messageRes, donorName,
+                    selectedDate.format(DISPLAY_DATE), selectedTime));
+        } else {
+            textViewScheduleConfirmation.setText(R.string.msg_choose_new_schedule);
+        }
+    }
+
+    private void updateSelectionControls() {
+        buttonPickScheduleDate.setText(selectedDate != null
+                ? getString(R.string.btn_date_selected, selectedDate.format(DISPLAY_DATE))
+                : getString(R.string.btn_pick_date));
+        buttonPickScheduleTime.setText(selectedTime != null
+                ? getString(R.string.btn_time_selected, selectedTime)
+                : getString(R.string.btn_pick_time));
+
+        if (selectedDate != null && selectedTime != null) {
+            textViewNewScheduleSelection.setText(getString(R.string.msg_new_schedule_selection,
+                    selectedDate.format(DISPLAY_DATE), selectedTime));
+            textViewNewScheduleSelection.setVisibility(View.VISIBLE);
+        } else {
+            textViewNewScheduleSelection.setVisibility(View.GONE);
+        }
+
+        refreshConfirmationText();
+        refreshConfirmEnabled();
+    }
+
+    private void refreshConfirmationText() {
+        if (isLifecycleMode()) {
+            updateLifecycleConfirmation();
+            return;
+        }
+        if (selectedItem == null) {
+            return;
+        }
+        if (selectedDate != null && selectedTime != null) {
+            textViewScheduleConfirmation.setText(getString(R.string.msg_schedule_confirmation,
+                    selectedItem.getFullName(),
+                    selectedDate.format(DISPLAY_DATE),
+                    selectedTime));
+        } else {
+            textViewScheduleConfirmation.setText(R.string.msg_choose_schedule);
+        }
+    }
+
+    private void refreshConfirmEnabled() {
+        if (buttonConfirmAppointment == null) {
+            return;
+        }
+        buttonConfirmAppointment.setEnabled(selectedDate != null
+                && selectedTime != null
+                && getSelectedProcedure() != null);
     }
 
     private LocalDate parseDate(String value) {
@@ -304,16 +396,23 @@ public class ScheduleAppointmentFragment extends Fragment {
 
     private void onDonorCardClick(SearchResultItem item) {
         selectedItem = item;
-        showDatePicker();
+        preselectProcedure(item.hasUpcomingAppointment() ? item.getNextAppointmentProcedure() : null);
+        hideKeyboard();
+        showAppointmentForm();
     }
 
     private void showDatePicker() {
         CalendarConstraints.DateValidator validator =
                 DateValidatorPointForward.from(MaterialDatePicker.todayInUtcMilliseconds());
 
+        long initialSelection = MaterialDatePicker.todayInUtcMilliseconds();
+        if (selectedDate != null) {
+            initialSelection = selectedDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli();
+        }
+
         MaterialDatePicker<Long> picker = MaterialDatePicker.Builder.datePicker()
                 .setTitleText(getString(R.string.schedule_date_picker_title))
-                .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
+                .setSelection(initialSelection)
                 .setCalendarConstraints(new CalendarConstraints.Builder().setValidator(validator).build())
                 .build();
 
@@ -322,7 +421,7 @@ public class ScheduleAppointmentFragment extends Fragment {
             if (isBeforeRecoveryEnd()) {
                 showRecoveryWarningDialog();
             } else {
-                showTimePicker();
+                updateSelectionControls();
             }
         });
 
@@ -368,7 +467,7 @@ public class ScheduleAppointmentFragment extends Fragment {
                 .setTitle(R.string.dialog_warning_title)
                 .setMessage(getString(R.string.warning_schedule_not_elapsed, formatDisplayDate(nextEligibleRaw())))
                 .setCancelable(false)
-                .setPositiveButton(R.string.btn_schedule_anyway, (dialog, which) -> showTimePicker())
+                .setPositiveButton(R.string.btn_schedule_anyway, (dialog, which) -> updateSelectionControls())
                 .setNegativeButton(R.string.btn_cancel, (dialog, which) -> dialog.dismiss())
                 .show();
     }
@@ -403,6 +502,10 @@ public class ScheduleAppointmentFragment extends Fragment {
                 return getString(R.string.procedure_platelets);
             case "BLOOD":
                 return getString(R.string.procedure_blood);
+            case "PLASMA_PLATELETS":
+            case "PLASMA+PLATELETS":
+            case "PLATELETS+PLASMA":
+                return getString(R.string.procedure_plasma_platelets);
             default:
                 return procedure;
         }
@@ -411,9 +514,10 @@ public class ScheduleAppointmentFragment extends Fragment {
     private void showTimePicker() {
         int initHour = 8;
         int initMinute = 0;
-        if (argCurrentTime != null && argCurrentTime.matches("^\\d{1,2}:\\d{2}.*")) {
+        String referenceTime = selectedTime != null ? selectedTime : argCurrentTime;
+        if (referenceTime != null && referenceTime.matches("^\\d{1,2}:\\d{2}.*")) {
             try {
-                String[] parts = argCurrentTime.split(":");
+                String[] parts = referenceTime.split(":");
                 initHour = Integer.parseInt(parts[0]);
                 initMinute = Integer.parseInt(parts[1].substring(0, 2));
             } catch (Exception ignored) {
@@ -422,60 +526,73 @@ public class ScheduleAppointmentFragment extends Fragment {
         TimePickerDialog timePicker = new TimePickerDialog(requireContext(),
                 (dialog, hourOfDay, minute) -> {
                     selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute);
-                    showConfirmation();
+                    updateSelectionControls();
                 }, initHour, initMinute, true);
         timePicker.setTitle(getString(R.string.schedule_time_picker_title));
         timePicker.show();
     }
 
-    private void showConfirmation() {
-        scrollScheduleConfirm.setVisibility(View.VISIBLE);
-
-        if (isLifecycleMode()) {
-            renderCurrentTurnCard();
-            textViewScheduleConfirmation.setText(getString(R.string.msg_reschedule_confirmation,
-                    argDonorName != null ? argDonorName : ""));
+    private void showAppointmentForm() {
+        if (selectedItem == null) {
             return;
         }
+        scrollScheduleConfirm.setVisibility(View.VISIBLE);
+        setSearchVisible(false);
+        buttonChangeDonor.setVisibility(View.VISIBLE);
+        textViewScheduleDateTimeLabel.setText(R.string.label_schedule_datetime);
+        renderSelectedDonorCard();
+        layoutNewSchedule.setVisibility(View.VISIBLE);
+        updateSelectionControls();
+    }
 
-        recyclerViewDonorSearch.setVisibility(View.GONE);
-        if (textInputLayoutDonorSearchDni != null) {
-            textInputLayoutDonorSearchDni.setVisibility(View.GONE);
-        }
-        if (buttonSearchDonorsByDni != null) {
-            buttonSearchDonorsByDni.setVisibility(View.GONE);
-        }
-
+    private void renderSelectedDonorCard() {
         textViewScheduleDonorName.setText(selectedItem.getFullName());
         textViewScheduleDonorDni.setText(getString(R.string.hint_dni) + " " + selectedItem.getDni());
 
         boolean enVeda = "EN_VEDA".equals(selectedItem.getStatus());
-        if (enVeda) {
-            chipScheduleDonorStatus.setText(R.string.badge_veda);
-            chipScheduleDonorStatus.setChipBackgroundColorResource(R.color.veda_red);
-        } else {
-            chipScheduleDonorStatus.setText(R.string.badge_apto);
-            chipScheduleDonorStatus.setChipBackgroundColorResource(R.color.aptitude_green);
-        }
+        chipScheduleDonorStatus.setText(enVeda ? R.string.badge_veda : R.string.badge_apto);
+        chipScheduleDonorStatus.setChipBackgroundColorResource(enVeda ? R.color.veda_red : R.color.aptitude_green);
         chipScheduleDonorStatus.setVisibility(View.VISIBLE);
 
         if (selectedItem.hasUpcomingAppointment()) {
-            chipScheduleUpcomingAppointment.setVisibility(View.VISIBLE);
-            chipScheduleUpcomingAppointment.setText(getString(R.string.label_next_appointment,
+            textViewScheduleUpcomingAppointment.setVisibility(View.VISIBLE);
+            textViewScheduleUpcomingAppointment.setText(getString(R.string.label_next_appointment,
                     procedureLabel(selectedItem.getNextAppointmentProcedure()),
                     formatDisplayDate(selectedItem.getNextAppointmentDate())));
         } else {
-            chipScheduleUpcomingAppointment.setVisibility(View.GONE);
+            textViewScheduleUpcomingAppointment.setVisibility(View.GONE);
         }
+    }
 
-        textViewScheduleConfirmation.setText(getString(R.string.msg_schedule_confirmation,
-                selectedItem.getFullName(),
-                selectedDate.format(DISPLAY_DATE),
-                selectedTime));
+    private void setSearchVisible(boolean visible) {
+        int visibility = visible ? View.VISIBLE : View.GONE;
+        recyclerViewDonorSearch.setVisibility(visibility);
+        if (textInputLayoutDonorSearchDni != null) {
+            textInputLayoutDonorSearchDni.setVisibility(visibility);
+        }
+        if (buttonSearchDonorsByDni != null) {
+            buttonSearchDonorsByDni.setVisibility(visibility);
+        }
+    }
+
+    private void resetToSearch() {
+        selectedItem = null;
+        selectedDate = null;
+        selectedTime = null;
+        donorNextEligibleDate = null;
+        chipGroupScheduleProcedure.clearCheck();
+        adapter.submitList(Collections.emptyList(), "");
+        editTextDonorSearchDni.setText("");
+        scrollScheduleConfirm.setVisibility(View.GONE);
+        layoutNewSchedule.setVisibility(View.GONE);
+        buttonChangeDonor.setVisibility(View.GONE);
+        setSearchVisible(true);
+        refreshConfirmEnabled();
     }
 
     private void confirmAppointment() {
         if (selectedDate == null || selectedTime == null) {
+            Toast.makeText(requireContext(), R.string.msg_choose_schedule, Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -509,17 +626,23 @@ public class ScheduleAppointmentFragment extends Fragment {
     }
 
     private String getSelectedProcedure() {
-        List<Integer> checked = toggleGroupScheduleProcedure.getCheckedButtonIds();
-        if (checked.isEmpty()) {
+        int checkedId = chipGroupScheduleProcedure.getCheckedChipId();
+        if (checkedId == View.NO_ID) {
             return null;
         }
-        if (checked.contains(R.id.buttonSchedulePlasma)) {
+        if (checkedId == R.id.chipScheduleBlood) {
+            return "BLOOD";
+        }
+        if (checkedId == R.id.chipSchedulePlasma) {
             return "PLASMA";
         }
-        if (checked.contains(R.id.buttonSchedulePlatelets)) {
+        if (checkedId == R.id.chipSchedulePlatelets) {
             return "PLATELETS";
         }
-        return "BLOOD";
+        if (checkedId == R.id.chipSchedulePlasmaPlatelets) {
+            return "PLASMA_PLATELETS";
+        }
+        return null;
     }
 
     private void onActionResult(Resource<java.util.Map<String, Object>> result) {
@@ -530,7 +653,7 @@ public class ScheduleAppointmentFragment extends Fragment {
             buttonConfirmAppointment.setEnabled(false);
             return;
         }
-        buttonConfirmAppointment.setEnabled(true);
+        refreshConfirmEnabled();
         if (result.status == Resource.Status.SUCCESS) {
             Toast.makeText(requireContext(), successMessage(), Toast.LENGTH_LONG).show();
             getParentFragmentManager().popBackStack();

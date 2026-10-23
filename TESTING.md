@@ -97,19 +97,39 @@ Checklist para probar la app a mano contra el backend real (XAMPP). Ejecutar en 
       secuencialmente, respeta la ventana horaria 08:00–13:00 y marca los flags por canal
       (ver `whatsapp-reminders-guide.md` §7).
 
+### 7.3 Agenda con días deslizables (plan-agenda-dias-deslizables)
+
+- [ ] **Tira única:** la Agenda usa una tira horizontal deslizable de días desde hoy (~90 días), sin tira fija Lun–Vie ni botón de calendario/modal.
+- [ ] **Conteo:** cada día muestra el número de turnos activos (`SCHEDULED`) del mismo día (derivado del fetch de activos).
+- [ ] **Selección inline:** al tocar un día se actualiza la lista del header "Turnos del <día>" y el listado sin abrir modal.
+- [ ] **"Hoy":** el botón "Hoy" vuelve al día actual y hace scroll a él.
+- [ ] **Sin calendario:** desaparece el botón `📅`; no existe `AppointmentCalendarDialogFragment`.
+- [ ] **"Ver historial":** sigue abriendo `AppointmentHistoryActivity`.
+
 ### 7.1 Ciclo de vida del turno (plan-agenda-robusta)
 
 - [ ] **Menú de acciones (⋮)** aparece solo en turnos `SCHEDULED` (oculto para `ATTENDED` / `NO_SHOW` / `CANCELLED`).
 - [ ] **Editar turno** → formulario en modo EDIT (sin búsqueda, con fecha/hora/procedimiento precargados) → guardar aplica los cambios y refresca la Agenda.
 - [ ] **Reagendar** → formulario en modo RESCHEDULE → al confirmar, el turno viejo queda `CANCELLED` con `cancel_reason='RESCHEDULED'` y `rescheduled_to_appointment_id` apuntando al nuevo; el nuevo queda `SCHEDULED`.
-- [ ] **Cancelar** (motivo opcional, max 120) → turno sale del activo, aparece en histórico con chip "Cancelado"; si fue reagendado, el chip dice "Reagendado".
+- [ ] **Cancelar** (motivo opcional, max 120) → turno sale del activo, aparece en el histórico con chip "Cancelado"; si fue reagendado, el chip dice "Reagendado".
 - [ ] **Atendido / No vino** (solo turnos de fecha pasada `SCHEDULED`) → cambia el estado; `NO_SHOW` disponible únicamente para fechas anteriores a hoy.
 - [ ] `ATTENDED` / `NO_SHOW` están protegidos: no se pueden cancelar ni reagendar (sin acciones en el ⋮).
 - [ ] **Registrar donación desde un turno** → setea `donations.appointment_id` y marca el turno `ATTENDED` en la misma transacción.
 - [ ] **Alerta WhatsApp** al cancelar/reagendar (post-commit, best-effort): se dispara si `REMINDER_ENABLED` está activo y el donante tiene teléfono; el fallo del envío no revierte la operación.
-- [ ] **Ver todos / histórico:** botón de texto en el header alterna activo ↔ histórico; el chip de estado solo se muestra en histórico; estado vacío "No quedan turnos activos".
+- [ ] **Ver historial:** el botón de texto del header (siempre "Ver historial") abre la pantalla `AppointmentHistoryActivity`; la Agenda activa nunca muestra chips de estado ni turnos resueltos.
 - [ ] **Solicitudes (D18):** un donante que pidió reagendar aparece en modo "Solicitudes" con chip "Pidió reagendar"; al reagendar/editar el turno, la marca se limpia.
 - [ ] Fecha pasada rechazada: `create_appointment` y `update_appointment` con fecha `< hoy` → 400.
+
+### 7.2 Historial de turnos (plan-historial-turnos)
+
+- [ ] **Acceso:** en la Agenda, "Ver historial" abre la pantalla de histórico (toolbar con flecha atrás; el back vuelve a la Agenda).
+- [ ] **Default:** al abrir, el rango es el último mes (hasta = hoy) y la lista trae solo turnos resueltos (`ATTENDED` / `NO_SHOW` / `CANCELLED`), **más recientes primero**.
+- [ ] **Rango:** "Desde" / "Hasta" abren `DatePickerDialog`; al cambiar el rango la lista se recarga. Si desde > hasta, se autocorrige.
+- [ ] **Filtro por tipo:** chips Todos / Atendido / No vino / Cancelado / Reagendado filtran en cliente.
+  - "Reagendado" = `CANCELLED` con `rescheduled_to_appointment_id`; "Cancelado" = `CANCELLED` sin reemplazo.
+- [ ] **Sin acciones:** en el histórico no hay recordatorios, ⋮ ni botón de agendar; la card es solo de consulta (sin navegación).
+- [ ] **Vacío:** si el rango/filtro no tiene turnos → "No hay turnos en el rango seleccionado".
+- [ ] **Backend:** `appointments.php?from=YYYY-MM-DD&to=YYYY-MM-DD&status=resolved` → devuelve solo no-`SCHEDULED`, orden `appointment_date DESC, appointment_time DESC`.
 
 ## 8. Políticas de recuperación (panel Directora)
 
