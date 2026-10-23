@@ -28,7 +28,7 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
         <activity
-            android:name=".views.DirectorDashboardActivity"
+            android:name=".views.DashboardActivity"
             android:exported="false" />
         <activity
             android:name=".views.StatisticsActivity"

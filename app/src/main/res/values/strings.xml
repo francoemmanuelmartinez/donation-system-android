@@ -179,15 +179,20 @@
     <string name="msg_search_min_chars">Ingresá al menos 2 caracteres</string>
     <string name="label_search_stock">Stock Crítico de Sangre</string>
 
-    <!-- Director -->
-    <string name="director_dashboard_title">Panel de Dirección</string>
-    <string name="director_dashboard_placeholder">Módulo de Dirección</string>
+    <!-- Dashboard -->
     <string name="dashboard_subtitle">Control y gestión del banco de plasma y plaquetas</string>
     <string name="dashboard_menu_donations">Flujo de Donación</string>
     <string name="dashboard_menu_statistics">Estadísticas</string>
     <string name="dashboard_menu_restrictions">Restricciones Médicas</string>
     <string name="dashboard_menu_users">Gestión de Personal</string>
+    <string name="dashboard_menu_centers">Centros</string>
+    <string name="action_profile">Mi Perfil</string>
     <string name="role_directora">Directora</string>
+    <string name="msg_no_centers">No hay centros</string>
+    <string name="msg_select_center">Seleccionar centro</string>
+    <string name="msg_selected_center">Centro: %1$s</string>
+    <string name="msg_centers_load_error">Error al cargar centros</string>
+    <string name="msg_connection_error">Error de conexión</string>
 
     <!-- Admin activities -->
     <string name="activity_statistics_title">Estadísticas</string>

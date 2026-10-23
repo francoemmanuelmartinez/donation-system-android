@@ -15,8 +15,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.francomartinez.donationsystem.R;
 import com.francomartinez.donationsystem.models.User;
 import com.francomartinez.donationsystem.viewmodels.LoginViewModel;
-import com.francomartinez.donationsystem.views.DirectorDashboardActivity;
-import com.francomartinez.donationsystem.views.MainActivity;
+import com.francomartinez.donationsystem.views.DashboardActivity;
 import com.francomartinez.donationsystem.utils.SessionManager;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -87,13 +86,8 @@ public class LoginFragment extends Fragment {
         SessionManager.getInstance(requireContext()).saveUser(user);
         Toast.makeText(requireContext(), getString(R.string.msg_welcome, user.getFirstName()), Toast.LENGTH_SHORT).show();
 
-        String role = user.getRole();
-        Intent intent;
-        if (role != null && (role.equalsIgnoreCase("DIRECTORA") || role.equalsIgnoreCase("DIRECTOR") || role.equalsIgnoreCase("SUPERADMIN"))) {
-            intent = new Intent(requireContext(), DirectorDashboardActivity.class);
-        } else {
-            intent = new Intent(requireContext(), MainActivity.class);
-        }
+        // Todos los roles aterrizan en el dashboard; los módulos visibles se filtran por rol.
+        Intent intent = new Intent(requireContext(), DashboardActivity.class);
 
         startActivity(intent);
         requireActivity().finish();
